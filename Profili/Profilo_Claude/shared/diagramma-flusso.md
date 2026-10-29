@@ -1,6 +1,6 @@
 # Diagramma del flusso
 
-Regole comuni alle skill che, nella fase DIAGRAMMA, devono generare un diagramma. Le regole specifiche di una skill (es. neutralità nel debug) restano nel suo SKILL.md e hanno la precedenza su queste.
+Regole comuni alle skill che, nella fase DIAGRAMMA (o MAPPA `dati`), devono generare un diagramma. Le regole specifiche di una skill (es. neutralità nel debug) restano nel suo SKILL.md e hanno la precedenza su queste.
 
 ## Formato
 
@@ -34,13 +34,13 @@ Regole comuni alle skill che, nella fase DIAGRAMMA, devono generare un diagramma
 
 ## Riferimenti ai passi
 
-- i numeri nel cerchio in alto a sinistra di ogni riquadro sono il **riferimento comune** tra te e l'utente per tutta la richiesta.
-- in tutte le fasi successive al diagramma (correzioni, risultati, segnalazioni, verifica) indica le parti del flusso come "passo N", seguito dal nome dell'elemento: es. "passo 4 (`getAllUsers`)".
-- l'utente può rispondere usando i numeri (es. "al passo 4 farei…", "tra il passo 5 e il 6 manca…"): interpreta ogni numero come il riquadro corrispondente del diagramma. Se un numero non esiste o il riferimento è ambiguo, chiedi prima di andare avanti.
-- quando citi un intervento tra due passi, usa "tra il passo N e il passo M".
+- i numeri **D1, D2…** nel cerchio in alto a sinistra di ogni riquadro sono il **riferimento comune** tra te e l'utente per tutta la richiesta (D = dati, per distinguerli dai riquadri S del diagramma della struttura).
+- in tutte le fasi successive al diagramma (correzioni, risultati, segnalazioni, verifica) indica le parti del flusso come "DN", seguito dal nome dell'elemento: es. "D4 (`getAllUsers`)".
+- l'utente può rispondere usando i numeri (es. "al passo 4 farei…", "tra D5 e D6 manca…"): interpreta ogni numero, con o senza D, come il riquadro corrispondente del flusso. Se un numero non esiste o il riferimento è ambiguo, chiedi prima di andare avanti.
+- quando citi un intervento tra due passi, usa "tra DN e DM".
 - non rigenerare il diagramma con una numerazione diversa durante la stessa richiesta. Se serve un diagramma nuovo (es. il flusso dopo la modifica), salvalo in un file nuovo e dichiara che da quel momento i numeri si riferiscono a quel file.
 
 ## Salvataggio
 
 - salva in `~/flussi/<nome-cartella-progetto>/<AAAA-MM-GG>-<argomento-in-kebab-case>.html`; crea la cartella se non esiste.
-- in chat indica solo il percorso del file (cliccabile), nel blocco DIAGRAMMA della skill.
+- in chat indica solo il percorso del file (cliccabile), nel blocco della skill che mostra il diagramma (MAPPA o DIAGRAMMA).

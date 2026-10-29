@@ -63,7 +63,7 @@ In qualsiasi fase:
 - numera i problemi in modo progressivo tra tutti i gruppi.
 - per ogni problema indica:
   - nomeFile:riga (cliccabile).
-  - il passo del diagramma in cui si trova (es. "passo 4 (`getAllUsers`)").
+  - il passo del diagramma in cui si trova (es. "D4 (`getAllUsers`)").
   - cosa è sbagliato.
   - perché è sbagliato e lo scenario concreto in cui si manifesta.
   - come lo correggeresti, a parole e senza codice.

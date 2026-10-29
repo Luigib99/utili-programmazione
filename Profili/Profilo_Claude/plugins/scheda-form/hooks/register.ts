@@ -1,19 +1,15 @@
 import type { Register } from 'claude-code'
 
-type Campo = { nome: string; obbligatorio: boolean; aiuto: string }
+type Campo = { nome: string; obbligatorio: boolean; aiuto: string; valori?: readonly string[] }
 
-// I campi devono restare allineati alla fase SCHEDA RICHIESTA dello SKILL.md della skill.
+// I campi devono restare allineati alla fase SCHEDA dello SKILL.md della skill.
 const SCHEDE: Record<string, readonly Campo[]> = {
   'modifica-maggiore': [
-    { nome: 'OBIETTIVO', obbligatorio: true, aiuto: "cosa deve succedere, come lo vede chi usa l'app" },
-    { nome: 'ORA', obbligatorio: false, aiuto: 'cosa succede adesso, prima della modifica' },
-    { nome: 'DOVE', obbligatorio: true, aiuto: 'schermate, flussi o file interessati' },
-    { nome: 'ESEMPIO', obbligatorio: false, aiuto: 'un caso concreto con dati reali' },
-    { nome: 'SIMILE A', obbligatorio: false, aiuto: "una parte dell'app che funziona già come vuoi" },
-    { nome: 'VERIFICA', obbligatorio: true, aiuto: 'azioni da fare e risultato atteso' },
-    { nome: 'VINCOLI', obbligatorio: false, aiuto: 'cosa non deve cambiare' },
-    { nome: 'FUORI SCOPO', obbligatorio: false, aiuto: 'cosa non fa parte della richiesta' },
-    { nome: 'COSA NON SO', obbligatorio: false, aiuto: 'dubbi da chiarire prima di procedere' },
+    { nome: 'TITOLO', obbligatorio: true, aiuto: 'nome breve: diventa il titolo della sessione' },
+    { nome: 'OBIETTIVO', obbligatorio: true, aiuto: 'cosa vuoi ottenere' },
+    { nome: 'DOVE', obbligatorio: true, aiuto: 'pagina, flusso o file' },
+    { nome: 'MAPPA', obbligatorio: true, aiuto: 'dati, struttura o entrambi', valori: ['dati', 'struttura', 'entrambi'] },
+    { nome: 'NOTE', obbligatorio: false, aiuto: 'tutto il resto: vincoli, dubbi, esempi' },
   ],
   'modifica-minore': [
     { nome: 'COSA', obbligatorio: true, aiuto: 'cosa cambiare: testo, colore, dimensione, posizione, formattazione' },
@@ -93,10 +89,18 @@ export const register: Register = on => {
         .filter(campo => campo.obbligatorio && !scheda.get(campo.nome))
         .map(campo => campo.nome)
 
-      if (vuoti.length > 0) {
-        await $.prompt.fill({ text: `/${skill}\n${e.args.replace(/^\s*\n/, '')}` })
+      const sbagliati = campi
+        .filter(campo => campo.valori && scheda.get(campo.nome) && !campo.valori.includes((scheda.get(campo.nome) ?? '').toLowerCase()))
+        .map(campo => `${campo.nome} (${campo.valori?.join(', ')})`)
 
-        return { text: `Scheda non inviata, compila prima: ${vuoti.join(', ')}. Il testo è di nuovo nella casella.` }
+      if (vuoti.length > 0 || sbagliati.length > 0) {
+        await $.prompt.fill({ text: `/${skill}\n${e.args.replace(/^\s*\n/, '')}` })
+        const problemi = [
+          vuoti.length > 0 ? `compila ${vuoti.join(', ')}` : '',
+          sbagliati.length > 0 ? `valore non valido in ${sbagliati.join(', ')}` : '',
+        ].filter(Boolean)
+
+        return { text: `Scheda non inviata: ${problemi.join(' · ')}. Il testo è di nuovo nella casella.` }
       }
 
       const args = campi
@@ -107,4 +111,16 @@ export const register: Register = on => {
       return next({ ...e, args })
     })
   }
+
+  // TITOLO SESSIONE
+  on('classic.UserPromptSubmit', async ($, e, next) => {
+    const risultato = await next(e)
+    const comando = e.prompt.trimStart().match(/^\/(?:[\w-]+:)?([\w-]+)/)?.[1]
+    const campi = comando ? SCHEDE[comando] : undefined
+    if (!campi?.some(campo => campo.nome === 'TITOLO')) return risultato
+
+    const titolo = leggiScheda(e.prompt.replace(/^\s*\/\S+\s*/, ''), campi).get('TITOLO')
+
+    return titolo ? { ...risultato, sessionTitle: titolo.split('\n')[0] } : risultato
+  })
 }

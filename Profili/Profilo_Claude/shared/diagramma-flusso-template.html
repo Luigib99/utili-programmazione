@@ -793,8 +793,8 @@
     fo.appendChild(div);
 
     const color = LANES[node.side].stroke;
-    el('circle', { cx: x, cy: node.y, r: 13, fill: cv('bg'), stroke: color, 'stroke-width': 2 }, g);
-    el('text', { x, y: node.y + 4, 'text-anchor': 'middle', fill: color, 'font-size': 12, 'font-weight': 700 }, g).textContent = node.number;
+    el('circle', { cx: x, cy: node.y, r: 15, fill: cv('bg'), stroke: color, 'stroke-width': 2 }, g);
+    el('text', { x, y: node.y + 4, 'text-anchor': 'middle', fill: color, 'font-size': 11, 'font-weight': 700 }, g).textContent = `D${node.number}`;
   }
 
   const isShortList = (v) => Array.isArray(v) && v.length <= 4 && v.every((item) => item === null || typeof item !== 'object');
@@ -956,6 +956,7 @@
         <h2>Come leggere il diagramma</h2>
         <p class="hint">Il flusso si legge dall'alto verso il basso. A sinistra la corsia FRONTEND (blu), a destra la corsia BACKEND (giallo): quando una freccia cambia corsia, i dati passano tra app e server.</p>
         <p class="hint">L'etichetta sulla freccia dice cosa passa al passo successivo. Clicca un riquadro o una freccia per vedere l'oggetto completo e la spiegazione.</p>
+        <p class="hint">I numeri <b>D1, D2…</b> sono il riferimento comune: puoi scrivere "al passo D4…".</p>
         <p class="hint">Usa <kbd>&uarr;</kbd> <kbd>&darr;</kbd> per scorrere i passi. Con <b>Passo-passo</b> attivo i passi successivi restano oscurati.</p>`;
       return;
     }
@@ -979,7 +980,7 @@
 
     panel.innerHTML = `
       <span class="panel-tag ${node.side}">${node.side}</span>
-      <h2>${node.number}. ${codeLink(node, node.line, esc(node.element || node.file))}${node.element ? ` ${codeLink(node, 1, `<span class="route">${esc(node.file)}</span>`)}` : ''}</h2>
+      <h2>D${node.number}. ${codeLink(node, node.line, esc(node.element || node.file))}${node.element ? ` ${codeLink(node, 1, `<span class="route">${esc(node.file)}</span>`)}` : ''}</h2>
       ${node.path ? `<p class="hint">Clic sul nome per aprirlo in VS Code${node.line ? ` alla riga ${node.line}` : ''}.</p>` : ''}
       <p class="route">${fmt(node.action)}</p>
       ${section('Cosa fa', node.does || node.explanation)}
@@ -1039,8 +1040,8 @@
   renderPanel();
   renderTracked();
 
-  // Apertura diretta su un passo: file.html#passo-3
-  const fromHash = location.hash.match(/^#passo-(\d+)$/);
+  // Apertura diretta su un passo: file.html#D3 (o #passo-3)
+  const fromHash = location.hash.match(/^#(?:D|passo-)(\d+)$/i);
   if (fromHash) {
     const target = Number(fromHash[1]) - 1;
     if (target >= 0 && target < FLOW.nodes.length) select(target);
