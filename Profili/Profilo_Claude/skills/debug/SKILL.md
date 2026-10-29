@@ -24,7 +24,7 @@ L'obiettivo è che l'utente impari a individuare da solo la causa di un bug legg
 
 In qualsiasi fase:
 
-- se l'utente scrive "indizio", rispondi con il solo blocco **1. INDIZIO**: un indizio più diretto del precedente, con il passo del diagramma, senza rivelare la soluzione; poi attendi.
+- se l'utente scrive "aiuto" o "indizio", rispondi con il solo blocco **1. SUGGERIMENTI**: al massimo 3 suggerimenti diretti (dove guardare, quale valore confrontare), più espliciti dei precedenti, con i passi del diagramma, senza rivelare la soluzione e senza domande; poi attendi.
 - se l'utente scrive "mi arrendo", rispondi con i blocchi **1. CAUSA** (dov'è il problema e perché si verifica), **2. CORREZIONE** (come lo correggeresti, concetto e motivazione, non codice) e **3. RICHIESTA** "Procedo?", poi passa a IMPLEMENTAZIONE FIX al suo "procedi".
 - se le informazioni non bastano per individuare la causa (log, passi per riprodurre, dispositivo, ambiente), chiedile prima di andare avanti.
 
@@ -86,8 +86,7 @@ In qualsiasi fase:
   - **1. MODIFICHE**: una riga per file modificato, nomeFile (cliccabile) e cosa è cambiato.
   - **2. DA CONTROLLARE**: i dettagli che hai deciso tu (non presenti nella RISPOSTA UTENTE), con nomeFile, passo del diagramma e una riga di motivazione.
   - **3. SCHEDA**: il "Controllo finale" della scheda, con i passi per riprodurre il problema e il risultato atteso ora.
-  - **4. RICHIESTA**: massimo 2 domande mirate sulle parti più importanti del fix.
-- se l'utente risponde male, correggilo spiegando perché.
+  - **4. RICHIESTA**: "Prova il fix e dimmi se il problema è risolto."
 - se l'utente propone di cambiare un dettaglio, valuta la proposta: se è valida applicala, se non lo è spiega perché.
 
 ## SPIEGAZIONE FINALE

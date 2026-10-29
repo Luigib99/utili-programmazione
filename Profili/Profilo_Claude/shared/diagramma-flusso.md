@@ -35,7 +35,7 @@ Regole comuni alle skill che, nella fase DIAGRAMMA, devono generare un diagramma
 ## Riferimenti ai passi
 
 - i numeri nel cerchio in alto a sinistra di ogni riquadro sono il **riferimento comune** tra te e l'utente per tutta la richiesta.
-- in tutte le fasi successive al diagramma (domande, correzioni, risultati, segnalazioni, verifica) indica le parti del flusso come "passo N", seguito dal nome dell'elemento: es. "passo 4 (`getAllUsers`)".
+- in tutte le fasi successive al diagramma (correzioni, risultati, segnalazioni, verifica) indica le parti del flusso come "passo N", seguito dal nome dell'elemento: es. "passo 4 (`getAllUsers`)".
 - l'utente può rispondere usando i numeri (es. "al passo 4 farei…", "tra il passo 5 e il 6 manca…"): interpreta ogni numero come il riquadro corrispondente del diagramma. Se un numero non esiste o il riferimento è ambiguo, chiedi prima di andare avanti.
 - quando citi un intervento tra due passi, usa "tra il passo N e il passo M".
 - non rigenerare il diagramma con una numerazione diversa durante la stessa richiesta. Se serve un diagramma nuovo (es. il flusso dopo la modifica), salvalo in un file nuovo e dichiara che da quel momento i numeri si riferiscono a quel file.

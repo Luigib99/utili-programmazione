@@ -13,7 +13,8 @@ Vale per ogni messaggio delle skill che richiamano questo file, in tutte le fasi
 - ogni blocco ha al massimo 3 righe o 3 punti, una riga ciascuno; fanno eccezione solo SCHEDA, MODIFICHE e GLOSSARIO, che hanno una riga per elemento.
 - frasi brevi e dirette: niente premesse, riepiloghi di quanto già detto o spiegazioni non richieste.
 - per le parti del flusso usa i numeri dei passi del diagramma; per il codice nomeFile:riga cliccabile.
-- l'ultimo blocco, quando serve una risposta, è sempre **RICHIESTA**: una sola domanda o al massimo 2 domande numerate.
+- l'ultimo blocco, quando serve una risposta, è sempre **RICHIESTA**: una sola riga con l'azione attesa dall'utente (es. "Come intendi procedere?", "Procedo?", "Confermi la scheda?").
+- **mai domande di verifica o da interrogazione** (es. "perché secondo te…?", "cosa succede se…?"), in nessuna fase: confondono l'utente. Se l'utente chiede aiuto o un indizio, dai suggerimenti diretti, non domande.
 
 ## Lettura della richiesta
 

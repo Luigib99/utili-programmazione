@@ -24,6 +24,7 @@ L'obiettivo è che l'utente impari a prendere le decisioni di design (dove inter
 
 In qualsiasi fase:
 
+- se l'utente scrive "aiuto" o "indizio", rispondi con il solo blocco **1. SUGGERIMENTI**: al massimo 3 suggerimenti diretti (dove guardare, cosa considerare), con i passi del diagramma, senza dare la soluzione completa e senza domande; poi attendi.
 - se l'utente scrive "mi arrendo", rispondi con i blocchi **1. COME LO FAREI** (concetto e motivazione, non codice, con i passi del diagramma) e **2. RICHIESTA** "Procedo?", poi passa a IMPLEMENTAZIONE CODICE al suo "procedi".
 - se la richiesta è ambigua, chiedi chiarimenti prima di andare avanti.
 
@@ -83,8 +84,7 @@ In qualsiasi fase:
   - **1. MODIFICHE**: una riga per file modificato, nomeFile (cliccabile) e cosa è cambiato.
   - **2. DA CONTROLLARE**: i dettagli che hai deciso tu (non presenti nella RISPOSTA UTENTE), con nomeFile, passo del diagramma e una riga di motivazione.
   - **3. SCHEDA**: il "Controllo finale" della scheda, con i passi per la `VERIFICA`.
-  - **4. RICHIESTA**: massimo 2 domande mirate sulle decisioni più importanti della modifica.
-- se l'utente risponde male, correggilo spiegando perché.
+  - **4. RICHIESTA**: "Prova la modifica e dimmi se va bene o cosa cambiare."
 - se l'utente propone di cambiare un dettaglio, valuta la proposta: se è valida applicala, se non lo è spiega perché.
 
 ## SPIEGAZIONE FINALE
