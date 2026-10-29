@@ -1,0 +1,25 @@
+PROFILO CLAUDE
+==============
+
+COSA CONTIENE
+La struttura della cartella rispecchia quella di ~/.claude:
+- CLAUDE.md       istruzioni globali di Claude Code
+- settings.json   impostazioni globali di Claude Code
+- skills/         skill personali (debug, lezione, modifica-maggiore, modifica-minore, revisione)
+- shared/         file usati dalle skill (regole e template HTML del diagramma di flusso)
+                  NECESSARIO: debug, modifica-maggiore e revisione leggono shared/diagramma-flusso.md
+
+DOVE COPIARLO
+Copiare TUTTO il contenuto di questa cartella (tranne ISTRUZIONI.txt) dentro:
+- Windows:  C:\Users\<utente>\.claude\
+- Mac:      ~/.claude/
+ATTENZIONE: CLAUDE.md, settings.json e le skill con lo stesso nome vengono SOSTITUITI.
+
+La cartella .claude e' nascosta: su Windows attivare "Elementi nascosti" in Esplora file,
+su Mac Cmd+Shift+. nel Finder.
+
+DA NON COPIARE QUI (restano solo sul PC)
+.credentials.json (segreti), projects/ (memoria per progetto), cache, sessions, file-history.
+
+DOPO
+Vale dalle nuove sessioni di Claude Code.

@@ -1,0 +1,14 @@
+PROFILO LOGITECH
+================
+
+FILE
+- Visual Studio Code React Native_ring.lp5   profilo Actions Ring per Visual Studio Code
+
+DOVE CARICARLO
+Non va copiato in una cartella: si importa da Logi Options+.
+1. Aprire Logi Options+
+2. Andare nelle impostazioni dell'Actions Ring
+3. Usare l'opzione di importazione del profilo e scegliere il file .lp5
+
+PREREQUISITI
+- Logi Options+ installato

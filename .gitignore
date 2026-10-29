@@ -1,0 +1,9 @@
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Repo private annidate (ognuna ha il suo git)
+Privato/

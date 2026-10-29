@@ -1,0 +1,1050 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagramma flusso</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-2: #1f2630;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --fe: #3b82f6;
+    --fe-bg: #0f2547;
+    --be: #facc15;
+    --be-bg: #3a3008;
+    --lost: #f85149;
+    --accent: #ffffff;
+    --syn-var: #79c0ff;
+    --syn-string: #a5d6ff;
+    --syn-number: #ffa657;
+    --syn-literal: #ff7b72;
+    --syn-function: #d2a8ff;
+    --syn-type: #56d4dd;
+    --syn-file: #8b949e;
+    color-scheme: dark;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 18px;
+  }
+
+  .subtitle {
+    margin: 2px 0 0;
+    color: var(--muted);
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .swatch {
+    width: 14px;
+    height: 14px;
+    border: 2px solid;
+    border-radius: 3px;
+  }
+
+  .swatch-line {
+    width: 22px;
+    height: 0;
+    border-top: 2px solid var(--muted);
+  }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  button {
+    padding: 6px 12px;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  button:hover {
+    border-color: var(--muted);
+  }
+
+  button[aria-pressed="true"] {
+    border-color: var(--accent);
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 440px;
+    height: calc(100vh - 74px);
+  }
+
+  #diagram {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    overflow: auto;
+    padding: 16px;
+  }
+
+  #diagram svg {
+    display: block;
+    flex: none;
+  }
+
+  #tracked {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: 12px;
+    width: 330px;
+    max-height: calc(100vh - 106px);
+    overflow: auto;
+  }
+
+  #tracked[hidden] {
+    display: none;
+  }
+
+  .tracked-card {
+    padding: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .tracked-card h2 {
+    margin: 0;
+    font-size: 15px;
+  }
+
+  .tracked-card .obj {
+    margin-top: 10px;
+  }
+
+  .diff-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding: 0 4px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .mark {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 4px;
+    border-radius: 2px;
+  }
+
+  .mark.added,
+  .obj .row.added > span {
+    background: rgba(46, 160, 67, .28);
+  }
+
+  .mark.changed,
+  .obj .row.changed > span {
+    background: rgba(210, 153, 34, .3);
+  }
+
+  .mark.removed,
+  .obj .row.removed > span {
+    background: rgba(248, 81, 73, .25);
+  }
+
+  .obj .row.removed .code {
+    text-decoration: line-through;
+  }
+
+  /* Una sola colonna: il commento sta sopra la riga che commenta */
+  .obj.stacked {
+    grid-template-columns: minmax(max-content, 1fr);
+  }
+
+  /* width 0 + min-width 100%: il commento va a capo invece di allargare la colonna */
+  .obj .row > .note {
+    width: 0;
+    min-width: 100%;
+    padding: 4px 12px 0;
+    color: var(--muted);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 11.5px;
+    white-space: pre-wrap;
+  }
+
+  #panel {
+    overflow: auto;
+    padding: 20px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+  }
+
+  @media (max-width: 900px) {
+    main {
+      grid-template-columns: 1fr;
+      height: auto;
+    }
+
+    #panel {
+      border-left: 0;
+      border-top: 1px solid var(--border);
+    }
+  }
+
+  svg text {
+    font-family: inherit;
+  }
+
+  .item {
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+
+  .item.dim {
+    opacity: .15;
+  }
+
+  .node {
+    width: 100%;
+    height: 100%;
+    padding: 8px 14px;
+    border: 2px solid;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .node.FRONTEND {
+    background: var(--fe-bg);
+    border-color: var(--fe);
+  }
+
+  .node.BACKEND {
+    background: var(--be-bg);
+    border-color: var(--be);
+  }
+
+  .item:hover .node {
+    filter: brightness(1.25);
+  }
+
+  .item.sel .node {
+    border-color: var(--accent);
+  }
+
+  .node .tag {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+  }
+
+  .node.FRONTEND .tag {
+    color: var(--fe);
+  }
+
+  .node.BACKEND .tag {
+    color: var(--be);
+  }
+
+  .node .title {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .node .element {
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .node .file {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  a.code-link {
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  a.code-link:hover {
+    text-decoration: underline;
+  }
+
+  #toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    z-index: 10;
+    max-width: min(560px, calc(100vw - 32px));
+    padding: 10px 16px;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+    font-size: 13px;
+    text-align: center;
+    transform: translateX(-50%);
+  }
+
+  #toast[hidden] {
+    display: none;
+  }
+
+  #toast code {
+    color: var(--syn-file);
+    font: 12.5px ui-monospace, Consolas, monospace;
+  }
+
+  .node .action {
+    margin-top: 2px;
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .edge-label {
+    fill: var(--surface-2);
+    stroke: var(--border);
+  }
+
+  .item.sel .edge-path {
+    stroke: var(--accent);
+    stroke-width: 3;
+  }
+
+  .panel-tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border: 1px solid;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+  }
+
+  .panel-tag.FRONTEND {
+    color: var(--fe);
+    border-color: var(--fe);
+  }
+
+  .panel-tag.BACKEND {
+    color: var(--be);
+    border-color: var(--be);
+  }
+
+  #panel h2 {
+    margin: 10px 0 4px;
+    font-size: 17px;
+  }
+
+  #panel h3 {
+    margin: 20px 0 8px;
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+
+  .route {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .explanation {
+    margin: 0;
+  }
+
+  /* Colori del codice nei testi: stessi token dell'oggetto (.obj) */
+  code .tk-var {
+    color: var(--syn-var);
+  }
+
+  code .tk-string {
+    color: var(--syn-string);
+  }
+
+  code .tk-number {
+    color: var(--syn-number);
+  }
+
+  code .tk-literal {
+    color: var(--syn-literal);
+  }
+
+  code .tk-function {
+    color: var(--syn-function);
+  }
+
+  code .tk-type {
+    color: var(--syn-type);
+  }
+
+  code .tk-file {
+    color: var(--syn-file);
+  }
+
+  #panel code,
+  .node code {
+    padding: 0 4px;
+    background: var(--surface-2);
+    border-radius: 4px;
+    font: 12.5px ui-monospace, Consolas, monospace;
+  }
+
+  .terms {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px 12px;
+    margin: 0;
+    font-size: 13px;
+  }
+
+  .terms dt {
+    font-weight: 600;
+  }
+
+  .terms dd {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .obj {
+    display: grid;
+    grid-template-columns: max-content minmax(120px, 1fr);
+    overflow-x: auto;
+    margin-top: 10px;
+    padding: 12px 0;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font: 12.5px/1.6 ui-monospace, Consolas, monospace;
+  }
+
+  .obj .row {
+    display: contents;
+  }
+
+  .obj .code {
+    padding: 2px 12px;
+    white-space: pre;
+  }
+
+  .obj .row > .c {
+    padding: 2px 12px 2px 0;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+
+  .obj .row:hover > span {
+    background: var(--surface-2);
+  }
+
+  .obj .k {
+    color: var(--syn-var);
+  }
+
+  .obj .s {
+    color: var(--syn-string);
+  }
+
+  .obj .n {
+    color: var(--syn-number);
+  }
+
+  .obj .b {
+    color: var(--syn-literal);
+  }
+
+  .obj .c {
+    color: #7ee787;
+  }
+
+  .hint {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  kbd {
+    padding: 0 5px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1 id="title"></h1>
+    <p class="subtitle" id="subtitle"></p>
+  </div>
+  <div class="legend">
+    <span><i class="swatch" style="border-color: var(--fe); background: var(--fe-bg)"></i>FRONTEND</span>
+    <span><i class="swatch" style="border-color: var(--be); background: var(--be-bg)"></i>BACKEND</span>
+    <span><i class="swatch-line"></i>passa al passo successivo</span>
+    <span><i class="swatch-line" style="border-color: var(--lost); border-top-style: dashed"></i>non arriva</span>
+  </div>
+  <div class="controls">
+    <button id="prev" title="Passo precedente (freccia su)">&uarr;</button>
+    <button id="next" title="Passo successivo (freccia giù)">&darr;</button>
+    <button id="mode" aria-pressed="false" title="Oscura i passi successivi a quello selezionato">Passo-passo</button>
+  </div>
+</header>
+<main>
+  <div id="diagram">
+    <section id="tracked" hidden></section>
+  </div>
+  <aside id="panel"></aside>
+  <div id="toast" role="status" hidden></div>
+</main>
+
+<!--
+  DATI DEL FLUSSO (unica parte da modificare). Il diagramma va dall'alto verso il basso:
+  ogni elemento di "nodes" è un riquadro e una freccia lo collega al successivo.
+  - side: "FRONTEND" (corsia blu a sinistra) | "BACKEND" (corsia gialla a destra)
+  - file, element: dove si trova il codice; action: cosa fa, in una frase breve
+  - path, line: percorso assoluto del file e riga dell'element; rendono cliccabili i nomi (aprono VS Code)
+  - does / purpose / receives / returns: sezioni "Cosa fa", "A cosa serve", "Riceve", "Restituisce" del pannello
+  - terms: { "termine": "significato semplice" } mostrati come glossario del passo
+  - nei testi, il codice va tra backtick (`esempio`) e viene mostrato come codice
+  - tracked: (opzionale, a livello di FLOW) [{ "id", "name" }] oggetti seguiti passo per passo nella colonna
+    a sinistra, un riquadro ciascuno; nei nodi in cui un oggetto cambia, "state": { "<id>": valore completo dopo
+    quel passo } (gli oggetti non presenti in "state" restano invariati)
+  - section: (opzionale) inizia un nuovo flusso con un titolo, senza freccia dal nodo precedente
+  - incoming: (opzionale) "lost" se la freccia dal nodo precedente non arriva (rossa tratteggiata)
+  - payloadName / payload / fields: cosa passa al nodo successivo (payload null se nulla)
+  - fields: { "percorso.del.campo": "spiegazione" }, gli array usano "lista[]", "" è il valore intero
+  - per mostrare un valore undefined scrivi "__undefined__"
+  Non inserire la sequenza </script> nel JSON.
+-->
+<script id="flow-data" type="application/json">
+{
+  "title": "Titolo del flusso",
+  "subtitle": "progetto · data · cosa rappresenta",
+  "nodes": [
+    {
+      "side": "FRONTEND", "file": "Componente.jsx", "element": "handleClick",
+      "action": "L'utente preme il pulsante e parte la richiesta",
+      "explanation": "Cosa succede in questo passo e perché.",
+      "payloadName": "body della richiesta",
+      "payload": { "id": 1 },
+      "fields": { "id": "a cosa serve questo campo" }
+    },
+    {
+      "side": "BACKEND", "file": "Controller.js", "element": "esempio",
+      "action": "Salva il dato e risponde",
+      "explanation": "Cosa succede in questo passo e perché.",
+      "payloadName": "response.data",
+      "payload": { "status": true },
+      "fields": {}
+    }
+  ]
+}
+</script>
+
+<script>
+  const FLOW = JSON.parse(document.getElementById('flow-data').textContent);
+
+  const PAD = 16;
+  const LANE_W = 330;
+  const LANE_GAP = 40;
+  const NODE_W = 290;
+  const NODE_H = 96;
+  const GAP = 76;
+  const SECTION_H = 44;
+  const HEADER_H = 46;
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const XHTML_NS = 'http://www.w3.org/1999/xhtml';
+
+  // Gli attributi SVG non risolvono var(): leggo i token CSS una volta sola
+  const cv = (name) => getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim();
+
+  const LANES = {
+    FRONTEND: { x: PAD, stroke: cv('fe'), fill: cv('fe-bg') },
+    BACKEND: { x: PAD + LANE_W + LANE_GAP, stroke: cv('be'), fill: cv('be-bg') },
+  };
+
+  const state = { selected: null, stepMode: false };
+  const centerX = (node) => LANES[node.side].x + LANE_W / 2;
+
+  const el = (tag, attrs = {}, parent) => {
+    const node = document.createElementNS(SVG_NS, tag);
+    Object.entries(attrs).forEach(([k, v]) => node.setAttribute(k, v));
+    if (parent) parent.appendChild(node);
+    return node;
+  };
+
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  // EVIDENZIAZIONE CODICE NEI TESTI
+  // Gruppi in ordine: stringa, numero, letterale, funzione (seguita da "("), tipo/componente (Maiuscola), variabile
+  const TOKEN = /('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")|\b(\d+(?:\.\d+)?)\b|\b(true|false|null|undefined)\b|([A-Za-z_$][\w$]*)(?=\s*\()|\b([A-Z][\w$]*)\b|([A-Za-z_$][\w$]*)/g;
+  const TOKEN_CLASSES = ['tk-string', 'tk-number', 'tk-literal', 'tk-function', 'tk-type', 'tk-var'];
+
+  const highlight = (code) => {
+    if (/^[\w./-]+\.(jsx?|tsx?|json|md)$/.test(code)) return `<span class="tk-file">${esc(code)}</span>`;
+    let html = '';
+    let last = 0;
+    for (const match of code.matchAll(TOKEN)) {
+      const group = match.slice(1).findIndex((g) => g !== undefined);
+      html += esc(code.slice(last, match.index)) + `<span class="${TOKEN_CLASSES[group]}">${esc(match[0])}</span>`;
+      last = match.index + match[0].length;
+    }
+    return html + esc(code.slice(last));
+  };
+
+  const fmt = (s) => (s || '')
+    .split(/(`[^`]+`)/)
+    .map((part) => (/^`[^`]+`$/.test(part) ? `<code>${highlight(part.slice(1, -1))}</code>` : esc(part)))
+    .join('');
+
+  // Link che apre il file in VS Code alla riga indicata (vscode://file/<percorso>:<riga>:<colonna>)
+  const codeLink = (node, line, inner) => {
+    if (!node.path) return inner;
+    const target = `${node.path.replace(/\\/g, '/')}:${line || 1}`;
+    const href = encodeURI(`vscode://file/${target}:1`);
+    return `<a class="code-link" href="${esc(href)}" data-copy="${esc(target)}" title="Apri in VS Code (nel browser integrato: copia il percorso per Ctrl+P)">${inner}</a>`;
+  };
+
+  // COPIA PERCORSO
+  // Il browser integrato di VS Code blocca i link vscode:// senza avvisare: il percorso copiato si apre con Ctrl+P
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      const area = document.createElement('textarea');
+      area.value = text;
+      document.body.appendChild(area);
+      area.select();
+      const ok = document.execCommand('copy');
+      area.remove();
+      return ok;
+    }
+  }
+
+  function showToast(html) {
+    const toast = document.getElementById('toast');
+    toast.innerHTML = html;
+    toast.hidden = false;
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => {
+      toast.hidden = true;
+    }, 4000);
+  }
+
+  document.addEventListener('click', async (e) => {
+    const link = e.target.closest('a.code-link');
+    if (!link) return;
+    const copied = await copyText(link.dataset.copy);
+    showToast(copied
+      ? `Copiato <code>${esc(link.dataset.copy)}</code><br>In VS Code premi <kbd>Ctrl</kbd>+<kbd>P</kbd>, incolla e premi <kbd>Invio</kbd>`
+      : 'Copia non riuscita: apri il file in un browser esterno per usare il link diretto');
+  });
+
+  // POSIZIONI NODI
+  function layout() {
+    let y = HEADER_H + 24;
+    FLOW.nodes.forEach((node, i) => {
+      node.number = i + 1;
+      if (node.section) {
+        const extra = i === 0 ? 0 : 8;
+        node.sectionY = y + extra;
+        y += SECTION_H + extra;
+      }
+      node.y = y;
+      y += NODE_H + GAP;
+    });
+    return y - GAP + 24;
+  }
+
+  // RENDER DIAGRAMMA
+  function renderDiagram() {
+    const height = layout();
+    const width = PAD * 2 + LANE_W * 2 + LANE_GAP;
+    const svg = el('svg', { width, height, viewBox: `0 0 ${width} ${height}` });
+    document.getElementById('diagram').appendChild(svg);
+
+    const defs = el('defs', {}, svg);
+    [['FRONTEND', cv('fe')], ['BACKEND', cv('be')], ['lost', cv('lost')], ['sel', cv('accent')]].forEach(([id, color]) => {
+      const marker = el('marker', { id: `head-${id}`, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto' }, defs);
+      el('path', { d: 'M0,0 L10,5 L0,10 z', fill: color }, marker);
+    });
+
+    Object.entries(LANES).forEach(([side, lane]) => {
+      el('rect', { x: lane.x, y: 0, width: LANE_W, height, rx: 12, fill: lane.fill, 'fill-opacity': 0.25, stroke: lane.stroke, 'stroke-opacity': 0.35 }, svg);
+      el('text', { x: lane.x + LANE_W / 2, y: 30, 'text-anchor': 'middle', fill: lane.stroke, 'font-size': 15, 'font-weight': 800, 'letter-spacing': '.2em' }, svg).textContent = side;
+    });
+
+    FLOW.nodes.forEach((node, i) => {
+      if (node.section) {
+        el('line', { x1: PAD, y1: node.sectionY + 18, x2: width - PAD, y2: node.sectionY + 18, stroke: cv('border'), 'stroke-dasharray': '6 4' }, svg);
+        const label = el('text', { x: width / 2, y: node.sectionY + 23, 'text-anchor': 'middle', fill: cv('text'), 'font-size': 13, 'font-weight': 700 }, svg);
+        label.textContent = node.section.toUpperCase();
+        const box = label.getBBox();
+        el('rect', { x: box.x - 12, y: box.y - 4, width: box.width + 24, height: box.height + 8, rx: 6, fill: cv('bg'), stroke: cv('border') }, svg);
+        svg.appendChild(label);
+      }
+      if (i > 0 && !node.section) renderEdge(svg, FLOW.nodes[i - 1], node, i - 1);
+    });
+
+    FLOW.nodes.forEach((node, i) => renderNode(svg, node, i));
+  }
+
+  // RENDER FRECCIA
+  function renderEdge(svg, from, to, fromIndex) {
+    const lost = to.incoming === 'lost';
+    const color = lost ? cv('lost') : LANES[from.side].stroke;
+    const marker = lost ? 'lost' : from.side;
+    const x1 = centerX(from);
+    const y1 = from.y + NODE_H;
+    const x2 = centerX(to);
+    const y2 = to.y - 2;
+    const mid = (y1 + y2) / 2;
+    const straight = x1 === x2;
+    const d = straight ? `M${x1},${y1} V${y2}` : `M${x1},${y1} V${mid} H${x2} V${y2}`;
+
+    const g = el('g', { class: 'item', 'data-i': fromIndex }, svg);
+    g.addEventListener('click', () => select(fromIndex));
+    el('path', { d, fill: 'none', stroke: 'transparent', 'stroke-width': 16 }, g);
+    el('path', { class: 'edge-path', d, fill: 'none', stroke: color, 'stroke-width': 2, 'stroke-dasharray': lost ? '6 4' : '', 'marker-end': `url(#head-${marker})`, 'data-marker': marker }, g);
+
+    const labelX = straight ? x1 : (x1 + x2) / 2;
+    const labelY = straight ? mid : mid - 16;
+
+    let labelRight = labelX;
+    if (from.payloadName) {
+      const text = el('text', { x: labelX, y: labelY + 4, 'text-anchor': 'middle', fill: cv('text'), 'font-size': 12 }, g);
+      text.textContent = from.payloadName;
+      const box = text.getBBox();
+      el('rect', { class: 'edge-label', x: box.x - 8, y: box.y - 3, width: box.width + 16, height: box.height + 6, rx: 10 }, g);
+      g.appendChild(text);
+      labelRight = box.x + box.width + 8;
+    }
+
+    if (lost) {
+      const crossX = labelRight + 18;
+      el('path', { d: `M${crossX - 7},${labelY - 7} l14,14 M${crossX - 7},${labelY + 7} l14,-14`, stroke: cv('lost'), 'stroke-width': 3 }, g);
+    }
+  }
+
+  // RENDER NODO
+  function renderNode(svg, node, i) {
+    const x = centerX(node) - NODE_W / 2;
+    const g = el('g', { class: 'item', 'data-i': i }, svg);
+    g.addEventListener('click', () => select(i));
+
+    const fo = el('foreignObject', { x, y: node.y, width: NODE_W, height: NODE_H }, g);
+    const div = document.createElementNS(XHTML_NS, 'div');
+    div.className = `node ${node.side}`;
+    div.innerHTML = `
+      <div class="tag">${node.side}</div>
+      <div class="title">${codeLink(node, node.line, `<span class="element">${esc(node.element || node.file)}</span>`)}${node.element ? codeLink(node, 1, `<span class="file">${esc(node.file)}</span>`) : ''}</div>
+      <div class="action">${fmt(node.action)}</div>`;
+    fo.appendChild(div);
+
+    const color = LANES[node.side].stroke;
+    el('circle', { cx: x, cy: node.y, r: 13, fill: cv('bg'), stroke: color, 'stroke-width': 2 }, g);
+    el('text', { x, y: node.y + 4, 'text-anchor': 'middle', fill: color, 'font-size': 12, 'font-weight': 700 }, g).textContent = node.number;
+  }
+
+  const isShortList = (v) => Array.isArray(v) && v.length <= 4 && v.every((item) => item === null || typeof item !== 'object');
+  const leafText = (v) => (v === undefined ? 'undefined' : JSON.stringify(v));
+
+  // Larghezza di un carattere del font monospace: serve ad allineare le note (in font normale) al codice
+  const MONO_CH = (() => {
+    const probe = document.createElement('span');
+    probe.style.cssText = 'position: absolute; visibility: hidden; font: 12.5px ui-monospace, Consolas, monospace';
+    probe.textContent = '0'.repeat(20);
+    document.body.appendChild(probe);
+    const width = probe.getBoundingClientRect().width / 20;
+    probe.remove();
+    return width;
+  })();
+
+  // APPIATTIMENTO PER DIFF
+  function flatten(raw, path = '', out = {}) {
+    const v = raw === '__undefined__' ? undefined : raw;
+    if (isShortList(v)) {
+      out[path] = JSON.stringify(v);
+    } else if (Array.isArray(v)) {
+      out[path] = '[]';
+      v.forEach((item, i) => flatten(item, `${path}[${i}]`, out));
+    } else if (v && typeof v === 'object') {
+      out[path] = '{}';
+      Object.entries(v).forEach(([k, item]) => flatten(item, path ? `${path}.${k}` : k, out));
+    } else {
+      out[path] = leafText(v);
+    }
+    return out;
+  }
+
+  // RENDER OGGETTO
+  function renderObject(value, fields, prevFlat = null, showNotes = true) {
+    const lines = [];
+    const diffClass = (diffPath, current) => {
+      if (!prevFlat) return '';
+      if (!(diffPath in prevFlat)) return 'added';
+      return prevFlat[diffPath] !== current ? 'changed' : '';
+    };
+    const noted = new Set();
+    const noteFor = (path) => {
+      if (!(path in fields) || noted.has(path)) return '';
+      noted.add(path);
+      return fields[path];
+    };
+    const primitive = (v) => {
+      if (typeof v === 'string') return `<span class="s">${esc(JSON.stringify(v))}</span>`;
+      if (typeof v === 'number') return `<span class="n">${v}</span>`;
+      return `<span class="b">${v}</span>`;
+    };
+
+    // path: con [] per le note in fields; diffPath: con [indice] per il confronto col passo precedente
+    const walk = (raw, path, diffPath, depth, key, comma) => {
+      // JSON non può contenere undefined: nei dati si scrive "__undefined__"
+      const v = raw === '__undefined__' ? undefined : raw;
+      const pad = '  '.repeat(depth);
+      const keyHtml = key !== null ? `<span class="k">${esc(key)}</span>: ` : '';
+      const tail = comma ? ',' : '';
+
+      if (isShortList(v)) {
+        const cls = diffClass(diffPath, JSON.stringify(v));
+        lines.push({ html: `${pad}${keyHtml}[${v.map(primitive).join(', ')}]${tail}`, note: noteFor(path), cls, diffPath });
+        return;
+      }
+
+      if (Array.isArray(v) || (v && typeof v === 'object')) {
+        const isArray = Array.isArray(v);
+        const entries = isArray ? v.map((item) => [null, item]) : Object.entries(v);
+        const cls = diffClass(diffPath, isArray ? '[]' : '{}');
+        lines.push({ html: pad + keyHtml + (isArray ? '[' : '{'), note: noteFor(path), cls, diffPath });
+        entries.forEach(([k, item], idx) => {
+          const childPath = isArray ? `${path}[]` : (path ? `${path}.${k}` : k);
+          const childDiffPath = isArray ? `${diffPath}[${idx}]` : (diffPath ? `${diffPath}.${k}` : k);
+          walk(item, childPath, childDiffPath, depth + 1, k, idx < entries.length - 1);
+        });
+        lines.push({ html: pad + (isArray ? ']' : '}') + tail, note: '', cls: cls === 'added' ? 'added' : '' });
+        return;
+      }
+
+      const cls = diffClass(diffPath, leafText(v));
+      lines.push({ html: pad + keyHtml + primitive(v) + tail, note: noteFor(path), cls, diffPath });
+    };
+
+    walk(value, '', '', 0, null, false);
+
+    if (prevFlat) {
+      const currentFlat = flatten(value);
+      const removed = Object.keys(prevFlat).filter((p) => p && !(p in currentFlat));
+      removed
+        .filter((p) => !removed.some((other) => other !== p && (p.startsWith(`${other}.`) || p.startsWith(`${other}[`))))
+        .forEach((p) => lines.push({ html: `${esc(p)}: ${esc(prevFlat[p])}`, note: 'rimosso', cls: 'removed' }));
+      lines.forEach((l) => {
+        if (l.cls === 'changed' && !l.note) l.note = `prima: ${prevFlat[l.diffPath]}`;
+      });
+    }
+
+    return lines
+      .map((l) => {
+        const indent = l.html.match(/^ */)[0];
+        const note = showNotes && l.note
+          ? `<div class="row"><span class="note" style="padding-left: calc(12px + ${indent.length * MONO_CH}px)">${esc(l.note)}</span></div>`
+          : '';
+        return `${note}<div class="row ${l.cls || ''}"><span class="code">${l.html}</span></div>`;
+      })
+      .join('');
+  }
+
+  // RENDER OGGETTI TRACCIATI
+  function renderTrackedCard(tracked) {
+    const header = `<h2>${fmt(tracked.name)}</h2>`;
+    if (state.selected === null) return `<div class="tracked-card">${header}</div>`;
+
+    let current;
+    let previous;
+    let changedAt = -1;
+    let hasCurrent = false;
+    let hasPrevious = false;
+    for (let j = 0; j <= state.selected; j += 1) {
+      const states = FLOW.nodes[j].state;
+      if (!states || !(tracked.id in states)) continue;
+      if (hasCurrent) {
+        previous = current;
+        hasPrevious = true;
+      }
+      current = states[tracked.id];
+      hasCurrent = true;
+      changedAt = j;
+    }
+
+    if (!hasCurrent) return `<div class="tracked-card">${header}</div>`;
+
+    const prevFlat = changedAt === state.selected && hasPrevious ? flatten(previous) : null;
+    return `
+      <div class="tracked-card">
+        ${header}
+        <div class="obj stacked">${renderObject(current, {}, prevFlat, false)}</div>
+      </div>`;
+  }
+
+  function renderTracked() {
+    const box = document.getElementById('tracked');
+    const list = [].concat(FLOW.tracked || []);
+    if (!list.length) return;
+    box.hidden = false;
+
+    box.innerHTML = `
+      <div class="diff-legend"><span><i class="mark added"></i>aggiunto</span><span><i class="mark changed"></i>cambiato</span><span><i class="mark removed"></i>rimosso</span></div>
+      ${list.map(renderTrackedCard).join('')}`;
+  }
+
+  // RENDER PANNELLO
+  function renderPanel() {
+    const panel = document.getElementById('panel');
+
+    if (state.selected === null) {
+      panel.innerHTML = `
+        <h2>Come leggere il diagramma</h2>
+        <p class="hint">Il flusso si legge dall'alto verso il basso. A sinistra la corsia FRONTEND (blu), a destra la corsia BACKEND (giallo): quando una freccia cambia corsia, i dati passano tra app e server.</p>
+        <p class="hint">L'etichetta sulla freccia dice cosa passa al passo successivo. Clicca un riquadro o una freccia per vedere l'oggetto completo e la spiegazione.</p>
+        <p class="hint">Usa <kbd>&uarr;</kbd> <kbd>&darr;</kbd> per scorrere i passi. Con <b>Passo-passo</b> attivo i passi successivi restano oscurati.</p>`;
+      return;
+    }
+
+    const node = FLOW.nodes[state.selected];
+    const next = FLOW.nodes[state.selected + 1];
+    const goesOn = next && !next.section;
+    const hasPayload = node.payload !== null && node.payload !== undefined;
+    const destination = goesOn
+      ? `<p class="route">passa a: <span class="panel-tag ${next.side}">${next.side}</span> ${esc(next.file)}${next.incoming === 'lost' ? ' — <b style="color: var(--lost)">non arriva</b>' : ''}</p>`
+      : '<p class="route">ultimo passo di questo flusso</p>';
+    const objectHtml = hasPayload
+      ? `<div class="obj stacked">${renderObject(node.payload, node.fields || {})}</div>`
+      : `<p class="hint">${node.payloadName ? `${esc(node.payloadName)}: nessun oggetto` : 'Non passa nessun oggetto.'}</p>`;
+
+    const section = (title, text) => (text ? `<h3>${title}</h3><p class="explanation">${fmt(text)}</p>` : '');
+    const terms = Object.entries(node.terms || {});
+    const termsHtml = terms.length
+      ? `<h3>Termini</h3><dl class="terms">${terms.map(([term, meaning]) => `<dt>${fmt(term)}</dt><dd>${fmt(meaning)}</dd>`).join('')}</dl>`
+      : '';
+
+    panel.innerHTML = `
+      <span class="panel-tag ${node.side}">${node.side}</span>
+      <h2>${node.number}. ${codeLink(node, node.line, esc(node.element || node.file))}${node.element ? ` ${codeLink(node, 1, `<span class="route">${esc(node.file)}</span>`)}` : ''}</h2>
+      ${node.path ? `<p class="hint">Clic sul nome per aprirlo in VS Code${node.line ? ` alla riga ${node.line}` : ''}.</p>` : ''}
+      <p class="route">${fmt(node.action)}</p>
+      ${section('Cosa fa', node.does || node.explanation)}
+      ${section('A cosa serve', node.purpose)}
+      ${section('Riceve', node.receives)}
+      ${section('Restituisce', node.returns)}
+      <h3>${hasPayload ? `Cosa passa al passo successivo · ${esc(node.payloadName || 'oggetto')}` : 'Cosa passa al passo successivo'}</h3>
+      ${destination}
+      ${objectHtml}
+      ${termsHtml}`;
+  }
+
+  // SELEZIONE E NAVIGAZIONE
+  function select(i) {
+    state.selected = i;
+    document.querySelectorAll('.item').forEach((g) => {
+      const gi = Number(g.dataset.i);
+      const isSelected = i !== null && gi === i;
+      g.classList.toggle('sel', isSelected);
+      g.classList.toggle('dim', state.stepMode && i !== null && gi > i);
+      const edge = g.querySelector('.edge-path');
+      if (edge) edge.setAttribute('marker-end', `url(#head-${isSelected ? 'sel' : edge.dataset.marker})`);
+    });
+    renderPanel();
+    renderTracked();
+  }
+
+  function move(delta) {
+    const current = state.selected === null ? -1 : state.selected;
+    const next = Math.min(Math.max(current + delta, 0), FLOW.nodes.length - 1);
+    select(next);
+    document.querySelector(`.item[data-i="${next}"] foreignObject`).scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
+  document.getElementById('title').textContent = FLOW.title;
+  document.getElementById('subtitle').textContent = FLOW.subtitle || '';
+  document.getElementById('prev').addEventListener('click', () => move(-1));
+  document.getElementById('next').addEventListener('click', () => move(1));
+  document.getElementById('mode').addEventListener('click', (e) => {
+    state.stepMode = !state.stepMode;
+    e.currentTarget.setAttribute('aria-pressed', state.stepMode);
+    select(state.selected);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      move(1);
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      move(-1);
+    }
+    if (e.key === 'Escape') select(null);
+  });
+
+  renderDiagram();
+  renderPanel();
+  renderTracked();
+
+  // Apertura diretta su un passo: file.html#passo-3
+  const fromHash = location.hash.match(/^#passo-(\d+)$/);
+  if (fromHash) {
+    const target = Number(fromHash[1]) - 1;
+    if (target >= 0 && target < FLOW.nodes.length) select(target);
+  }
+</script>
+</body>
+</html>

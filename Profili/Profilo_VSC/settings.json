@@ -1,0 +1,167 @@
+{
+  //LINGUA
+  "github.copilot.chat.localeOverride": "it",
+  "typescript.locale": "it",
+
+  //FONT
+  "editor.fontFamily": "'Fira Code', Consolas, 'Courier New', monospace",
+  "editor.fontLigatures": true,
+  "editor.codeLensFontFamily": "'Fira Code', Consolas, 'Courier New', monospace",
+
+  //TEMA
+  "workbench.colorTheme": "Dark Modern",
+  "workbench.iconTheme": "vscode-jetbrains-icon-theme",
+
+  //EDITOR
+  "editor.minimap.enabled": false,
+  "editor.tabSize": 2,
+  "editor.indentSize": "tabSize",
+  "editor.stickyTabStops": true,
+  "editor.autoClosingBrackets": "never",
+
+  //FORMATTAZIONE
+  "editor.defaultFormatter": "google.geminicodeassist",
+  "editor.defaultFoldingRangeProvider": "google.geminicodeassist",
+  "prettier.printWidth": 200,
+  "[javascript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[xml]": {
+    "editor.defaultFormatter": "redhat.vscode-xml"
+  },
+
+  //SALVATAGGIO
+  "files.autoSave": "afterDelay",
+  "files.autoSaveWhenNoErrors": true,
+  "jdk.jdkhome": "c:\\Java\\JDK\\OpenJDK-23",
+
+  //EXPLORER
+  "explorer.confirmDelete": false,
+  "explorer.confirmDragAndDrop": false,
+  "explorer.decorations.colors": true,
+  "explorer.decorations.badges": false,
+
+  //WORKBENCH
+  "window.newWindowProfile": "Default",
+  "workbench.editor.empty.hint": "hidden",
+  "workbench.secondarySideBar.showLabels": false,
+  "workbench.editor.autoLockGroups": {
+    "mainThreadWebview-browserPreview": false
+  },
+
+  //GIT
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+  "gitlens.ai.model": "claudeCode",
+  "gitlens.ai.vscode.model": "copilot:gpt-4-turbo",
+
+  //COLORI DIFF/GIT
+  "workbench.colorCustomizations": {
+    "gitDecoration.modifiedResourceForeground": "#ffffff",
+    "gitDecoration.untrackedResourceForeground": "#ffffff",
+    "gitDecoration.ignoredResourceForeground": "#ffffff",
+    "gitDecoration.conflictingResourceForeground": "#ffffff",
+    "gitDecoration.submoduleResourceForeground": "#ffffff",
+    "gitDecoration.stageModifiedResourceForeground": "#ffffff",
+    "gitDecoration.stageDeletedResourceForeground": "#ffffff",
+    "gitDecoration.deletedResourceForeground": "#ff1100",
+    // FRECCIA RIGHE ELIMINATE (margine sinistro)
+    "editorGutter.deletedBackground": "#ff990054",
+    // TRATTINO RIGHE ELIMINATE (barra destra)
+    "editorOverviewRuler.deletedForeground": "#ff990054",
+    // RIGA ELIMINATA
+    "diffEditor.removedLineBackground": "#ff990054",
+    // TESTO ELIMINATO
+    "diffEditor.removedTextBackground": "#ff990054",
+    // RIGA AGGIUNTA
+    "diffEditor.insertedLineBackground": "#1900ff33",
+    // TESTO AGGIUNTO
+    "diffEditor.insertedTextBackground": "#1900ff33"
+  },
+
+  //AI
+  "geminicodeassist.project": "rugged-plasma-5jh33",
+  "geminicodeassist.inlineSuggestions.enableAuto": true,
+  "claudeCode.preferredLocation": "panel",
+
+  //TERMINALE
+  "terminal.integrated.initialHint": false,
+  "terminal.integrated.profiles.windows": {
+    "npx": {
+      "path": "powershell.exe",
+      "args": ["-NoExit"],
+      "icon": "rocket",
+      "color": "terminal.ansiCyan"
+    },
+    "git": {
+      "path": "powershell.exe",
+      "args": ["-NoExit"],
+      "icon": "git-branch",
+      "color": "terminal.ansiBlue"
+    },
+    "npm": {
+      "path": "powershell.exe",
+      "args": ["-NoExit"],
+      "icon": "package",
+      "color": "terminal.ansiRed"
+    }
+  },
+
+  //TERMINALI AUTO-APERTURA
+  "restoreTerminals.runOnStartup": true,
+  "restoreTerminals.terminals": [
+    {
+      "splitTerminals": [
+        { "name": "npx", "icon": "rocket", "color": "terminal.ansiCyan", "commands": ["npxmode; clear"] }
+      ]
+    },
+    {
+      "splitTerminals": [
+        { "name": "npm", "icon": "package", "color": "terminal.ansiRed", "commands": ["npmmode; clear"] }
+      ]
+    },
+    {
+      "splitTerminals": [
+        { "name": "git", "icon": "git-branch", "color": "terminal.ansiBlue", "commands": ["gitmode; clear"] }
+      ]
+    },
+    {
+      "splitTerminals": [
+        { "name": "api", "icon": "debug-alt", "color": "terminal.ansiMagenta", "commands": ["apimode; clear"] }
+      ]
+    }
+  ],
+
+  //DEBUG
+  "debug.javascript.autoAttachFilter": "onlyWithFlag",
+
+  //REACT NATIVE
+  "react-native-tools.showUserTips": false,
+
+  //REST CLIENT
+  "rest-client.environmentVariables": {
+    "beta": { "baseUrl": "https://beta.esempio.it/api" },
+    "demo": { "baseUrl": "https://demo.esempio.it/api" },
+    "app": { "baseUrl": "https://app.esempio.it/api" }
+  },
+
+  //LINGUAGGI
+  "css.enabledLanguages": ["html"],
+  "markdown.updateLinksOnFileMove.enabled": "prompt",
+  "json.schemas": [],
+
+  //VARIE
+  "redhat.telemetry.enabled": true,
+  "http.systemCertificatesNode": true,
+  "jdk.telemetry.enabled": false,
+  "claudeCode.hideOnboarding": true,
+  "geminicodeassist.outlines.automaticOutlineGeneration": true
+
+  
+}

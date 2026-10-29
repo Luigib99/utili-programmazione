@@ -1,0 +1,28 @@
+PROFILO TERMINALE
+=================
+
+COSA FA
+Aggiunge al terminale le modalità gitmode, npmmode, npxmode, apimode
+(usate dai terminali automatici di VS Code, vedi Profilo_VSC).
+
+WINDOWS (PowerShell)
+1. Tasto destro su Windows\carica_profilo.ps1 -> "Esegui con PowerShell"
+2. Il contenuto di profile-windows.ps1 viene scritto nel profilo PowerShell:
+     $PROFILE  (di solito C:\Users\<utente>\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1)
+   ATTENZIONE: il profilo esistente viene SOSTITUITO.
+3. Se Windows blocca lo script, aprire PowerShell e lanciare una volta:
+     Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+
+MAC (zsh)
+1. Doppio clic su Mac/carica_profilo.command
+   (se non parte: nel Terminale  chmod +x carica_profilo.command)
+2. Il contenuto di profile-mac.zsh viene AGGIUNTO in fondo a ~/.zshrc.
+   ATTENZIONE: lanciarlo due volte duplica il contenuto.
+
+DOPO
+Chiudere e riaprire il terminale (o VS Code).
+
+MENU NPM PERSONALIZZATO (opzionale, per progetto)
+Nella cartella del progetto creare un file .npm-menu con uno script per riga
+(# per commentare): il menu npm mostrera' solo quelli, nell'ordine del file.
+Per non committarlo, aggiungere la riga  .npm-menu  in  .git/info/exclude  del progetto.

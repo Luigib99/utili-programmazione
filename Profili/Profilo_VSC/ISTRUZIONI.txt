@@ -1,0 +1,31 @@
+PROFILO VS CODE
+===============
+
+FILE
+- settings.json     impostazioni di VS Code (terminali automatici, debug, REST Client, ecc.)
+- keybindings.json  scorciatoie da tastiera
+
+DOVE COPIARLI (sovrascrivendo quelli esistenti)
+- Windows:  C:\Users\<utente>\AppData\Roaming\Code\User\
+- Mac:      ~/Library/Application Support/Code/User/
+
+Scorciatoia: in VS Code  Ctrl+Shift+P (Mac: Cmd+Shift+P)
+  -> "Preferences: Open User Settings (JSON)"         apre settings.json
+  -> "Preferences: Open Keyboard Shortcuts (JSON)"    apre keybindings.json
+e incolli dentro il contenuto.
+
+ESTENSIONI NECESSARIE (da installare a parte)
+- REST Client         (humao.rest-client)
+- Restore Terminals   (EthanSK.restore-terminals)
+
+DIPENDENZE
+- I terminali npx / npm / git / api usano le funzioni del Profilo_Terminale: caricare anche quello.
+- Il terminale api usa la cartella ~/api-requests: caricare anche il Profilo_API del progetto
+  (in Privato/<Progetto>/Profilo_API).
+
+DA PERSONALIZZARE
+- "rest-client.environmentVariables": gli URL sono di esempio, sostituirli con quelli del progetto
+  (per i progetti privati sono in Privato/<Progetto>/Comandi_<Progetto>.md).
+
+DOPO
+Riavviare VS Code.

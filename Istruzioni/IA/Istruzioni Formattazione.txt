@@ -1,0 +1,25 @@
+Esegui un refactoring strutturale e semantico SOLO del codice in questione seguendo rigorosamente queste direttive divise per categoria. Il codice finale deve essere snello, pulito e privo di ridondanze.
+
+1. PULIZIA GENERALE E REFRACTORING (DEAD CODE ELIMINATION)
+- Rimuovi tutti i commenti preesistenti nel file.
+- Esegui una "Dead Code Elimination" completa: identifica ed elimina tutti i componenti, le funzioni, le variabili, gli elementi JSX e gli stili dello StyleSheet che non sono effettivamente utilizzati o invocati nel file.
+
+2. DOCUMENTAZIONE SEMANTICA (COMMENTI)
+- Macrofunzioni: Aggiungi sopra ognuno di essi un titolo di massimo 1-3 parole scritto interamente in MAIUSCOLO che ne spieghi la responsabilità (es. // LOGICA AUTENTICAZIONE).
+- Microfunzioni (funzioni interne alle macrofunzioni): Aggiungi sopra ognuna di esse un commento di massimo 1-3 parole in minuscolo che ne spieghi lo scopo. ATTENZIONE: Questi commenti non devono avere righe vuote (spaziature) né sopra né sotto; devono essere attaccati direttamente al codice circostante.
+- Sezione componenti JSX: Aggiungi sopra ognuno di essi un titolo di massimo 1-3 parole scritto interamente in MAIUSCOLO che ne spieghi la responsabilità (es. HEADER).
+- Elementi visivi JSX: Aggiungi sopra ognuno di essi un titolo di massimo 1-3 parole scritto interamente in minuscolo senza spazi sopra e sotto che ne spieghi la responsabilità (es. pulsante elimina).
+
+3. STRUTTURA DEGLI IMPORT
+- Riorganizza gli import dividendoli ordinatamente per tipologia (es. librerie core, librerie esterne, componenti, stili).
+- Ogni gruppo di import deve essere preceduto da un titolo in minuscolo (es. // librerie esterne). Non inserire righe vuote (spaziature) sopra o sotto questi titoli.
+
+4. FORMATTAZIONE DEL CODICE E DEGLI STILI
+- Proprietà JSX: Formatta le proprietà di tutti i componenti in colonna (multiline), evitando di scriverle sulla stessa riga, UNICA ECCEZIONE: è presente una sola proprietà nel componente, in quel caso deve essere disposta in riga con il componente
+- StyleSheet: Suddividi gli stili in sezioni logiche. Prima di ogni sezione, inserisci un commento con il titolo della sezione scritto in MAIUSCOLO. Anche in questo caso, azzera gli spazi vuoti tra il commento e le righe di codice sopra e sotto. Formatta le proprietà CSS/StyleSheet rigorosamente in colonna.
+- Style interni al componente stesso: se ci sono degli stili all'interno del componente stesso mettimeli tutti in riga dopo style. Esempio Style={[ stile1, stile 2 ...]}
+
+5. LIMITI DA RISPETTARE
+- non modificare file esterni dal file richiesto
+- non modificare per alcun motivo funzioni o comportamenti già presenti all'interno del codice
+- se ritieni necessario al fine di pulire il codice di modificare funzioni, comportamenti o elementi che vanno a mutare il sistema logico o visivo del codice comunicami i cambiamenti e chiedimi conferma per attuare le modifiche

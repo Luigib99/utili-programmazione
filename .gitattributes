@@ -1,0 +1,10 @@
+# Script Mac: sempre fine riga LF (con CRLF non partono)
+*.command text eol=lf
+*.sh      text eol=lf
+
+# Script Windows: sempre fine riga CRLF
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+
+# Manuali
+*.md      text eol=lf
