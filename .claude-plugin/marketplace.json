@@ -1,0 +1,12 @@
+{
+  "name": "utili-programmazione",
+  "owner": { "name": "Luigib99" },
+  "description": "Strumenti personali per Claude Code: skill e mod del Profilo Claude",
+  "plugins": [
+    {
+      "name": "scheda-form",
+      "source": "./Profili/Profilo_Claude/plugins/scheda-form",
+      "description": "Schema a campi per le skill del Profilo Claude, con controllo dei campi obbligatori"
+    }
+  ]
+}

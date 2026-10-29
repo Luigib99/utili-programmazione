@@ -25,7 +25,11 @@ echo ===================================
 set "ORA=%TIME:~0,5%"
 set "ORA=%ORA: =0%"
 
-call :sincro "%REPO%"
+:: FILE E RIGHE SOSPETTE (controllati solo sulla repo pubblica)
+set FILE_SOSPETTI="*.env" "*.env.*" "*.keystore" "*.jks" "*.pem" "*.p12" "*.key" "*id_rsa*" "*.session.json" "*credentials*"
+set "RIGHE_SOSPETTE=([Pp]assword|PASSWORD|[Pp]asswd|[Ss]ecret|SECRET|[Aa]pi_?[Kk]ey|API_?KEY|[Tt]oken|TOKEN)[^[:space:]]{0,2}[[:space:]]*[:=][[:space:]]*[^[:space:]]{6,}|-----BEGIN [A-Z ]*PRIVATE KEY-----"
+
+call :sincro "%REPO%" pubblica
 if errorlevel 1 goto errore
 
 :: REPO PRIVATE ANNIDATE (Privato\<Progetto>, ognuna con il suo git)
@@ -61,6 +65,11 @@ if errorlevel 1 (
   exit /b 1
 )
 
+if "%~2"=="pubblica" (
+  call :controllo
+  if errorlevel 1 exit /b 1
+)
+
 echo 2. Creazione del commit
 git diff --cached --quiet
 if errorlevel 1 (
@@ -89,6 +98,27 @@ echo 4. Invio su GitHub (git push)
 git push -u origin HEAD
 if errorlevel 1 (
   set "MSG=%~nx1: push non riuscito: controlla accesso - token - e connessione"
+  exit /b 1
+)
+exit /b 0
+
+:: CONTROLLO FILE SENSIBILI
+:controllo
+echo    Controllo file sensibili
+set "SOSPETTI="
+for /f "delims=" %%f in ('git diff --cached --name-only --diff-filter=AM -- %FILE_SOSPETTI%') do (
+  echo %GIALLO%   file sospetto: %%f%RESET%
+  set "SOSPETTI=1"
+)
+for /f "delims=" %%f in ('git diff --cached --name-only --diff-filter=AM "-G%RIGHE_SOSPETTE%"') do (
+  echo %GIALLO%   possibile password o chiave in: %%f%RESET%
+  set "SOSPETTI=1"
+)
+if not defined SOSPETTI exit /b 0
+echo %GIALLO%   Questa repo e' PUBBLICA: i file sospetti vanno in Privato\ o nel .gitignore%RESET%
+choice /c SN /n /m "   Inviare comunque? [S/N] "
+if errorlevel 2 (
+  set "MSG=Invio annullato: sposta i file sospetti in Privato\ e rilancia"
   exit /b 1
 )
 exit /b 0

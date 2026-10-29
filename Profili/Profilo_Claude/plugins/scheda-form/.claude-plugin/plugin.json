@@ -1,0 +1,6 @@
+{
+  "name": "scheda-form",
+  "version": "0.3.0",
+  "author": { "name": "Luigib99" },
+  "description": "Schema a campi per le skill: lanciata senza testo, la skill riempie la casella dei messaggi con i campi della scheda e controlla gli obbligatori prima di partire"
+}

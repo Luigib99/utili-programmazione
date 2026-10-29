@@ -1,7 +1,7 @@
 ---
 name: modifica-maggiore
 description: Modifica o aggiunta maggiore di codice nel progetto, guidata in modo didattico
-argument-hint: "<modifica o aggiunta>"
+argument-hint: "<vuoto per lo schema, testo libero o OBIETTIVO: / ORA: / DOVE: / ESEMPIO: / SIMILE A: / VERIFICA: / VINCOLI: / FUORI SCOPO: / COSA NON SO:>"
 disable-model-invocation: true
 ---
 
@@ -13,18 +13,34 @@ L'obiettivo è che l'utente impari a prendere le decisioni di design (dove inter
 
 ## Struttura
 
-1. analizza e individua dove e come inserire il codice.
-2. passa a SPIEGAZIONE COMPLETA FLUSSO.
-3. passa a RISPOSTA UTENTE.
-4. passa a RISULTATO RISPOSTA UTENTE.
-5. passa a IMPLEMENTAZIONE CODICE.
-6. passa a VERIFICA.
-7. quando la richiesta è conclusa (sarà l'utente a dirlo) procedi alla SPIEGAZIONE FINALE.
+1. passa a SCHEDA RICHIESTA.
+2. analizza e individua dove e come inserire il codice.
+3. passa a SPIEGAZIONE COMPLETA FLUSSO.
+4. passa a RISPOSTA UTENTE.
+5. passa a RISULTATO RISPOSTA UTENTE.
+6. passa a IMPLEMENTAZIONE CODICE.
+7. passa a VERIFICA.
+8. quando la richiesta è conclusa (sarà l'utente a dirlo) procedi alla SPIEGAZIONE FINALE.
 
 In qualsiasi fase:
 
 - se l'utente scrive "mi arrendo", spiega tu come implementeresti la modifica (concetto e motivazione, non codice), poi chiedi "procedi" e passa a IMPLEMENTAZIONE CODICE.
 - se la richiesta è ambigua, chiedi chiarimenti prima di andare avanti.
+
+## SCHEDA RICHIESTA
+
+- leggi e applica le regole in `~/.claude/shared/scheda-richiesta.md`.
+- campi (\* = obbligatorio):
+  - `OBIETTIVO`\*: cosa deve succedere a modifica finita, descritto come lo vede chi usa l'app.
+  - `ORA`: cosa succede adesso, prima della modifica; con `OBIETTIVO` definisce la differenza esatta da realizzare.
+  - `DOVE`\*: schermate, flussi o file interessati.
+  - `ESEMPIO`: un caso concreto con dati reali (es. "Mario chiude l'app alle 10:00 → alle 10:05 il pallino diventa grigio").
+  - `SIMILE A`: una parte dell'app che funziona già come si vuole; il codice nuovo segue lo stesso approccio e le stesse convenzioni.
+  - `VERIFICA`\*: come l'utente controlla che la modifica funziona (azioni da fare e risultato atteso).
+  - `VINCOLI`: cosa non deve cambiare (comportamenti, file, API, aspetto).
+  - `FUORI SCOPO`: cosa non fa parte di questa richiesta, anche se collegato.
+  - `COSA NON SO`: dubbi dell'utente da chiarire prima di procedere.
+- l'`OBIETTIVO` confermato è il "comportamento finale atteso" della SPIEGAZIONE COMPLETA FLUSSO.
 
 ## SPIEGAZIONE COMPLETA FLUSSO
 
@@ -56,11 +72,12 @@ In qualsiasi fase:
 - prima di modificare qualsiasi file, verifica la soluzione accettata: se contiene problemi gravi (sicurezza, perdita di dati, regressioni, crash), comunicali in modo esplicito e chiaro, senza scrivere codice, e attendi.
   - se l'utente scrive "procedi lo stesso", implementa la soluzione così com'è.
   - altrimenti torna a RISPOSTA UTENTE.
-- implementa la soluzione accettata rispettando le scelte dell'utente.
+- implementa la soluzione accettata rispettando le scelte dell'utente e il "Recinto" della scheda.
 - i dettagli che l'utente non ha specificato (nomi, collocazione, sintassi, gestione errori) decidili tu seguendo le convenzioni del progetto.
 
 ## VERIFICA
 
+- fai il "Controllo finale" della scheda.
 - elenca in modo schematico i dettagli che hai deciso tu (non presenti nella RISPOSTA UTENTE), con nomeFile (cliccabile) e una riga di motivazione ciascuno: sono le parti che l'utente deve controllare.
 - per ogni dettaglio indica anche il passo del diagramma in cui si trova.
 - poni massimo 3 domande mirate sulle decisioni più importanti della modifica.

@@ -1,7 +1,7 @@
 ---
 name: modifica-minore
 description: Modifica minore di codice nel progetto (traduzioni, elementi grafici, formattazione, piccole modifiche generiche)
-argument-hint: "<modifica minore>"
+argument-hint: "<vuoto per lo schema, testo libero o COSA: / DOVE: / VALORE NUOVO: / VINCOLI:>"
 disable-model-invocation: true
 ---
 
@@ -13,15 +13,26 @@ Le modifiche minori non richiedono ragionamento didattico: procedi in automatico
 
 ## Struttura
 
-1. individua a quale tipologia appartiene la richiesta: TRADUZIONI, ELEMENTI GRAFICI, FORMATTAZIONE o GENERICI.
-2. se hai dubbi tra modifica minore e modifica maggiore, chiedi all'utente prima di procedere.
-3. esegui la modifica seguendo le regole della tipologia.
-4. al termine fai il RIEPILOGO.
+1. passa a SCHEDA RICHIESTA.
+2. individua a quale tipologia appartiene la richiesta: TRADUZIONI, ELEMENTI GRAFICI, FORMATTAZIONE o GENERICI.
+3. se hai dubbi tra modifica minore e modifica maggiore, chiedi all'utente prima di procedere.
+4. esegui la modifica seguendo le regole della tipologia.
+5. al termine fai il RIEPILOGO.
 
 In qualsiasi fase:
 
 - se durante la modifica emerge che serve cambiare la logica o prendere decisioni di design, fermati senza modificare altro, spiega il motivo in breve e suggerisci all'utente di usare `/modifica-maggiore`.
 - se la richiesta è ambigua, chiedi chiarimenti prima di andare avanti.
+
+## SCHEDA RICHIESTA
+
+- leggi e applica le regole in `~/.claude/shared/scheda-richiesta.md`.
+- campi (\* = obbligatorio):
+  - `COSA`\*: cosa cambiare (testo, colore, dimensione, posizione, formattazione…).
+  - `DOVE`\*: schermata, componente o file.
+  - `VALORE NUOVO`: il valore finale (es. il testo nuovo, il colore, la distanza); se manca e non è deducibile, proponi i valori già usati nel progetto come opzioni.
+  - `VINCOLI`: cosa non deve cambiare.
+- eccezione alla "Conferma": se tutti i campi obbligatori sono `✍️` (scritti dall'utente) e nessuna domanda è stata necessaria, non mostrare la scheda e procedi in automatico; altrimenti mostrala e attendi l'ok.
 
 ## TRADUZIONI
 
@@ -52,6 +63,7 @@ In qualsiasi fase:
 ## RIEPILOGO
 
 - comunica solo cosa hai modificato: niente convenevoli, cose superflue o cose non presenti nella richiesta.
+- fai il "Controllo finale" della scheda in forma breve: una riga per campo.
 - per ogni modifica indica nomeFile (cliccabile) e cosa hai cambiato.
 - per le TRADUZIONI indica per ogni chiave il nome e il testo scritto in ogni lingua.
 - per gli ELEMENTI GRAFICI indica il valore precedente e quello nuovo, così l'utente può ripristinarlo o cambiarlo manualmente.

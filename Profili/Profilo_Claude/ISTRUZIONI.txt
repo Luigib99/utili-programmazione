@@ -6,11 +6,16 @@ La struttura della cartella rispecchia quella di ~/.claude:
 - CLAUDE.md       istruzioni globali di Claude Code
 - settings.json   impostazioni globali di Claude Code
 - skills/         skill personali (debug, lezione, modifica-maggiore, modifica-minore, revisione)
-- shared/         file usati dalle skill (regole e template HTML del diagramma di flusso)
-                  NECESSARIO: debug, modifica-maggiore e revisione leggono shared/diagramma-flusso.md
+- shared/         file usati dalle skill:
+                  - diagramma-flusso.md + template HTML (debug, modifica-maggiore, revisione)
+                  - scheda-richiesta.md (tutte le skill)
+                  NECESSARIO: senza questa cartella le skill non funzionano
+- plugins/        mod di Claude Code (NON si copia: si installa, vedi sotto)
+                  - scheda-form: lanciando una skill senza testo riempie la casella
+                    con lo schema dei campi e controlla gli obbligatori
 
 DOVE COPIARLO
-Copiare TUTTO il contenuto di questa cartella (tranne ISTRUZIONI.txt) dentro:
+Copiare il contenuto di questa cartella (tranne ISTRUZIONI.txt e plugins/) dentro:
 - Windows:  C:\Users\<utente>\.claude\
 - Mac:      ~/.claude/
 ATTENZIONE: CLAUDE.md, settings.json e le skill con lo stesso nome vengono SOSTITUITI.
@@ -20,6 +25,21 @@ su Mac Cmd+Shift+. nel Finder.
 
 DA NON COPIARE QUI (restano solo sul PC)
 .credentials.json (segreti), projects/ (memoria per progetto), cache, sessions, file-history.
+
+INSTALLARE LA MOD scheda-form (una volta per PC, dopo il Push)
+Da un terminale (nell'estensione VS Code /plugin non esiste):
+  claude plugin install scheda-form --marketplace Luigib99/utili-programmazione
+Se "claude" non e' riconosciuto, usare l'eseguibile dell'estensione VS Code:
+- Windows:  & "$HOME\.vscode\extensions\anthropic.claude-code-<versione>-win32-x64\resources\native-binary\claude.exe" plugin install ...
+- Mac:      ~/.vscode/extensions/anthropic.claude-code-<versione>-darwin-arm64/resources/native-binary/claude plugin install ...
+Nel Claude Code da terminale si puo' anche scrivere /plugin install scheda-form --marketplace Luigib99/utili-programmazione
+
+AGGIORNARLA DOPO UNA MODIFICA
+1. alzare "version" in plugins/scheda-form/.claude-plugin/plugin.json
+2. Push
+3. claude plugin marketplace update utili-programmazione
+4. claude plugin update scheda-form@utili-programmazione
+5. aprire una sessione nuova
 
 DOPO
 Vale dalle nuove sessioni di Claude Code.

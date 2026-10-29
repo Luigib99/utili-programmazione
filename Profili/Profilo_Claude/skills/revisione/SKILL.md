@@ -1,7 +1,7 @@
 ---
 name: revisione
 description: Revisione di codice nel progetto con problemi classificati per gravità
-argument-hint: "<file, porzione di codice o branch da revisionare>"
+argument-hint: "<vuoto per lo schema, testo libero o COSA REVISIONARE: / COSA DOVREBBE FARE: / FOCUS: / MODALITÀ:>"
 disable-model-invocation: true
 ---
 
@@ -13,9 +13,9 @@ L'obiettivo è che l'utente impari a giudicare criticamente il codice (anche que
 
 ## Struttura
 
-1. individua il codice da revisionare.
+1. passa a SCHEDA RICHIESTA.
 2. passa a DIAGRAMMA DEL FLUSSO.
-3. se l'utente ha scritto "prova io", passa a REVISIONE UTENTE, altrimenti passa a REVISIONE.
+3. se `MODALITÀ` è "prova io", passa a REVISIONE UTENTE, altrimenti passa a REVISIONE.
 4. passa a SEGNALAZIONI.
 5. passa a CORREZIONE.
 6. passa a RIEPILOGO.
@@ -25,11 +25,22 @@ In qualsiasi fase:
 - se non è chiaro cosa revisionare, usa in ordine: il codice evidenziato nell'IDE, il file aperto, le modifiche del branch corrente rispetto a main. Se nessuno è disponibile, chiedi all'utente.
 - se la richiesta è ambigua, chiedi chiarimenti prima di andare avanti.
 
+## SCHEDA RICHIESTA
+
+- leggi e applica le regole in `~/.claude/shared/scheda-richiesta.md`.
+- campi (\* = obbligatorio):
+  - `COSA REVISIONARE`\*: file, porzione di codice o branch.
+  - `COSA DOVREBBE FARE`\*: il comportamento che il codice deve avere, secondo l'utente; è il riferimento per giudicare la correttezza.
+  - `FOCUS`: tutto (predefinito) oppure solo alcuni aspetti (logica, sicurezza, prestazioni, convenzioni del progetto).
+  - `MODALITÀ`: normale (predefinita) oppure "prova io".
+- `COSA REVISIONARE` si può dedurre con l'ordine indicato sopra ("In qualsiasi fase"); `COSA DOVREBBE FARE` si può dedurre dal codice solo se è evidente, altrimenti chiedilo.
+- se `FOCUS` è limitato, segnala comunque i problemi 🔴 Gravi trovati fuori dal focus.
+
 ## DIAGRAMMA DEL FLUSSO
 
 - leggi e applica le regole in `~/.claude/shared/diagramma-flusso.md`: qui non c'è una spiegazione a passi, quindi il diagramma precede direttamente la fase successiva.
 - il diagramma rappresenta il flusso in cui si inserisce il codice revisionato (se è un branch, il flusso toccato dalle modifiche), non solo le righe richieste.
-- se l'utente ha scritto "prova io", il diagramma deve essere **neutro**: non usare `incoming: "lost"`, e né `action`, né `payloadName`, né i testi (`does`, `purpose`, `receives`, `returns`) o `fields` devono mettere in risalto i punti problematici.
+- se `MODALITÀ` è "prova io", il diagramma deve essere **neutro**: non usare `incoming: "lost"`, e né `action`, né `payloadName`, né i testi (`does`, `purpose`, `receives`, `returns`) o `fields` devono mettere in risalto i punti problematici.
 
 ## REVISIONE UTENTE
 
@@ -70,3 +81,4 @@ In qualsiasi fase:
 
 - per ogni problema corretto indica il numero, nomeFile (cliccabile) e cosa hai cambiato.
 - indica i problemi non corretti, così l'utente sa cosa resta aperto.
+- fai il "Controllo finale" della scheda.

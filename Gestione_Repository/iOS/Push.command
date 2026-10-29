@@ -17,6 +17,27 @@ errore() {
   exit 1
 }
 
+# FILE E RIGHE SOSPETTE (controllati solo sulla repo pubblica)
+FILE_SOSPETTI=('*.env' '*.env.*' '*.keystore' '*.jks' '*.pem' '*.p12' '*.key' '*id_rsa*' '*.session.json' '*credentials*')
+RIGHE_SOSPETTE='([Pp]assword|PASSWORD|[Pp]asswd|[Ss]ecret|SECRET|[Aa]pi_?[Kk]ey|API_?KEY|[Tt]oken|TOKEN)[^[:space:]]{0,2}[[:space:]]*[:=][[:space:]]*[^[:space:]]{6,}|-----BEGIN [A-Z ]*PRIVATE KEY-----'
+
+# CONTROLLO FILE SENSIBILI
+controllo() {
+  echo "   Controllo file sensibili"
+  local file_trovati=(${(f)"$(git diff --cached --name-only --diff-filter=AM -- $FILE_SOSPETTI)"})
+  local righe_trovate=(${(f)"$(git diff --cached --name-only --diff-filter=AM "-G$RIGHE_SOSPETTE")"})
+  local f
+  for f in $file_trovati; do echo "${GIALLO}   file sospetto: $f${RESET}"; done
+  for f in $righe_trovate; do echo "${GIALLO}   possibile password o chiave in: $f${RESET}"; done
+  (( ${#file_trovati} + ${#righe_trovate} )) || return 0
+
+  echo "${GIALLO}   Questa repo è PUBBLICA: i file sospetti vanno in Privato/ o nel .gitignore${RESET}"
+  local risposta
+  read -k 1 "risposta?   Inviare comunque? [s/N] "
+  echo ""
+  [[ $risposta == [sS] ]] || errore "Invio annullato: sposta i file sospetti in Privato/ e rilancia"
+}
+
 # SINCRO DI UNA REPO
 sincro() {
   local nome="${1:t}"
@@ -27,6 +48,7 @@ sincro() {
   echo "1. Preparazione dei file (git add)"
   git add -A || errore "$nome: git add non riuscito"
   git add --renormalize . || errore "$nome: sistemazione fine riga non riuscita"
+  [[ $2 == pubblica ]] && controllo
 
   echo "2. Creazione del commit"
   if git diff --cached --quiet; then
@@ -53,7 +75,7 @@ echo "==================================="
 echo "  AVVIO SINCRO AUTOMATICA GIT"
 echo "==================================="
 
-sincro "$REPO"
+sincro "$REPO" pubblica
 
 # REPO PRIVATE ANNIDATE (Privato/<Progetto>, ognuna con il suo git)
 for dir in "$REPO"/Privato/*(N/); do
