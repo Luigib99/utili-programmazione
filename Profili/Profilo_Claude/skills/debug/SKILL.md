@@ -9,25 +9,24 @@ disable-model-invocation: true
 
 Il problema riscontrato dall'utente è: $ARGUMENTS
 
-L'obiettivo è che l'utente impari a individuare da solo la causa di un bug leggendo il flusso, non che riceva la soluzione. Tieni le fasi snelle: niente spiegazioni superflue, niente domande ripetute.
+L'obiettivo è che l'utente impari a individuare da solo la causa di un bug leggendo il flusso, non che riceva la soluzione. Ogni messaggio segue il "Formato dei messaggi" di `~/.claude/shared/scheda-richiesta.md`, con i blocchi indicati in ogni fase.
 
 ## Struttura
 
 1. passa a SCHEDA RICHIESTA.
 2. analizza e individua dove potrebbe essere la causa del problema.
-3. passa a SPIEGAZIONE COMPLETA FLUSSO.
-4. passa a DOMANDE GUIDA.
-5. passa a RISPOSTA UTENTE.
-6. passa a CORREZIONE RISPOSTA UTENTE.
-7. passa a IMPLEMENTAZIONE FIX.
-8. passa a VERIFICA.
-9. quando il problema è ufficialmente risolto (sarà l'utente a dirlo) procedi alla SPIEGAZIONE FINALE.
+3. passa a DIAGRAMMA.
+4. passa a RISPOSTA UTENTE.
+5. passa a CORREZIONE RISPOSTA UTENTE.
+6. passa a IMPLEMENTAZIONE FIX.
+7. passa a VERIFICA.
+8. quando il problema è ufficialmente risolto (sarà l'utente a dirlo) procedi alla SPIEGAZIONE FINALE.
 
 In qualsiasi fase:
 
-- se l'utente scrive "indizio", dagli un indizio più diretto del precedente senza rivelare la soluzione, poi attendi.
-- se l'utente scrive "mi arrendo", spiega tu dov'è il problema, perché si verifica e come lo correggeresti (concetto e motivazione, non codice), poi chiedi "procedi" e passa a IMPLEMENTAZIONE FIX.
-- se le informazioni non bastano per individuare la causa (log, passi per riprodurre, dispositivo, flavor), chiedile prima di andare avanti.
+- se l'utente scrive "indizio", rispondi con il solo blocco **1. INDIZIO**: un indizio più diretto del precedente, con il passo del diagramma, senza rivelare la soluzione; poi attendi.
+- se l'utente scrive "mi arrendo", rispondi con i blocchi **1. CAUSA** (dov'è il problema e perché si verifica), **2. CORREZIONE** (come lo correggeresti, concetto e motivazione, non codice) e **3. RICHIESTA** "Procedo?", poi passa a IMPLEMENTAZIONE FIX al suo "procedi".
+- se le informazioni non bastano per individuare la causa (log, passi per riprodurre, dispositivo, ambiente), chiedile prima di andare avanti.
 
 ## SCHEDA RICHIESTA
 
@@ -41,23 +40,19 @@ In qualsiasi fase:
   - `ERRORI`: log, messaggi d'errore o screenshot.
   - `COSA NON SO`: dubbi dell'utente da chiarire prima di procedere.
 - le opzioni per `AMBIENTE` prendile da ciò che il progetto supporta davvero (script di avvio, file di configurazione, piattaforme presenti).
-- nella scheda e nelle domande non anticipare dove pensi sia la causa: il debug resta neutro.
+- nella scheda, nei RISCHI e nelle domande non anticipare dove pensi sia la causa: il debug resta neutro.
 
-## SPIEGAZIONE COMPLETA FLUSSO
+## DIAGRAMMA
 
-- il flusso si spiega **solo** con il diagramma: non scrivere in chat la spiegazione a passi.
 - leggi e applica le regole in `~/.claude/shared/diagramma-flusso.md`.
 - il diagramma deve coprire tutti i punti del flusso in cui si trova il problema, senza parti superflue.
 - ogni oggetto, lista o json nei `payload` deve essere completo; se un oggetto cambia durante il flusso, mostralo nei nodi successivi con i valori aggiornati e spiega nei `fields` cosa è cambiato.
 - il diagramma deve essere **neutro**: dai a ogni passo lo stesso peso, non usare `incoming: "lost"`, e né `action`, né `payloadName`, né i testi (`does`, `purpose`, `receives`, `returns`) o `fields` devono mettere in risalto il punto del bug; descrivi cosa fa il codice, non cosa manca o cosa è sbagliato.
 - quando raggruppi parti del flusso per restare nel limite di nodi, il raggruppamento non deve escludere o isolare il punto del bug.
-- in chat scrivi solo il percorso del file (cliccabile) e una riga su cosa rappresenta, poi passa a DOMANDE GUIDA riferendoti ai passi con il loro numero.
-
-## DOMANDE GUIDA
-
-- poni massimo 3 domande che aiutino l'utente a ragionare sul flusso fino a trovare la causa, senza rivelare la soluzione.
-- le domande devono far confrontare all'utente cosa si aspetta che succeda con cosa succede davvero (valori, ordine delle chiamate, condizioni).
-- per indicare le parti del flusso usa i numeri dei passi del diagramma, come descritto in "Riferimenti ai passi" di `~/.claude/shared/diagramma-flusso.md`.
+- il flusso si spiega **solo** con il diagramma; in chat scrivi i blocchi:
+  - **1. DIAGRAMMA**: il percorso del file (cliccabile).
+  - **2. COSE DA SAPERE**: massimo 3 punti utili a leggere il flusso (es. da dove arriva un dato, in che ordine partono due chiamate), con il passo del diagramma; **neutri**: non devono indicare né far intuire il punto del bug.
+  - **3. RICHIESTA**: "Dov'è il problema e come intendi correggerlo?"
 
 ## RISPOSTA UTENTE
 
@@ -68,18 +63,18 @@ In qualsiasi fase:
 
 ## CORREZIONE RISPOSTA UTENTE
 
-- se la risposta è sbagliata o incompleta, spiega in modo chiaro ma non troppo dettagliato cosa non torna nel suo ragionamento: dagli l'input per capire da solo, non la formulazione corretta da copiare.
+- rispondi con i blocchi:
+  - **1. VALUTAZIONE**: se la risposta è sbagliata o incompleta, cosa non torna nel ragionamento, con i passi del diagramma: dagli l'input per capire da solo, non la formulazione corretta da copiare; se è corretta, una riga che lo conferma.
+  - **2. RICHIESTA**: "Riformula la risposta." se non è corretta, "Procedo con il fix?" se lo è.
 - dai priorità alla sostanza, ma bada in piccola parte anche alla forma.
-- per indicare le parti del flusso usa i numeri dei passi del diagramma, come descritto in "Riferimenti ai passi" di `~/.claude/shared/diagramma-flusso.md`.
 - non toccare punti che l'utente non ha nominato.
-- se la risposta non è corretta, chiedi esplicitamente di riformularla, poi fermati e attendi.
-- se la risposta è corretta, chiedi all'utente se procedere al fix, poi fermati e attendi.
-- se l'utente scrive "procedi", passa a IMPLEMENTAZIONE FIX.
-- se l'utente chiede delucidazioni, rispondi e attendi nuovamente il "procedi".
+- poi fermati e attendi:
+  - "procedi": passa a IMPLEMENTAZIONE FIX.
+  - l'utente chiede delucidazioni: rispondi con i blocchi **1. RISPOSTA** e **2. RICHIESTA** (la stessa di prima), e attendi.
 
 ## IMPLEMENTAZIONE FIX
 
-- prima di modificare qualsiasi file, verifica il fix accettato: se introduce problemi gravi (sicurezza, perdita di dati, regressioni, crash), comunicali in modo esplicito e chiaro, senza scrivere codice, e attendi.
+- prima di modificare qualsiasi file, verifica il fix accettato: se introduce problemi gravi (sicurezza, perdita di dati, regressioni, crash), rispondi con i blocchi **1. PROBLEMI** (senza codice) e **2. RICHIESTA** "Procedo lo stesso o rivedi il fix?", e attendi.
   - se l'utente scrive "procedi lo stesso", implementa il fix così com'è.
   - altrimenti torna a RISPOSTA UTENTE.
 - implementa il fix accettato rispettando le scelte dell'utente e il "Recinto" della scheda.
@@ -87,15 +82,16 @@ In qualsiasi fase:
 
 ## VERIFICA
 
-- fai il "Controllo finale" della scheda.
-- elenca in modo schematico i dettagli che hai deciso tu (non presenti nella RISPOSTA UTENTE), con nomeFile (cliccabile) e una riga di motivazione ciascuno: sono le parti che l'utente deve controllare.
-- per ogni dettaglio indica anche il passo del diagramma in cui si trova.
-- indica come verificare che il bug sia risolto (passi per riprodurlo e risultato atteso).
-- poni massimo 3 domande mirate sulle parti più importanti del fix.
+- rispondi con i blocchi:
+  - **1. MODIFICHE**: una riga per file modificato, nomeFile (cliccabile) e cosa è cambiato.
+  - **2. DA CONTROLLARE**: i dettagli che hai deciso tu (non presenti nella RISPOSTA UTENTE), con nomeFile, passo del diagramma e una riga di motivazione.
+  - **3. SCHEDA**: il "Controllo finale" della scheda, con i passi per riprodurre il problema e il risultato atteso ora.
+  - **4. RICHIESTA**: massimo 2 domande mirate sulle parti più importanti del fix.
 - se l'utente risponde male, correggilo spiegando perché.
 - se l'utente propone di cambiare un dettaglio, valuta la proposta: se è valida applicala, se non lo è spiega perché.
 
 ## SPIEGAZIONE FINALE
 
-- spiega in maniera tecnica, chiara e schematica qual era la causa del problema, cosa e perché hai modificato e il risultato ottenuto.
-- al termine inserisci un glossario dei termini tecnici nuovi incontrati durante la richiesta.
+- rispondi con i blocchi:
+  - **1. COSA HO FATTO**: qual era la causa del problema, cosa e perché hai modificato e il risultato ottenuto, in modo tecnico e schematico.
+  - **2. GLOSSARIO**: i termini tecnici nuovi incontrati durante la richiesta, una riga ciascuno.

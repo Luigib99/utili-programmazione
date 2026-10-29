@@ -9,13 +9,13 @@ disable-model-invocation: true
 
 La richiesta dell'utente è: $ARGUMENTS
 
-L'obiettivo è che l'utente impari a prendere le decisioni di design (dove intervenire, cosa cambia nel flusso, quali casi limite esistono), non a dettare la sintassi. Tieni le fasi snelle: niente spiegazioni superflue, niente domande ripetute.
+L'obiettivo è che l'utente impari a prendere le decisioni di design (dove intervenire, cosa cambia nel flusso, quali casi limite esistono), non a dettare la sintassi. Ogni messaggio segue il "Formato dei messaggi" di `~/.claude/shared/scheda-richiesta.md`, con i blocchi indicati in ogni fase.
 
 ## Struttura
 
 1. passa a SCHEDA RICHIESTA.
 2. analizza e individua dove e come inserire il codice.
-3. passa a SPIEGAZIONE COMPLETA FLUSSO.
+3. passa a DIAGRAMMA.
 4. passa a RISPOSTA UTENTE.
 5. passa a RISULTATO RISPOSTA UTENTE.
 6. passa a IMPLEMENTAZIONE CODICE.
@@ -24,7 +24,7 @@ L'obiettivo è che l'utente impari a prendere le decisioni di design (dove inter
 
 In qualsiasi fase:
 
-- se l'utente scrive "mi arrendo", spiega tu come implementeresti la modifica (concetto e motivazione, non codice), poi chiedi "procedi" e passa a IMPLEMENTAZIONE CODICE.
+- se l'utente scrive "mi arrendo", rispondi con i blocchi **1. COME LO FAREI** (concetto e motivazione, non codice, con i passi del diagramma) e **2. RICHIESTA** "Procedo?", poi passa a IMPLEMENTAZIONE CODICE al suo "procedi".
 - se la richiesta è ambigua, chiedi chiarimenti prima di andare avanti.
 
 ## SCHEDA RICHIESTA
@@ -40,15 +40,16 @@ In qualsiasi fase:
   - `VINCOLI`: cosa non deve cambiare (comportamenti, file, API, aspetto).
   - `FUORI SCOPO`: cosa non fa parte di questa richiesta, anche se collegato.
   - `COSA NON SO`: dubbi dell'utente da chiarire prima di procedere.
-- l'`OBIETTIVO` confermato è il "comportamento finale atteso" della SPIEGAZIONE COMPLETA FLUSSO.
 
-## SPIEGAZIONE COMPLETA FLUSSO
+## DIAGRAMMA
 
-- il flusso si spiega **solo** con il diagramma: non scrivere in chat la spiegazione a passi.
 - leggi e applica le regole in `~/.claude/shared/diagramma-flusso.md`.
 - il diagramma rappresenta il flusso **attuale**, cioè prima della modifica, e copre tutti i punti interessati dalla richiesta, senza parti superflue.
 - ogni oggetto, lista o json nei `payload` deve essere completo; se un oggetto cambia durante il flusso, mostralo nei nodi successivi con i valori aggiornati e spiega nei `fields` cosa è cambiato.
-- in chat scrivi solo il percorso del file (cliccabile), una riga su cosa rappresenta e, in 2-4 righe, cosa deve ottenere la modifica (il comportamento finale atteso), senza suggerire come implementarla.
+- il flusso si spiega **solo** con il diagramma; in chat scrivi i blocchi:
+  - **1. DIAGRAMMA**: il percorso del file (cliccabile).
+  - **2. COSE DA SAPERE**: massimo 3 punti utili a decidere (es. da dove arriva un dato, un vincolo tecnico, un altro punto che usa lo stesso codice), con il passo del diagramma; niente suggerimenti su come implementare.
+  - **3. RICHIESTA**: "Come intendi procedere?"
 
 ## RISPOSTA UTENTE
 
@@ -59,17 +60,18 @@ In qualsiasi fase:
 
 ## RISULTATO RISPOSTA UTENTE
 
-- spiega all'utente cosa accadrebbe se implementasse ciò che ha descritto in RISPOSTA UTENTE: effetti sul flusso, risultati e casi limite toccati, in maniera chiara.
-- per indicare le parti del flusso usa i numeri dei passi del diagramma, come descritto in "Riferimenti ai passi" di `~/.claude/shared/diagramma-flusso.md`.
+- rispondi con i blocchi:
+  - **1. COSA SUCCEDEREBBE**: effetti sul flusso, risultati e casi limite toccati da ciò che l'utente ha descritto, con i passi del diagramma.
+  - **2. RICHIESTA**: "Procedo?"
 - non dirgli se la soluzione è giusta o sbagliata: deve capirlo lui dalle conseguenze.
-- chiedi sempre all'utente se procedere all'implementazione, poi fermati e attendi.
-- se l'utente scrive "procedi", passa a IMPLEMENTAZIONE CODICE.
-- se l'utente non è d'accordo, torna a RISPOSTA UTENTE e attendi la nuova risposta.
-- se l'utente chiede delucidazioni, rispondi e attendi nuovamente il "procedi".
+- poi fermati e attendi:
+  - "procedi": passa a IMPLEMENTAZIONE CODICE.
+  - l'utente non è d'accordo: torna a RISPOSTA UTENTE e attendi la nuova risposta.
+  - l'utente chiede delucidazioni: rispondi con i blocchi **1. RISPOSTA** e **2. RICHIESTA** "Procedo?", e attendi.
 
 ## IMPLEMENTAZIONE CODICE
 
-- prima di modificare qualsiasi file, verifica la soluzione accettata: se contiene problemi gravi (sicurezza, perdita di dati, regressioni, crash), comunicali in modo esplicito e chiaro, senza scrivere codice, e attendi.
+- prima di modificare qualsiasi file, verifica la soluzione accettata: se contiene problemi gravi (sicurezza, perdita di dati, regressioni, crash), rispondi con i blocchi **1. PROBLEMI** (senza codice) e **2. RICHIESTA** "Procedo lo stesso o rivedi la soluzione?", e attendi.
   - se l'utente scrive "procedi lo stesso", implementa la soluzione così com'è.
   - altrimenti torna a RISPOSTA UTENTE.
 - implementa la soluzione accettata rispettando le scelte dell'utente e il "Recinto" della scheda.
@@ -77,14 +79,16 @@ In qualsiasi fase:
 
 ## VERIFICA
 
-- fai il "Controllo finale" della scheda.
-- elenca in modo schematico i dettagli che hai deciso tu (non presenti nella RISPOSTA UTENTE), con nomeFile (cliccabile) e una riga di motivazione ciascuno: sono le parti che l'utente deve controllare.
-- per ogni dettaglio indica anche il passo del diagramma in cui si trova.
-- poni massimo 3 domande mirate sulle decisioni più importanti della modifica.
+- rispondi con i blocchi:
+  - **1. MODIFICHE**: una riga per file modificato, nomeFile (cliccabile) e cosa è cambiato.
+  - **2. DA CONTROLLARE**: i dettagli che hai deciso tu (non presenti nella RISPOSTA UTENTE), con nomeFile, passo del diagramma e una riga di motivazione.
+  - **3. SCHEDA**: il "Controllo finale" della scheda, con i passi per la `VERIFICA`.
+  - **4. RICHIESTA**: massimo 2 domande mirate sulle decisioni più importanti della modifica.
 - se l'utente risponde male, correggilo spiegando perché.
 - se l'utente propone di cambiare un dettaglio, valuta la proposta: se è valida applicala, se non lo è spiega perché.
 
 ## SPIEGAZIONE FINALE
 
-- spiega in maniera tecnica, chiara e schematica cosa e perché hai implementato, gli effetti che avrà sul codice e il risultato ottenuto.
-- al termine inserisci un glossario dei termini tecnici nuovi incontrati durante la richiesta.
+- rispondi con i blocchi:
+  - **1. COSA HO FATTO**: cosa e perché hai implementato, gli effetti sul codice e il risultato ottenuto, in modo tecnico e schematico.
+  - **2. GLOSSARIO**: i termini tecnici nuovi incontrati durante la richiesta, una riga ciascuno.

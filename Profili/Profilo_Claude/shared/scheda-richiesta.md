@@ -4,6 +4,17 @@ Regole comuni alle skill che, nella fase SCHEDA RICHIESTA, trasformano la richie
 
 L'obiettivo è che l'utente abbia il controllo totale su cosa viene fatto anche senza conoscere bene il codice: decide lui, scegliendo tra opzioni concrete, e niente viene supposto in silenzio.
 
+## Formato dei messaggi
+
+Vale per ogni messaggio delle skill che richiamano questo file, in tutte le fasi.
+
+- il messaggio è fatto **solo** di blocchi con titolo numerato in maiuscolo e grassetto (es. `**1. DIAGRAMMA**`): niente testo prima, tra o dopo i blocchi.
+- i blocchi di ogni fase sono indicati nello SKILL.md; un blocco senza contenuto si omette e la numerazione resta progressiva.
+- ogni blocco ha al massimo 3 righe o 3 punti, una riga ciascuno; fanno eccezione solo SCHEDA, MODIFICHE e GLOSSARIO, che hanno una riga per elemento.
+- frasi brevi e dirette: niente premesse, riepiloghi di quanto già detto o spiegazioni non richieste.
+- per le parti del flusso usa i numeri dei passi del diagramma; per il codice nomeFile:riga cliccabile.
+- l'ultimo blocco, quando serve una risposta, è sempre **RICHIESTA**: una sola domanda o al massimo 2 domande numerate.
+
 ## Lettura della richiesta
 
 - l'utente può scrivere i campi (es. `OBIETTIVO: ...`, uno per riga, in qualsiasi ordine) oppure testo libero.
@@ -24,11 +35,10 @@ L'obiettivo è che l'utente abbia il controllo totale su cosa viene fatto anche 
 
 ## Conferma
 
-- mostra la scheda completa in chat, un campo per riga, con il segno di provenienza:
-  - `✍️` scritto dall'utente
-  - `🔍` dedotto dal codice
-  - `☑️` scelto dall'utente tra le opzioni
-- sotto la scheda, se esistono, elenca in massimo 3 righe i rischi concreti emersi leggendo il codice (es. "`DOVE` è usato anche da `X`: la modifica cambia anche quella schermata").
+- mostra la scheda con i blocchi (vedi "Formato dei messaggi"):
+  - **1. SCHEDA**: un campo per riga, con il segno di provenienza: `✍️` scritto dall'utente, `🔍` dedotto dal codice, `☑️` scelto dall'utente tra le opzioni.
+  - **2. RISCHI**: solo se esistono, i rischi concreti emersi leggendo il codice (es. "`DOVE` è usato anche da `X`: la modifica cambia anche quella schermata").
+  - **3. RICHIESTA**: "Confermi la scheda?"
 - poi fermati e attendi:
   - "ok" o "procedi": la scheda è confermata e diventa il **contratto** della richiesta.
   - una correzione: aggiorna la scheda e mostrala di nuovo.

@@ -1,6 +1,6 @@
 # Diagramma del flusso
 
-Regole comuni alle skill che, nella SPIEGAZIONE COMPLETA FLUSSO, devono generare un diagramma. Le regole specifiche di una skill (es. neutralità nel debug) restano nel suo SKILL.md e hanno la precedenza su queste.
+Regole comuni alle skill che, nella fase DIAGRAMMA, devono generare un diagramma. Le regole specifiche di una skill (es. neutralità nel debug) restano nel suo SKILL.md e hanno la precedenza su queste.
 
 ## Formato
 
@@ -43,4 +43,4 @@ Regole comuni alle skill che, nella SPIEGAZIONE COMPLETA FLUSSO, devono generare
 ## Salvataggio
 
 - salva in `~/flussi/<nome-cartella-progetto>/<AAAA-MM-GG>-<argomento-in-kebab-case>.html`; crea la cartella se non esiste.
-- in chat indica il percorso del file (cliccabile) e ricorda che si apre nel browser; si può aprire direttamente su un passo aggiungendo `#passo-N` all'indirizzo.
+- in chat indica solo il percorso del file (cliccabile), nel blocco DIAGRAMMA della skill.
