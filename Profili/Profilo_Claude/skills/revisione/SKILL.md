@@ -1,7 +1,7 @@
 ---
 name: revisione
 description: Revisione di codice nel progetto con problemi classificati per gravità
-argument-hint: "<vuoto per lo schema, testo libero o COSA REVISIONARE: / COSA DOVREBBE FARE: / FOCUS: / MODALITÀ:>"
+argument-hint: "<vuoto per lo schema, testo libero o TITOLO: / COSA REVISIONARE: / COSA DOVREBBE FARE: / FOCUS: / MODALITÀ: / MAPPA: dati, struttura o entrambi>"
 disable-model-invocation: true
 ---
 
@@ -14,7 +14,7 @@ L'obiettivo è che l'utente impari a giudicare criticamente il codice (anche que
 ## Struttura
 
 1. passa a SCHEDA RICHIESTA.
-2. passa a DIAGRAMMA DEL FLUSSO.
+2. passa a DIAGRAMMA.
 3. se `MODALITÀ` è "prova io", passa a REVISIONE UTENTE, altrimenti passa a REVISIONE.
 4. passa a SEGNALAZIONI.
 5. passa a CORREZIONE.
@@ -29,23 +29,26 @@ In qualsiasi fase:
 
 - leggi e applica le regole in `~/.claude/shared/scheda-richiesta.md`.
 - campi (\* = obbligatorio):
+  - `TITOLO`\*: vedi "Campi comuni".
   - `COSA REVISIONARE`\*: file, porzione di codice o branch.
   - `COSA DOVREBBE FARE`\*: il comportamento che il codice deve avere, secondo l'utente; è il riferimento per giudicare la correttezza.
   - `FOCUS`: tutto (predefinito) oppure solo alcuni aspetti (logica, sicurezza, prestazioni, convenzioni del progetto).
   - `MODALITÀ`: normale (predefinita) oppure "prova io".
+  - `MAPPA`\*: vedi "Campi comuni".
 - `COSA REVISIONARE` si può dedurre con l'ordine indicato sopra ("In qualsiasi fase"); `COSA DOVREBBE FARE` si può dedurre dal codice solo se è evidente, altrimenti chiedilo.
 - se `FOCUS` è limitato, segnala comunque i problemi 🔴 Gravi trovati fuori dal focus.
 
-## DIAGRAMMA DEL FLUSSO
+## DIAGRAMMA
 
-- leggi e applica le regole in `~/.claude/shared/diagramma-flusso.md`: qui non c'è una spiegazione a passi, quindi il diagramma precede direttamente la fase successiva.
-- il diagramma rappresenta il flusso in cui si inserisce il codice revisionato (se è un branch, il flusso toccato dalle modifiche), non solo le righe richieste.
-- se `MODALITÀ` è "prova io", il diagramma deve essere **neutro**: non usare `incoming: "lost"`, e né `action`, né `payloadName`, né i testi (`does`, `purpose`, `receives`, `returns`) o `fields` devono mettere in risalto i punti problematici.
+- genera il diagramma scelto in `MAPPA` (vedi "Campi comuni"): qui non c'è una spiegazione a passi, quindi il diagramma precede direttamente la fase successiva.
+- il diagramma rappresenta la parte dell'app in cui si inserisce il codice revisionato (se è un branch, quella toccata dalle modifiche), non solo le righe richieste.
+- se `MODALITÀ` è "prova io", il diagramma deve essere **neutro**: non usare `incoming: "lost"`; né `action`, né `payloadName`, né i testi (`physical`, `simple`, `does`, `purpose`, `receives`, `returns`, `explanation`), né `fields`, `badges` o `label` devono mettere in risalto i punti problematici.
+- in chat indica il percorso del file (cliccabile); con `entrambi`, una riga per file con davanti `DATI` o `STRUTTURA`.
 
 ## REVISIONE UTENTE
 
 - fermati e attendi che l'utente elenchi i problemi che ha trovato, con il motivo.
-- l'utente può indicare i punti del flusso con i numeri dei passi del diagramma (es. "al passo 4…", "tra il passo 5 e il 6…"): usali come riferimento, e se un numero non esiste o è ambiguo chiedi.
+- l'utente può indicare i punti con i numeri del diagramma (es. "al passo D4…", "tra D5 e D6…", "S3"): usali come riferimento, e se un numero non esiste o è ambiguo chiedi.
 - dopo la sua risposta passa a REVISIONE e, in SEGNALAZIONI, indica per ogni problema se l'utente lo aveva trovato, se lo aveva mancato o se ne aveva segnalato uno che non è un problema (spiegando perché).
 
 ## REVISIONE
@@ -63,7 +66,7 @@ In qualsiasi fase:
 - numera i problemi in modo progressivo tra tutti i gruppi.
 - per ogni problema indica:
   - nomeFile:riga (cliccabile).
-  - il passo del diagramma in cui si trova (es. "D4 (`getAllUsers`)").
+  - il punto del diagramma in cui si trova (es. "D4 (`getAllUsers`)" o "S3 (`footerContainer`)").
   - cosa è sbagliato.
   - perché è sbagliato e lo scenario concreto in cui si manifesta.
   - come lo correggeresti, a parole e senza codice.

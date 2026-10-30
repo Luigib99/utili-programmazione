@@ -1,7 +1,7 @@
 ---
 name: modifica-minore
 description: Modifica minore di codice nel progetto (traduzioni, elementi grafici, formattazione, piccole modifiche generiche)
-argument-hint: "<vuoto per lo schema, testo libero o COSA: / DOVE: / VALORE NUOVO: / VINCOLI:>"
+argument-hint: "<vuoto per lo schema, testo libero o TITOLO: / COSA: / DOVE: / VALORE NUOVO: / VINCOLI: / MAPPA: dati, struttura o entrambi (facoltativa)>"
 disable-model-invocation: true
 ---
 
@@ -28,10 +28,12 @@ In qualsiasi fase:
 
 - leggi e applica le regole in `~/.claude/shared/scheda-richiesta.md`.
 - campi (\* = obbligatorio):
+  - `TITOLO`\*: vedi "Campi comuni".
   - `COSA`\*: cosa cambiare (testo, colore, dimensione, posizione, formattazione…).
   - `DOVE`\*: schermata, componente o file.
   - `VALORE NUOVO`: il valore finale (es. il testo nuovo, il colore, la distanza); se manca e non è deducibile, proponi i valori già usati nel progetto come opzioni.
   - `VINCOLI`: cosa non deve cambiare.
+  - `MAPPA`: facoltativa, vedi "Campi comuni". Se c'è, prima di modificare genera il diagramma dello stato attuale e indica il link nel RIEPILOGO; poi procedi come al solito, senza attendere.
 - eccezione alla "Conferma": se tutti i campi obbligatori sono `✍️` (scritti dall'utente) e nessuna domanda è stata necessaria, non mostrare la scheda e procedi in automatico; altrimenti mostrala e attendi l'ok.
 
 ## TRADUZIONI

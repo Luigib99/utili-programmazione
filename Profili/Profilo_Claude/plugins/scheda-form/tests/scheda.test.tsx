@@ -109,3 +109,21 @@ test('il TITOLO della scheda diventa il titolo della sessione', async ($, on) =>
   expect(senzaTitolo.sessionTitle).toBeUndefined()
   expect(altroTesto.sessionTitle).toBeUndefined()
 })
+
+test('debug richiede TITOLO e MAPPA, lezione accetta la MAPPA vuota', async ($, on) => {
+  const eseguiti: string[] = []
+  on('prompt.fill', () => ({ isFilled: true }))
+  on('command.run', (_, e) => {
+    eseguiti.push(`${e.command}: ${e.args}`)
+    return { text: 'skill avviata' }
+  })
+
+  const debug = await $.command.run({
+    command: 'debug',
+    args: 'ATTESO: si apre\nOSSERVATO: resta bianca\nCOME RIPRODURLO: apro la chat',
+  })
+  await $.command.run({ command: 'lezione', args: 'TITOLO: useEffect\nARGOMENTO: useEffect\nMAPPA: ' })
+
+  expect(debug.text).toContain('compila TITOLO, MAPPA')
+  expect(eseguiti).toEqual(['lezione: TITOLO: useEffect\nARGOMENTO: useEffect'])
+})

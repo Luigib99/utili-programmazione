@@ -16,6 +16,17 @@ Vale per ogni messaggio delle skill che richiamano questo file, in tutte le fasi
 - l'ultimo blocco, quando serve una risposta, è sempre **RICHIESTA**: una sola riga con l'azione attesa dall'utente (es. "Come intendi procedere?", "Procedo?", "Confermi la scheda?").
 - **mai domande di verifica o da interrogazione** (es. "perché secondo te…?", "cosa succede se…?"), in nessuna fase: confondono l'utente. Se l'utente chiede aiuto o un indizio, dai suggerimenti diretti, non domande.
 
+## Campi comuni
+
+Presenti in tutte le skill; lo SKILL.md dice se sono obbligatori.
+
+- `TITOLO`: nome breve della richiesta. La mod `scheda-form` lo usa come titolo della sessione; tu lo usi, in kebab-case, come nome dei file dei diagrammi.
+- `MAPPA`: quale diagramma serve: `dati`, `struttura` o `entrambi`. La sceglie **sempre l'utente**: non dedurla. Se è obbligatoria e manca, chiedila con le tre opzioni; se è facoltativa e manca, niente diagramma.
+  - `dati`: regole in `~/.claude/shared/diagramma-flusso.md`, riferimenti **D1, D2…**.
+  - `struttura`: regole in `~/.claude/shared/diagramma-pagina.md`, riferimenti **S1, S2…**.
+  - `entrambi`: i due diagrammi, in due file.
+  - nel blocco che mostra il diagramma scrivi una riga per file, con davanti `DATI` o `STRUTTURA`.
+
 ## Lettura della richiesta
 
 - l'utente può scrivere i campi (es. `OBIETTIVO: ...`, uno per riga, in qualsiasi ordine) oppure testo libero.

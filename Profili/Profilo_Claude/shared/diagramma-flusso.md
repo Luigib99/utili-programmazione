@@ -43,5 +43,5 @@ Regole comuni alle skill che, nella fase DIAGRAMMA (o MAPPA `dati`), devono gene
 
 ## Salvataggio
 
-- salva in `~/flussi/<nome-cartella-progetto>/<AAAA-MM-GG>-<argomento-in-kebab-case>.html`; crea la cartella se non esiste.
+- salva in `~/flussi/<nome-cartella-progetto>/<AAAA-MM-GG>-<titolo-in-kebab-case>.html` (il `TITOLO` della scheda); crea la cartella se non esiste.
 - in chat indica solo il percorso del file (cliccabile), nel blocco della skill che mostra il diagramma (MAPPA o DIAGRAMMA).

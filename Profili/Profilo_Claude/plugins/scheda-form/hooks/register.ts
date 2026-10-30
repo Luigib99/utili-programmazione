@@ -12,12 +12,15 @@ const SCHEDE: Record<string, readonly Campo[]> = {
     { nome: 'NOTE', obbligatorio: false, aiuto: 'tutto il resto: vincoli, dubbi, esempi' },
   ],
   'modifica-minore': [
+    { nome: 'TITOLO', obbligatorio: true, aiuto: 'nome breve: diventa il titolo della sessione' },
     { nome: 'COSA', obbligatorio: true, aiuto: 'cosa cambiare: testo, colore, dimensione, posizione, formattazione' },
     { nome: 'DOVE', obbligatorio: false, aiuto: 'schermata, componente o file (vuoto: il file aperto)' },
     { nome: 'VALORE NUOVO', obbligatorio: false, aiuto: 'il valore finale (vuoto: ti propongo quelli del progetto)' },
     { nome: 'VINCOLI', obbligatorio: false, aiuto: 'cosa non deve cambiare' },
+    { nome: 'MAPPA', obbligatorio: false, aiuto: 'dati, struttura o entrambi (vuoto: nessun diagramma)', valori: ['dati', 'struttura', 'entrambi'] },
   ],
   debug: [
+    { nome: 'TITOLO', obbligatorio: true, aiuto: 'nome breve: diventa il titolo della sessione' },
     { nome: 'ATTESO', obbligatorio: true, aiuto: 'cosa dovrebbe succedere' },
     { nome: 'OSSERVATO', obbligatorio: true, aiuto: 'cosa succede invece: messaggio, schermata, comportamento' },
     { nome: 'COME RIPRODURLO', obbligatorio: true, aiuto: 'i passi, e se succede sempre o solo a volte' },
@@ -25,17 +28,22 @@ const SCHEDE: Record<string, readonly Campo[]> = {
     { nome: 'DA QUANDO', obbligatorio: false, aiuto: 'da sempre o da un aggiornamento, commit, branch' },
     { nome: 'ERRORI', obbligatorio: false, aiuto: 'log o messaggi di errore' },
     { nome: 'COSA NON SO', obbligatorio: false, aiuto: 'dubbi da chiarire prima di procedere' },
+    { nome: 'MAPPA', obbligatorio: true, aiuto: 'dati, struttura o entrambi', valori: ['dati', 'struttura', 'entrambi'] },
   ],
   revisione: [
+    { nome: 'TITOLO', obbligatorio: true, aiuto: 'nome breve: diventa il titolo della sessione' },
     { nome: 'COSA REVISIONARE', obbligatorio: false, aiuto: 'file, porzione di codice o branch (vuoto: selezione, file aperto o branch)' },
     { nome: 'COSA DOVREBBE FARE', obbligatorio: false, aiuto: 'il comportamento atteso del codice (vuoto: te lo chiedo se non è evidente)' },
     { nome: 'FOCUS', obbligatorio: false, aiuto: 'tutto, oppure logica, sicurezza, prestazioni, convenzioni' },
     { nome: 'MODALITÀ', obbligatorio: false, aiuto: 'normale, oppure "prova io"' },
+    { nome: 'MAPPA', obbligatorio: true, aiuto: 'dati, struttura o entrambi', valori: ['dati', 'struttura', 'entrambi'] },
   ],
   lezione: [
+    { nome: 'TITOLO', obbligatorio: true, aiuto: 'nome breve: diventa il titolo della sessione' },
     { nome: 'ARGOMENTO', obbligatorio: true, aiuto: 'concetto o parte di codice da spiegare' },
     { nome: 'LIVELLO', obbligatorio: false, aiuto: 'da zero, ripasso o approfondimento' },
     { nome: 'A COSA MI SERVE', obbligatorio: false, aiuto: 'il compito per cui ti serve' },
+    { nome: 'MAPPA', obbligatorio: false, aiuto: 'dati, struttura o entrambi (vuoto: nessun diagramma)', valori: ['dati', 'struttura', 'entrambi'] },
   ],
 }
 

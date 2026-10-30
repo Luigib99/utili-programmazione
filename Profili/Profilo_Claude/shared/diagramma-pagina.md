@@ -1,6 +1,6 @@
 # Diagramma della pagina
 
-Regole per il diagramma della **struttura** (mappa `struttura` di `/modifica-maggiore`): mostra **com'è fatta** una schermata (struttura e grafica), non come si muovono i dati. Le regole specifiche di una skill restano nel suo SKILL.md e hanno la precedenza su queste.
+Regole per il diagramma della **struttura** (`MAPPA` `struttura` delle skill): mostra **com'è fatta** una schermata (struttura e grafica), non come si muovono i dati. Le regole specifiche di una skill restano nel suo SKILL.md e hanno la precedenza su queste.
 
 ## Formato
 
@@ -32,5 +32,5 @@ Regole per il diagramma della **struttura** (mappa `struttura` di `/modifica-mag
 
 ## Salvataggio
 
-- salva in `~/flussi/<nome-cartella-progetto>/<AAAA-MM-GG>-<argomento-in-kebab-case>-struttura.html`; crea la cartella se non esiste.
+- salva in `~/flussi/<nome-cartella-progetto>/<AAAA-MM-GG>-<titolo-in-kebab-case>-struttura.html` (il `TITOLO` della scheda); crea la cartella se non esiste.
 - in chat indica solo il percorso del file (cliccabile), nel blocco della skill che mostra il diagramma (MAPPA o DIAGRAMMA).

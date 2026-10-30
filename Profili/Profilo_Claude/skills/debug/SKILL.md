@@ -1,7 +1,7 @@
 ---
 name: debug
 description: Debug guidato in modo didattico di un problema nel progetto
-argument-hint: "<vuoto per lo schema, testo libero o ATTESO: / OSSERVATO: / COME RIPRODURLO: / AMBIENTE: / DA QUANDO: / ERRORI: / COSA NON SO:>"
+argument-hint: "<vuoto per lo schema, testo libero o TITOLO: / ATTESO: / OSSERVATO: / COME RIPRODURLO: / AMBIENTE: / DA QUANDO: / ERRORI: / COSA NON SO: / MAPPA: dati, struttura o entrambi>"
 disable-model-invocation: true
 ---
 
@@ -32,6 +32,7 @@ In qualsiasi fase:
 
 - leggi e applica le regole in `~/.claude/shared/scheda-richiesta.md`.
 - campi (\* = obbligatorio):
+  - `TITOLO`\*: vedi "Campi comuni".
   - `ATTESO`\*: cosa dovrebbe succedere.
   - `OSSERVATO`\*: cosa succede invece (messaggio, schermata, comportamento).
   - `COME RIPRODURLO`\*: i passi per far comparire il problema, e se succede sempre o solo a volte.
@@ -39,18 +40,18 @@ In qualsiasi fase:
   - `DA QUANDO`: da sempre o da un certo momento (aggiornamento, commit, branch).
   - `ERRORI`: log, messaggi d'errore o screenshot.
   - `COSA NON SO`: dubbi dell'utente da chiarire prima di procedere.
+  - `MAPPA`\*: vedi "Campi comuni".
 - le opzioni per `AMBIENTE` prendile da ciò che il progetto supporta davvero (script di avvio, file di configurazione, piattaforme presenti).
 - nella scheda, nei RISCHI e nelle domande non anticipare dove pensi sia la causa: il debug resta neutro.
 
 ## DIAGRAMMA
 
-- leggi e applica le regole in `~/.claude/shared/diagramma-flusso.md`.
-- il diagramma deve coprire tutti i punti del flusso in cui si trova il problema, senza parti superflue.
-- ogni oggetto, lista o json nei `payload` deve essere completo; se un oggetto cambia durante il flusso, mostralo nei nodi successivi con i valori aggiornati e spiega nei `fields` cosa è cambiato.
-- il diagramma deve essere **neutro**: dai a ogni passo lo stesso peso, non usare `incoming: "lost"`, e né `action`, né `payloadName`, né i testi (`does`, `purpose`, `receives`, `returns`) o `fields` devono mettere in risalto il punto del bug; descrivi cosa fa il codice, non cosa manca o cosa è sbagliato.
-- quando raggruppi parti del flusso per restare nel limite di nodi, il raggruppamento non deve escludere o isolare il punto del bug.
-- il flusso si spiega **solo** con il diagramma; in chat scrivi i blocchi:
-  - **1. DIAGRAMMA**: il percorso del file (cliccabile).
+- genera il diagramma scelto in `MAPPA` (vedi "Campi comuni"); deve coprire tutti i punti in cui si trova il problema, senza parti superflue.
+- `dati`: ogni oggetto, lista o json nei `payload` deve essere completo; se un oggetto cambia durante il flusso, mostralo nei nodi successivi con i valori aggiornati e spiega nei `fields` cosa è cambiato.
+- il diagramma deve essere **neutro**: dai a ogni passo o riquadro lo stesso peso; non usare `incoming: "lost"`; né `action`, né `payloadName`, né i testi (`physical`, `simple`, `does`, `purpose`, `receives`, `returns`, `explanation`), né `fields`, `badges` o `label` devono mettere in risalto il punto del bug; descrivi cosa fa il codice, non cosa manca o cosa è sbagliato.
+- quando raggruppi parti per restare nel limite di nodi o riquadri, il raggruppamento non deve escludere o isolare il punto del bug.
+- il problema si spiega **solo** con il diagramma; in chat scrivi i blocchi:
+  - **1. DIAGRAMMA**: il percorso del file (cliccabile); con `entrambi`, una riga per file con davanti `DATI` o `STRUTTURA`.
   - **2. COSE DA SAPERE**: massimo 3 punti utili a leggere il flusso (es. da dove arriva un dato, in che ordine partono due chiamate), con il passo del diagramma; **neutri**: non devono indicare né far intuire il punto del bug.
   - **3. RICHIESTA**: "Dov'è il problema e come intendi correggerlo?"
 
