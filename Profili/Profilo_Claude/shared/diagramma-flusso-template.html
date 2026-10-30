@@ -553,7 +553,9 @@
   - side: "FRONTEND" (corsia blu a sinistra) | "BACKEND" (corsia gialla a destra)
   - file, element: dove si trova il codice; action: cosa fa, in una frase breve
   - path, line: percorso assoluto del file e riga dell'element; rendono cliccabili i nomi (aprono VS Code)
+  - physical: sezione "Cosa succede fisicamente", la prima del pannello
   - does / purpose / receives / returns: sezioni "Cosa fa", "A cosa serve", "Riceve", "Restituisce" del pannello
+  - simple: sezione "Spiegazione semplice", dopo l'oggetto e prima dei termini
   - terms: { "termine": "significato semplice" } mostrati come glossario del passo
   - nei testi, il codice va tra backtick (`esempio`) e viene mostrato come codice
   - tracked: (opzionale, a livello di FLOW) [{ "id", "name" }] oggetti seguiti passo per passo nella colonna
@@ -981,8 +983,7 @@
     panel.innerHTML = `
       <span class="panel-tag ${node.side}">${node.side}</span>
       <h2>D${node.number}. ${codeLink(node, node.line, esc(node.element || node.file))}${node.element ? ` ${codeLink(node, 1, `<span class="route">${esc(node.file)}</span>`)}` : ''}</h2>
-      ${node.path ? `<p class="hint">Clic sul nome per aprirlo in VS Code${node.line ? ` alla riga ${node.line}` : ''}.</p>` : ''}
-      <p class="route">${fmt(node.action)}</p>
+      ${section('Cosa succede fisicamente', node.physical)}
       ${section('Cosa fa', node.does || node.explanation)}
       ${section('A cosa serve', node.purpose)}
       ${section('Riceve', node.receives)}
@@ -990,6 +991,7 @@
       <h3>${hasPayload ? `Cosa passa al passo successivo · ${esc(node.payloadName || 'oggetto')}` : 'Cosa passa al passo successivo'}</h3>
       ${destination}
       ${objectHtml}
+      ${section('Spiegazione semplice', node.simple)}
       ${termsHtml}`;
   }
 
