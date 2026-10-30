@@ -286,26 +286,18 @@
     color: var(--be);
   }
 
+  /* Funzione e file sulla stessa riga, stesso stile: se non ci stanno la riga finisce con "…" invece di andare a capo */
   .node .title {
-    display: flex;
-    gap: 10px;
-    align-items: baseline;
-    justify-content: space-between;
-  }
-
-  .node .element {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     font-size: 14px;
     font-weight: 700;
-    white-space: nowrap;
   }
 
-  .node .file {
-    min-width: 0;
-    overflow: hidden;
+  .node .sep {
+    margin: 0 6px;
     color: var(--muted);
-    font-size: 12px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   a.code-link {
@@ -790,7 +782,7 @@
     div.className = `node ${node.side}`;
     div.innerHTML = `
       <div class="tag">${node.side}</div>
-      <div class="title">${codeLink(node, node.line, `<span class="element">${esc(node.element || node.file)}</span>`)}${node.element ? codeLink(node, 1, `<span class="file">${esc(node.file)}</span>`) : ''}</div>
+      <div class="title" title="${esc(node.element ? `${node.element} · ${node.file}` : node.file)}">${codeLink(node, node.line, `<span class="element">${esc(node.element || node.file)}</span>`)}${node.element ? `<span class="sep">·</span>${codeLink(node, 1, `<span class="file">${esc(node.file)}</span>`)}` : ''}</div>
       <div class="action">${fmt(node.action)}</div>`;
     fo.appendChild(div);
 
