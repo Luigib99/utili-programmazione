@@ -11,6 +11,7 @@ const { spawn } = require('child_process');
 const PORTA = 4517;
 const HOST = '127.0.0.1';
 const FILE_GETTONE = path.join(os.homedir(), '.claude', 'chat-mappa-token');
+const CARTELLA_MAPPE = path.join(os.homedir(), 'flussi');
 const MAX_BODY = 2 * 1024 * 1024;
 const TIMEOUT_MS = 4 * 60 * 1000;
 
@@ -110,6 +111,28 @@ function chiediClaude(progetto, prompt) {
   });
 }
 
+// FILE DELLA MAPPA
+// Solo file .html dentro ~/flussi (anche seguendo i collegamenti): il server non tocca nient'altro
+function fileMappa(percorso) {
+  try {
+    const reale = fs.realpathSync(path.resolve(String(percorso || '')));
+    const relativo = path.relative(fs.realpathSync(CARTELLA_MAPPE), reale);
+    const dentro = relativo && !relativo.startsWith('..') && !path.isAbsolute(relativo);
+    return dentro && path.extname(reale).toLowerCase() === '.html' && fs.statSync(reale).isFile() ? reale : null;
+  } catch {
+    return null;
+  }
+}
+
+// APERTURA CARTELLA
+// Apre la cartella della mappa nel gestore dei file, con il file già selezionato
+function apriCartella(file) {
+  const opzioni = { detached: true, stdio: 'ignore' };
+  if (process.platform === 'win32') spawn('explorer.exe', [`/select,"${file}"`], { ...opzioni, windowsVerbatimArguments: true }).unref();
+  else if (process.platform === 'darwin') spawn('open', ['-R', file], opzioni).unref();
+  else spawn('xdg-open', [path.dirname(file)], opzioni).unref();
+}
+
 function rispondi(res, status, corpo) {
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
@@ -149,7 +172,7 @@ function avvia() {
   const server = http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') return rispondi(res, 204, {});
     if (req.method === 'GET' && req.url === '/stato') return rispondi(res, 200, { attivo: true });
-    if (req.method !== 'POST' || !['/chiedi', '/ferma'].includes(req.url)) return rispondi(res, 404, { errore: 'non trovato' });
+    if (req.method !== 'POST' || !['/chiedi', '/ferma', '/cartella', '/elimina'].includes(req.url)) return rispondi(res, 404, { errore: 'non trovato' });
 
     let dati;
     try {
@@ -162,6 +185,17 @@ function avvia() {
     if (req.url === '/ferma') {
       rispondi(res, 200, { fermato: true });
       return server.close(() => process.exit(0));
+    }
+
+    if (req.url === '/cartella' || req.url === '/elimina') {
+      const file = fileMappa(dati.file);
+      if (!file) return rispondi(res, 400, { errore: 'si possono aprire o eliminare solo mappe .html dentro ~/flussi' });
+      if (req.url === '/cartella') {
+        apriCartella(file);
+        return rispondi(res, 200, { aperta: true });
+      }
+      fs.unlinkSync(file);
+      return rispondi(res, 200, { eliminata: true });
     }
 
     const progetto = String(dati.project || '');

@@ -581,6 +581,27 @@
     cursor: pointer;
   }
 
+  /* Azioni sul file della mappa, in fondo al riepilogo */
+  .azioni-mappa {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 32px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .azioni-mappa .pericolo {
+    border-color: #f85149;
+    color: #ffa198;
+  }
+
+  .eliminata {
+    margin: 48px;
+    color: var(--muted);
+    font-size: 15px;
+  }
+
   /* Sezioni del pannello di destra: il titolo le apre e le chiude */
   .sez > h3 {
     cursor: pointer;
@@ -1589,13 +1610,10 @@
       <h3>File coinvolti</h3>
       <ul class="files">${files.map((f) => `<li>${codeLink(f, 1, `<b>${esc(f.file)}</b>`)}${f.role ? ` <span class="route">· ${fmt(f.role)}</span>` : ''}</li>`).join('')}</ul>
       ${(o.notes || []).length ? `<h3>Da sapere</h3><ul class="files">${o.notes.map((n) => `<li>${fmt(n)}</li>`).join('')}</ul>` : ''}
-      <details class="howto"><summary>Come leggere la mappa</summary>
-        <p class="hint">Il flusso si legge dall'alto verso il basso. A sinistra la corsia FRONTEND (blu), a destra la corsia BACKEND (giallo): quando una freccia cambia corsia, i dati passano tra app e server.</p>
-        <p class="hint">Ogni riquadro mostra una frase semplice: cliccalo per aprirlo e leggere i punti tecnici, e qui a destra tutti i dettagli. Clicca una freccia per vedere che chiamata è e cosa trasporta. Clicca fuori per tornare a questo riepilogo.</p>
-        <p class="hint">Trascina lo sfondo per muoverti, <kbd>Ctrl</kbd> + rotella o i pulsanti <b>− +</b> per ingrandire e ridurre.</p>
-        <p class="hint">I numeri <b>D1, D2…</b> sono il riferimento comune: puoi scrivere "al passo D4…".</p>
-        <p class="hint">Usa <kbd>&uarr;</kbd> <kbd>&darr;</kbd> per scorrere i passi. Con <b>Passo-passo</b> attivo i passi successivi restano oscurati.</p>
-      </details>`;
+      <div class="azioni-mappa">
+        <button type="button" data-azione="cartella" title="Apre la cartella con il file della mappa selezionato">Apri cartella</button>
+        <button type="button" data-azione="elimina" title="Cancella il file della mappa dal PC">Elimina mappa</button>
+      </div>`;
   }
 
   // RENDER PANNELLO
@@ -1835,7 +1853,7 @@
         sez.className = 'sez';
         h3.before(sez);
         let nodo = h3;
-        while (nodo && !(nodo !== h3 && (nodo.tagName === 'H3' || nodo.classList.contains('howto')))) {
+        while (nodo && !(nodo !== h3 && (nodo.tagName === 'H3' || nodo.matches('.howto, .azioni-mappa')))) {
           const dopo = nodo.nextElementSibling;
           sez.appendChild(nodo);
           nodo = dopo;
@@ -2092,6 +2110,50 @@
 
     $('chat-hint').hidden = INDIZI.length === 0;
     $('chat-hint').addEventListener('click', chiediIndizio);
+
+    // AZIONI SULLA MAPPA
+    // Apri cartella ed elimina passano dal server locale: la pagina da sola non può toccare i file
+    const FILE_MAPPA = decodeURIComponent(location.pathname).replace(/^\/([A-Za-z]:)/, '$1');
+    let daConfermare = null;
+
+    async function azioneMappa(azione) {
+      const res = await fetch(`${SERVER}/${azione}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: CONFIG.token, file: FILE_MAPPA }),
+      });
+      const corpo = await res.json();
+      if (!res.ok) throw new Error(corpo.errore || `errore ${res.status}`);
+    }
+
+    // Eliminare chiede un secondo clic entro 4 secondi
+    $('panel').addEventListener('click', async (e) => {
+      const bottone = e.target.closest('[data-azione]');
+      if (!bottone) return;
+      if (!CONFIG.token) {
+        showToast('Questa mappa non è collegata al server locale: chiedi a Claude di rigenerarla');
+        return;
+      }
+      const azione = bottone.dataset.azione;
+      if (azione === 'elimina' && daConfermare !== bottone) {
+        daConfermare = bottone;
+        bottone.textContent = 'Sicuro? Clicca di nuovo';
+        bottone.classList.add('pericolo');
+        setTimeout(() => {
+          if (daConfermare !== bottone) return;
+          daConfermare = null;
+          bottone.textContent = 'Elimina mappa';
+          bottone.classList.remove('pericolo');
+        }, 4000);
+        return;
+      }
+      try {
+        await azioneMappa(azione);
+        if (azione === 'elimina') document.body.innerHTML = '<p class="eliminata">Mappa eliminata dal PC. Puoi chiudere questa scheda.</p>';
+      } catch (err) {
+        showToast(err instanceof TypeError ? `Il server locale è spento: avvialo con <code>${esc(AVVIO)}</code>` : esc(err.message));
+      }
+    });
 
     // MASCOTTE
     // Ogni carattere è un pixel: D contorno, P arancione, L riflesso, W bianco occhio, K pupilla e bocca, R guance
