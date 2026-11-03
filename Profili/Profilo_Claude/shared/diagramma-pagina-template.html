@@ -390,6 +390,27 @@
     cursor: pointer;
   }
 
+  /* Sezioni del pannello di destra: il titolo le apre e le chiude */
+  .sez > h3 {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .sez > h3::before {
+    content: "▾";
+    display: inline-block;
+    width: 14px;
+    transition: transform .15s;
+  }
+
+  .sez.chiusa > h3::before {
+    transform: rotate(-90deg);
+  }
+
+  .sez.chiusa > :not(h3) {
+    display: none;
+  }
+
   .hint {
     color: var(--muted);
     font-size: 13px;
@@ -487,11 +508,17 @@
     95% { transform: scaleY(.1); }
   }
 
-  /* Presa in mano: smette di fluttuare, si ingrandisce e si inclina */
+  /* Presa in mano: si ingrandisce e trema dalla paura */
   #chat-open.dragging .sprite {
     cursor: grabbing;
-    animation: none;
-    transform: scale(1.15) rotate(-8deg);
+    animation: chat-trema .12s linear infinite;
+  }
+
+  @keyframes chat-trema {
+    0%, 100% { transform: scale(1.15) translate(0, 0) rotate(-4deg); }
+    25% { transform: scale(1.15) translate(-1px, 1px) rotate(4deg); }
+    50% { transform: scale(1.15) translate(1px, -1px) rotate(-4deg); }
+    75% { transform: scale(1.15) translate(-1px, -1px) rotate(4deg); }
   }
 
   #chat-open.dragging::after {
@@ -520,6 +547,21 @@
 
   @keyframes chat-spin {
     to { rotate: 360deg; }
+  }
+
+  /* Faccia che urla mentre la trascini: ha la precedenza anche sugli occhi a spirale */
+  #chat-open .paura {
+    display: none;
+  }
+
+  #chat-open.dragging .paura {
+    display: inline;
+  }
+
+  #chat-open.dragging .eye,
+  #chat-open.dragging .bocca,
+  #chat-open.dragging .ipno {
+    display: none;
   }
 
   @keyframes chat-ping {
@@ -1259,6 +1301,40 @@
       e.preventDefault();
     }, true);
   })();
+
+  // SEZIONI APRIBILI
+  // Ogni titolo del pannello di destra apre e chiude la sua sezione; una sezione chiusa resta chiusa anche cambiando selezione
+  (() => {
+    const panel = document.getElementById('panel');
+    const chiuse = new Set();
+
+    function rendiApribili() {
+      panel.querySelectorAll(':scope > h3').forEach((h3) => {
+        const sez = document.createElement('section');
+        sez.className = 'sez';
+        h3.before(sez);
+        let nodo = h3;
+        while (nodo && !(nodo !== h3 && (nodo.tagName === 'H3' || nodo.classList.contains('howto')))) {
+          const dopo = nodo.nextElementSibling;
+          sez.appendChild(nodo);
+          nodo = dopo;
+        }
+        const titolo = h3.textContent.split('·')[0].trim();
+        sez.classList.toggle('chiusa', chiuse.has(titolo));
+        h3.addEventListener('click', () => {
+          const chiusa = sez.classList.toggle('chiusa');
+          if (chiusa) chiuse.add(titolo);
+          else chiuse.delete(titolo);
+        });
+      });
+    }
+
+    // Il pannello viene riscritto a ogni selezione: le sezioni si ricreano ogni volta
+    new MutationObserver(() => {
+      if (panel.querySelector(':scope > h3')) rendiApribili();
+    }).observe(panel, { childList: true });
+    rendiApribili();
+  })();
 </script>
 <script>
   // Cosa la chat sa della mappa: i dati (con i numeri S assegnati) e l'elemento selezionato
@@ -1509,8 +1585,16 @@
     ];
     const PIXEL = { D: '#5c2414', P: '#d97757', L: '#f5c4ad', W: '#ffffff', K: '#2b130b', R: '#f9a8a0' };
     const pixel = (x, y, c) => `<rect x="${x}" y="${y}" width="1" height="1" fill="${PIXEL[c]}"/>`;
-    // Sotto gli occhi va il viola: si vede quando gli occhi diventano spirali
-    const corpo = SPRITE.flatMap((riga, y) => [...riga].map((c, x) => (PIXEL[c] ? pixel(x, y, y >= 3 && y <= 5 && 'WK'.includes(c) ? 'P' : c) : ''))).join('');
+    // Sotto occhi e bocca va il colore del corpo: si vede quando cambia espressione
+    const mobile = (x, y, c) => (y >= 3 && y <= 5 && 'WK'.includes(c)) || (y === 7 && c === 'K');
+    const corpo = SPRITE.flatMap((riga, y) => [...riga].map((c, x) => (PIXEL[c] ? pixel(x, y, mobile(x, y, c) ? 'P' : c) : ''))).join('');
+    const bocca = `<g class="bocca">${[5, 6, 7].map((x) => pixel(x, 7, 'K')).join('')}</g>`;
+    // Occhi sgranati 3×3 con la pupilla al centro e bocca spalancata con la lingua
+    const PAURA = [
+      ...[3, 7].flatMap((x0) => [2, 3, 4].flatMap((y) => [0, 1, 2].map((dx) => [x0 + dx, y, y === 3 && dx === 1 ? 'K' : 'W']))),
+      [5, 6, 'K'], [6, 6, 'K'], [7, 6, 'K'], [5, 7, 'K'], [6, 7, 'R'], [7, 7, 'K'], [5, 8, 'K'], [6, 8, 'K'], [7, 8, 'K'],
+    ];
+    const paura = `<g class="paura">${PAURA.map(([x, y, c]) => pixel(x, y, c)).join('')}</g>`;
     const occhio = (x0) => `<g class="eye">${[3, 4, 5].flatMap((y) => [x0, x0 + 1].map((x) => pixel(x, y, SPRITE[y][x]))).join('')}</g>`;
     const spirale = (cx, cy) => {
       const punti = Array.from({ length: 61 }, (_, i) => {
@@ -1520,7 +1604,7 @@
       });
       return `<g class="ipno"><circle cx="${cx}" cy="${cy}" r="1.3" fill="${PIXEL.W}"/><polyline class="spirale" style="transform-origin: ${cx}px ${cy}px" points="${punti.join(' ')}" fill="none" stroke="${PIXEL.K}" stroke-width=".3" stroke-linecap="round"/></g>`;
     };
-    $('chat-open').insertAdjacentHTML('afterbegin', `<svg class="sprite" viewBox="0 0 12 12" aria-hidden="true">${corpo}${occhio(4)}${occhio(8)}${spirale(5, 4.5)}${spirale(9, 4.5)}</svg>`);
+    $('chat-open').insertAdjacentHTML('afterbegin', `<svg class="sprite" viewBox="0 0 12 12" aria-hidden="true">${corpo}${occhio(4)}${occhio(8)}${bocca}${spirale(5, 4.5)}${spirale(9, 4.5)}${paura}</svg>`);
 
     // TRASCINAMENTO
     // Chat e mascotte sono incollate: la chat sta sempre sopra la mascotte e chi viene spostato si porta dietro l'altro
