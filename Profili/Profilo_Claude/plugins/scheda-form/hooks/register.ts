@@ -7,9 +7,9 @@ const SCHEDE: Record<string, readonly Campo[]> = {
   'modifica-maggiore': [
     { nome: 'TITOLO', obbligatorio: true, aiuto: 'nome breve: diventa il titolo della sessione' },
     { nome: 'OBIETTIVO', obbligatorio: true, aiuto: 'cosa vuoi ottenere' },
+    { nome: 'PROBLEMA', obbligatorio: false, aiuto: 'se è un bug: cosa succede, cosa ti aspettavi, come riprodurlo, dove (piattaforma, dispositivo)' },
     { nome: 'DOVE', obbligatorio: true, aiuto: 'pagina, flusso o file' },
     { nome: 'MAPPA', obbligatorio: true, aiuto: 'dati, struttura o entrambi', valori: ['dati', 'struttura', 'entrambi'] },
-    { nome: 'PROBLEMA', obbligatorio: false, aiuto: 'se è un bug: cosa succede, cosa ti aspettavi, come riprodurlo, dove (piattaforma, dispositivo)' },
     { nome: 'NOTE', obbligatorio: false, aiuto: 'tutto il resto: vincoli, dubbi, esempi' },
   ],
   'modifica-minore': [

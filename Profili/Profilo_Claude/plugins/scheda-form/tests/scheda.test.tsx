@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-const SCHEMA = '/modifica-maggiore\nTITOLO: \nOBIETTIVO: \nDOVE: \nMAPPA: \nPROBLEMA: \nNOTE: '
+const SCHEMA = '/modifica-maggiore\nTITOLO: \nOBIETTIVO: \nPROBLEMA: \nDOVE: \nMAPPA: \nNOTE: '
 
 test('senza testo riempie la casella con lo schema e non lancia la skill', async ($, on) => {
   const eseguiti: string[] = []

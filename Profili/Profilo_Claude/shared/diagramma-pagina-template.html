@@ -464,31 +464,65 @@
     opacity: .3;
   }
 
+  /* Mentre aspetta la risposta gli occhi diventano spirali che girano */
+  #chat-open .ipno {
+    display: none;
+    shape-rendering: geometricPrecision;
+  }
+
+  #chat-open.pensa .ipno {
+    display: inline;
+  }
+
+  #chat-open.pensa .eye {
+    display: none;
+  }
+
+  #chat-open .spirale {
+    transform-box: view-box;
+    animation: chat-spin .9s linear infinite;
+  }
+
+  @keyframes chat-spin {
+    to { rotate: 360deg; }
+  }
+
+  @keyframes chat-ping {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(63, 185, 80, .7); }
+    50% { box-shadow: 0 0 0 5px rgba(63, 185, 80, 0); }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     #chat-open .sprite,
     #chat-open::after,
-    #chat-open .eye {
+    #chat-open .eye,
+    #chat-open .spirale,
+    #chat-open .dot {
       animation: none;
     }
   }
 
+  /* Verde: risposta pronta e non ancora vista; rosso: server spento */
   #chat-open .dot {
     position: absolute;
     top: 0;
     right: 2px;
+    display: none;
     width: 12px;
     height: 12px;
-    background: var(--muted);
     border: 2px solid var(--bg);
     border-radius: 50%;
   }
 
-  #chat-open .dot.on {
-    background: #3fb950;
+  #chat-open .dot.off {
+    display: block;
+    background: #f85149;
   }
 
-  #chat-open .dot.off {
-    background: #f85149;
+  #chat-open .dot.pronta {
+    display: block;
+    background: #3fb950;
+    animation: chat-ping 1.2s ease-in-out infinite;
   }
 
   #chat {
@@ -1100,9 +1134,9 @@
       const dot = document.querySelector('#chat-open .dot');
       try {
         const res = await fetch(`${SERVER}/stato`);
-        dot.className = res.ok ? 'dot on' : 'dot off';
+        dot.classList.toggle('off', !res.ok);
       } catch {
-        dot.className = 'dot off';
+        dot.classList.add('off');
       }
     }
 
@@ -1154,6 +1188,7 @@
         if (!res.ok) throw new Error(corpo.errore || `errore ${res.status}`);
         storia.push({ ruolo: 'utente', testo: selezione ? `[su ${selezione}] ${domanda}` : domanda }, { ruolo: 'claude', testo: corpo.risposta });
         aggiungi('claude', markdown(corpo.risposta));
+        if ($('chat').hidden) document.querySelector('#chat-open .dot').classList.add('pronta');
       } catch (err) {
         if (err instanceof TypeError) serverSpento();
         else aggiungi('errore', esc(err.message));
@@ -1185,9 +1220,18 @@
     ];
     const PIXEL = { D: '#2e1065', P: '#8b5cf6', L: '#c4b5fd', W: '#ffffff', K: '#1e1b4b', R: '#f472b6' };
     const pixel = (x, y, c) => `<rect x="${x}" y="${y}" width="1" height="1" fill="${PIXEL[c]}"/>`;
-    const corpo = SPRITE.flatMap((riga, y) => [...riga].map((c, x) => (PIXEL[c] && !(y >= 3 && y <= 5 && 'WK'.includes(c)) ? pixel(x, y, c) : ''))).join('');
+    // Sotto gli occhi va il viola: si vede quando gli occhi diventano spirali
+    const corpo = SPRITE.flatMap((riga, y) => [...riga].map((c, x) => (PIXEL[c] ? pixel(x, y, y >= 3 && y <= 5 && 'WK'.includes(c) ? 'P' : c) : ''))).join('');
     const occhio = (x0) => `<g class="eye">${[3, 4, 5].flatMap((y) => [x0, x0 + 1].map((x) => pixel(x, y, SPRITE[y][x]))).join('')}</g>`;
-    $('chat-open').insertAdjacentHTML('afterbegin', `<svg class="sprite" viewBox="0 0 12 12" aria-hidden="true">${corpo}${occhio(4)}${occhio(8)}</svg>`);
+    const spirale = (cx, cy) => {
+      const punti = Array.from({ length: 61 }, (_, i) => {
+        const angolo = (i / 60) * 4 * Math.PI;
+        const raggio = 0.08 + (1.05 * i) / 60;
+        return `${(cx + raggio * Math.cos(angolo)).toFixed(2)},${(cy + raggio * Math.sin(angolo)).toFixed(2)}`;
+      });
+      return `<g class="ipno"><circle cx="${cx}" cy="${cy}" r="1.3" fill="${PIXEL.W}"/><polyline class="spirale" style="transform-origin: ${cx}px ${cy}px" points="${punti.join(' ')}" fill="none" stroke="${PIXEL.K}" stroke-width=".3" stroke-linecap="round"/></g>`;
+    };
+    $('chat-open').insertAdjacentHTML('afterbegin', `<svg class="sprite" viewBox="0 0 12 12" aria-hidden="true">${corpo}${occhio(4)}${occhio(8)}${spirale(5, 4.5)}${spirale(9, 4.5)}</svg>`);
 
     // TRASCINAMENTO
     // Chat (dalla barra del titolo) e mascotte si spostano con il puntatore e restano sempre dentro la finestra
@@ -1281,6 +1325,7 @@
       }
       $('chat').hidden = !$('chat').hidden;
       if ($('chat').hidden) return;
+      document.querySelector('#chat-open .dot').classList.remove('pronta');
       if (!chatSpostata) vicinoAllaMascotte();
       aggiornaContesto();
       controllaServer();

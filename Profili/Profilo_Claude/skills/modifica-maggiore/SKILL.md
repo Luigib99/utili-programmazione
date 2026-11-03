@@ -1,7 +1,7 @@
 ---
 name: modifica-maggiore
 description: Modifica, aggiunta o correzione di un problema nel codice del progetto, guidata dalle indicazioni dell'utente
-argument-hint: "<vuoto per lo schema, oppure TITOLO: / OBIETTIVO: / DOVE: / MAPPA: dati, struttura o entrambi / PROBLEMA: / NOTE:>"
+argument-hint: "<vuoto per lo schema, oppure TITOLO: / OBIETTIVO: / PROBLEMA: / DOVE: / MAPPA: dati, struttura o entrambi / NOTE:>"
 disable-model-invocation: true
 ---
 
@@ -34,9 +34,9 @@ In qualsiasi fase:
 - campi, tutti obbligatori tranne `PROBLEMA` e `NOTE`:
   - `TITOLO`: nome breve della richiesta; è anche il titolo della sessione e il nome del file del diagramma.
   - `OBIETTIVO`: cosa vuole ottenere l'utente.
+  - `PROBLEMA`: se c'è un bug, cosa succede, cosa ci si aspettava, come riprodurlo e in che ambiente (piattaforma, dispositivo, build). Con `PROBLEMA` la richiesta è una correzione: vedi "Con un problema".
   - `DOVE`: pagina, flusso o file interessati.
   - `MAPPA`: quale diagramma serve: `dati`, `struttura` o `entrambi`. La sceglie **sempre l'utente**: non dedurla.
-  - `PROBLEMA`: se c'è un bug, cosa succede, cosa ci si aspettava, come riprodurlo e in che ambiente (piattaforma, dispositivo, build). Con `PROBLEMA` la richiesta è una correzione: vedi "Con un problema".
   - `NOTE`: tutto il resto (vincoli, dubbi, esempi).
 - se l'utente scrive testo libero o manca un campo obbligatorio, chiedi solo i campi mancanti con le domande a scelta (AskUserQuestion); per `MAPPA` le opzioni sono `dati`, `struttura`, `entrambi`.
 - non mostrare la scheda per conferma: con i campi completi passa subito a MAPPA.
