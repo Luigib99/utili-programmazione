@@ -12,5 +12,6 @@ Ogni mappa (dati o struttura) ha in basso a sinistra una chat in cui l'utente fa
 
 - il gettone resta solo nel file della mappa (che sta in `~/flussi`, fuori dalle repo): mai in repo, commit o messaggi.
 - `project` è la cartella da cui la chat può leggere il codice: la radice della repo del progetto, non una sottocartella.
+- `indizi` (tasto 💡 della chat): solo se la skill li prevede (es. `modifica-maggiore`); formato nel commento sopra il JSON del template. La pagina non li manda al Claude della chat.
 - per spegnere il server: `node ~/.claude/shared/chat-mappa-server.js --ferma`.
 - se la chat dà errori, il messaggio rosso nella pagina dice cosa fare; il server si prova con `GET http://127.0.0.1:4517/stato`.

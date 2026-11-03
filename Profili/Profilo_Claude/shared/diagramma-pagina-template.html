@@ -625,6 +625,56 @@
     color: #ffa198;
   }
 
+  #chat-log .msg.suggerimento {
+    align-self: stretch;
+    max-width: none;
+    background: rgba(250, 204, 21, .08);
+    border: 1px solid #facc15;
+  }
+
+  #chat-log .msg button {
+    margin-top: 8px;
+    padding: 3px 10px;
+    font-size: 12.5px;
+  }
+
+  #chat-hint[hidden] {
+    display: none;
+  }
+
+  /* LUCE DELL'INDIZIO: la zona si illumina, il punto si illumina e pulsa ingrandito */
+  .luce {
+    filter: drop-shadow(0 0 6px #fde047) drop-shadow(0 0 16px rgba(253, 224, 71, .75));
+  }
+
+  .el.luce {
+    z-index: 6;
+    outline: 3px solid #fde047;
+    outline-offset: -3px;
+  }
+
+  .luce-zoom {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: luce-zoom 1.4s ease-in-out infinite;
+  }
+
+  body.con-indizio .item:not(.luce) {
+    opacity: .3;
+  }
+
+  @keyframes luce-zoom {
+    0%, 100% { scale: 1.06; }
+    50% { scale: 1.14; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .luce-zoom {
+      animation: none;
+      scale: 1.1;
+    }
+  }
+
   #chat-log .msg .ctx {
     display: block;
     margin-bottom: 2px;
@@ -735,6 +785,7 @@
 <section id="chat" hidden>
   <div class="chat-head">
     <b title="Trascina per spostare · angolo in basso a destra per ridimensionare · doppio clic per rimetterla vicino alla mascotte">Chiedi sulla mappa</b>
+    <button id="chat-hint" title="Indizio: ti mostro dove guardare, mai la soluzione" hidden>&#x1F4A1; Indizio</button>
     <button id="chat-clear" title="Ricomincia la conversazione">Nuova</button>
     <button id="chat-big" title="Alza / abbassa la chat">&#x2922;</button>
     <button id="chat-close" title="Chiudi (la conversazione resta finché la pagina è aperta)">&#x2715;</button>
@@ -769,6 +820,8 @@
   - explanation: cosa è, 1-2 frasi semplici
   - props, terms: (opzionali) { "nome": "valore o significato" }
   - children: (opzionale) elementi contenuti, in ordine di comparsa
+  - indizi: (opzionale) [{ "testo": cosa osservare, "punti": ["S12", "S13"] }, { "testo", "punti": ["S13"] }]
+    tasto Indizio della chat: il primo illumina la zona, il secondo il punto; mai la soluzione
   - chat: { "token": contenuto di ~/.claude/chat-mappa-token, "project": percorso assoluto del progetto con "/" }
     attiva la chat in basso a sinistra (server: ~/.claude/shared/chat-mappa-server.js)
   Non inserire la sequenza </script> nel JSON.
@@ -1059,7 +1112,9 @@
   const MAPPA_CHAT = {
     tipo: 'struttura',
     dati: DATA,
-    mappa: () => ({ ...DATA, chat: undefined }),
+    // Gli indizi non vanno al Claude della chat: potrebbe svelare il punto prima che l'utente lo chieda
+    mappa: () => ({ ...DATA, chat: undefined, indizi: undefined }),
+    trova: (punto) => document.querySelector(`.el[data-i="${Number(String(punto).replace(/^S/i, '')) - 1}"]`),
     selezione: () => {
       const item = elements[state.selected];
       return item ? `${item.number} · ${item.name} (${item.screenName})` : null;
@@ -1201,6 +1256,75 @@
         controllaServer();
       }
     }
+
+    // INDIZI
+    // Graduali (prima la zona, poi il punto) e preparati dalla skill: dicono dove guardare, mai cosa cambiare
+    const INDIZI = Array.isArray(MAPPA_CHAT.dati.indizi) ? MAPPA_CHAT.dati.indizi : [];
+    let indiziUsati = 0;
+
+    function spegniLuce() {
+      document.querySelectorAll('.luce').forEach((el) => el.classList.remove('luce', 'luce-zoom'));
+      document.body.classList.remove('con-indizio');
+    }
+
+    function accendiLuce(indizio) {
+      spegniLuce();
+      const trovati = indizio.punti.map(MAPPA_CHAT.trova).filter(Boolean);
+      trovati.forEach((el) => el.classList.add('luce'));
+      if (trovati.length === 1) trovati[0].classList.add('luce-zoom');
+      document.body.classList.add('con-indizio');
+      if (!trovati.length) return;
+      // Nella mappa struttura si scorre il telefono intero: scorrere dentro lo schermo simulato lo sposterebbe
+      (trovati[0].closest('.frame') || trovati[0]).scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
+      setTimeout(() => liberaVista(trovati), 600);
+    }
+
+    // Se la chat copre i punti illuminati, si sposta sul lato opposto della finestra
+    function liberaVista(trovati) {
+      const chat = $('chat');
+      if (chat.hidden) return;
+      const c = chat.getBoundingClientRect();
+      const coperto = trovati.some((el) => {
+        const r = el.getBoundingClientRect();
+        return r.left < c.right && r.right > c.left && r.top < c.bottom && r.bottom > c.top;
+      });
+      if (!coperto) return;
+      const aDestra = c.left + c.width / 2 < window.innerWidth / 2;
+      Object.assign(chat.style, {
+        left: `${aDestra ? window.innerWidth - c.width - MARGINE : MARGINE}px`,
+        top: `${c.top}px`,
+        bottom: 'auto',
+      });
+      tieniDentro(chat);
+    }
+
+    function mostraIndizio(i) {
+      const indizio = INDIZI[i];
+      const tipo = indizio.punti.length > 1 ? 'zona' : 'punto';
+      const msg = aggiungi('suggerimento', `<div class="par"><b>&#x1F4A1; Indizio ${i + 1} di ${INDIZI.length} · ${tipo}: ${esc(indizio.punti.join(', '))}</b><br>${inline(esc(indizio.testo))}</div><button type="button" data-rivedi>Illumina di nuovo</button> <button type="button" data-spegni>Spegni la luce</button>`);
+      msg.querySelector('[data-rivedi]').addEventListener('click', () => accendiLuce(indizio));
+      msg.querySelector('[data-spegni]').addEventListener('click', spegniLuce);
+      accendiLuce(indizio);
+    }
+
+    function chiediIndizio() {
+      if ($('chat-log').querySelector('[data-conferma]')) return;
+      if (indiziUsati >= INDIZI.length) {
+        aggiungi('info', 'Indizi finiti: da qui il ragionamento è tuo. La soluzione la do solo se la chiedi esplicitamente nella chat di Claude Code.');
+        return;
+      }
+      const n = indiziUsati + 1;
+      const msg = aggiungi('suggerimento', `<div class="par" data-conferma>Vuoi l'indizio ${n} di ${INDIZI.length}? ${n === 1 ? 'Ti illumino la zona in cui guardare.' : 'Ti illumino il punto preciso.'} Non ti dirò cosa cambiare.</div><button type="button" data-si>Sì, mostramelo</button> <button type="button" data-no>No, ci provo ancora</button>`);
+      msg.querySelector('[data-si]').addEventListener('click', () => {
+        msg.remove();
+        mostraIndizio(indiziUsati);
+        indiziUsati += 1;
+      }, { once: true });
+      msg.querySelector('[data-no]').addEventListener('click', () => msg.remove(), { once: true });
+    }
+
+    $('chat-hint').hidden = INDIZI.length === 0;
+    $('chat-hint').addEventListener('click', chiediIndizio);
 
     // MASCOTTE
     // Ogni carattere è un pixel: D contorno, P viola, L riflesso, W bianco occhio, K pupilla e bocca, R guance

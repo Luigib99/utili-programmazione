@@ -47,6 +47,11 @@ In qualsiasi fase:
 - `MAPPA` `dati` o `entrambi`: leggi e applica le regole in `~/.claude/shared/diagramma-flusso.md` (riferimenti **D1, D2…**); ogni oggetto, lista o json nei `payload` deve essere completo.
 - `MAPPA` `struttura` o `entrambi`: leggi e applica le regole in `~/.claude/shared/diagramma-pagina.md` (riferimenti **S1, S2…**).
 - in questa fase sai di che argomento si tratta ma **non** cosa e come l'utente vuole cambiarlo: il diagramma e le note descrivono com'è adesso, senza proporre modifiche.
+- **indizi**: nel JSON di ogni mappa aggiungi `indizi` con 2 voci, che l'utente apre solo se vuole dal tasto 💡 della chat della mappa:
+  - 1 · **zona**: `punti` con 2-5 riferimenti vicini (es. `["D4", "D5", "D6"]`) dove va fatta la modifica dell'`OBIETTIVO` o, con `PROBLEMA`, dove nasce il bug.
+  - 2 · **punto**: `punti` con un solo riferimento, quello preciso.
+  - `testo`: una frase su **cosa osservare** lì (es. "Guarda quale valore ha `role` quando arriva qui"), **mai** cosa cambiare, la causa o la soluzione, nemmeno di riflesso (niente "manca…", "è sbagliato…", "andrebbe…").
+  - con `entrambi`, ogni mappa ha i suoi indizi con i suoi numeri; non citarli in chat.
 - rispondi con i blocchi:
   - **1. MAPPA**: il percorso del file (cliccabile); con `entrambi`, una riga per file con davanti `DATI` o `STRUTTURA`.
   - **2. NOTE**: massimo 3 punti su com'è fatto adesso che servono a decidere (es. un pezzo duplicato, un valore scritto a mano, un punto che usa lo stesso codice), con i numeri del diagramma.
@@ -57,6 +62,7 @@ In qualsiasi fase:
 
 - se mancano informazioni per riprodurre il problema (passi, ambiente, log), chiedile prima della mappa.
 - il diagramma deve coprire tutti i punti in cui può trovarsi il problema ed essere **neutro**: ogni passo o elemento con lo stesso peso; niente `incoming: "lost"`; né `action`, né `payloadName`, né i testi (`physical`, `simple`, `does`, `purpose`, `receives`, `returns`, `explanation`), né `fields`, `badges` o `label` mettono in risalto il punto del bug; descrivi cosa fa il codice, non cosa manca o cosa è sbagliato. Raggruppando parti per restare nei limiti, non isolare né escludere il punto del bug.
+- gli `indizi` sono l'unica parte della mappa che porta verso il punto del bug: restano nascosti finché l'utente non li apre e seguono le regole sopra.
 - anche le **NOTE** sono neutre: aiutano a leggere il diagramma (es. da dove arriva un dato, in che ordine partono due chiamate) senza indicare né far intuire dov'è il bug.
 - la RICHIESTA diventa: "Scrivimi per punti cosa correggeresti e come, anche se non sei sicuro."
 - nel PIANO, se un punto non risolve il problema o ne crea un altro, dillo in ATTENZIONE senza rivelare la causa: indica dove guardare.
