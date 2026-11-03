@@ -519,7 +519,7 @@
     position: fixed;
     bottom: 14px;
     left: 18px;
-    z-index: 20;
+    z-index: 21;
     width: 60px;
     height: 66px;
     padding: 0;
@@ -529,6 +529,12 @@
 
   #chat-open:hover {
     border: 0;
+  }
+
+  #chat-open,
+  #chat-open .sprite {
+    cursor: grab;
+    touch-action: none;
   }
 
   #chat-open .sprite {
@@ -593,6 +599,18 @@
     95% { transform: scaleY(.1); }
   }
 
+  /* Presa in mano: smette di fluttuare, si ingrandisce e si inclina */
+  #chat-open.dragging .sprite {
+    cursor: grabbing;
+    animation: none;
+    transform: scale(1.15) rotate(-8deg);
+  }
+
+  #chat-open.dragging::after {
+    animation: none;
+    opacity: .3;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     #chat-open .sprite,
     #chat-open::after,
@@ -633,6 +651,13 @@
     border: 1px solid var(--border);
     border-radius: 12px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, .6);
+    /* Maniglia di ridimensionamento nell'angolo in basso a destra */
+    resize: both;
+    overflow: hidden;
+    min-width: 300px;
+    min-height: 260px;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
   }
 
   #chat[hidden] {
@@ -827,10 +852,10 @@
   <aside id="panel"></aside>
   <div id="toast" role="status" hidden></div>
 </main>
-<button id="chat-open" title="Chiedi sulla mappa"><i class="dot"></i></button>
+<button id="chat-open" title="Chiedi sulla mappa (trascinami per spostarmi)"><i class="dot"></i></button>
 <section id="chat" hidden>
   <div class="chat-head">
-    <b title="Trascina per spostare, doppio clic per rimetterla al suo posto">Chiedi sulla mappa</b>
+    <b title="Trascina per spostare · angolo in basso a destra per ridimensionare · doppio clic per rimetterla vicino alla mascotte">Chiedi sulla mappa</b>
     <button id="chat-clear" title="Ricomincia la conversazione">Nuova</button>
     <button id="chat-big" title="Alza / abbassa la chat">&#x2922;</button>
     <button id="chat-close" title="Chiudi (la conversazione resta finché la pagina è aperta)">&#x2715;</button>
@@ -1517,50 +1542,98 @@
     $('chat-open').insertAdjacentHTML('afterbegin', `<svg class="sprite" viewBox="0 0 12 12" aria-hidden="true">${corpo}${occhio(4)}${occhio(8)}</svg>`);
 
     // TRASCINAMENTO
-    // La chat si sposta tenendo premuta la barra del titolo; resta sempre dentro la finestra
+    // Chat (dalla barra del titolo) e mascotte si spostano con il puntatore e restano sempre dentro la finestra
     const MARGINE = 8;
-    function tieniDentro() {
-      const chat = $('chat');
-      if (!chat.style.top) return;
-      const box = chat.getBoundingClientRect();
-      chat.style.left = `${Math.min(Math.max(box.left, MARGINE), window.innerWidth - box.width - MARGINE)}px`;
-      chat.style.top = `${Math.min(Math.max(box.top, MARGINE), window.innerHeight - box.height - MARGINE)}px`;
+    const SOGLIA = 4;
+    let chatSpostata = false;
+
+    function tieniDentro(el) {
+      if (!el.style.top || el.hidden) return;
+      const box = el.getBoundingClientRect();
+      el.style.left = `${Math.min(Math.max(box.left, MARGINE), window.innerWidth - box.width - MARGINE)}px`;
+      el.style.top = `${Math.min(Math.max(box.top, MARGINE), window.innerHeight - box.height - MARGINE)}px`;
     }
 
-    $('chat').querySelector('.chat-head').addEventListener('pointerdown', (e) => {
-      if (e.button !== 0 || e.target.closest('button')) return;
-      const chat = $('chat');
-      const head = e.currentTarget;
-      const box = chat.getBoundingClientRect();
-      const dx = e.clientX - box.left;
-      const dy = e.clientY - box.top;
-      Object.assign(chat.style, { left: `${box.left}px`, top: `${box.top}px`, bottom: 'auto' });
-      chat.classList.add('dragging');
-      head.setPointerCapture(e.pointerId);
+    function rendiTrascinabile(el, maniglia, quandoLasci) {
+      maniglia.addEventListener('pointerdown', (e) => {
+        const bottone = e.target.closest('button');
+        if (e.button !== 0 || (bottone && bottone !== maniglia)) return;
+        const box = el.getBoundingClientRect();
+        const dx = e.clientX - box.left;
+        const dy = e.clientY - box.top;
+        let mosso = false;
+        maniglia.setPointerCapture(e.pointerId);
 
-      const muovi = (ev) => {
-        chat.style.left = `${ev.clientX - dx}px`;
-        chat.style.top = `${ev.clientY - dy}px`;
-        tieniDentro();
-      };
-      const lascia = () => {
-        chat.classList.remove('dragging');
-        head.removeEventListener('pointermove', muovi);
-      };
-      head.addEventListener('pointermove', muovi);
-      head.addEventListener('pointerup', lascia, { once: true });
-      head.addEventListener('pointercancel', lascia, { once: true });
+        // Sotto la soglia è un clic, non un trascinamento
+        const muovi = (ev) => {
+          if (!mosso && Math.hypot(ev.clientX - e.clientX, ev.clientY - e.clientY) < SOGLIA) return;
+          if (!mosso) {
+            mosso = true;
+            Object.assign(el.style, { left: `${box.left}px`, top: `${box.top}px`, bottom: 'auto' });
+            el.classList.add('dragging');
+          }
+          el.style.left = `${ev.clientX - dx}px`;
+          el.style.top = `${ev.clientY - dy}px`;
+          tieniDentro(el);
+        };
+        const lascia = () => {
+          maniglia.removeEventListener('pointermove', muovi);
+          el.classList.remove('dragging');
+          if (mosso) quandoLasci();
+        };
+        maniglia.addEventListener('pointermove', muovi);
+        maniglia.addEventListener('pointerup', lascia, { once: true });
+        maniglia.addEventListener('pointercancel', lascia, { once: true });
+      });
+    }
+
+    // La chat si apre sopra la mascotte, o sotto se sopra non c'è spazio
+    function vicinoAllaMascotte() {
+      const chat = $('chat');
+      const omino = $('chat-open').getBoundingClientRect();
+      const sopra = omino.top - chat.offsetHeight - MARGINE;
+      Object.assign(chat.style, {
+        left: `${omino.left}px`,
+        top: `${sopra >= MARGINE ? sopra : omino.bottom + MARGINE}px`,
+        bottom: 'auto',
+      });
+      tieniDentro(chat);
+    }
+
+    // Dopo un trascinamento il browser manda comunque un clic: va ignorato
+    let ignoraClic = false;
+    $('chat-open').addEventListener('pointerdown', () => {
+      ignoraClic = false;
+    });
+    rendiTrascinabile($('chat-open'), $('chat-open'), () => {
+      ignoraClic = true;
+    });
+    rendiTrascinabile($('chat'), $('chat').querySelector('.chat-head'), () => {
+      chatSpostata = true;
     });
     $('chat').querySelector('.chat-head').addEventListener('dblclick', (e) => {
       if (e.target.closest('button')) return;
-      Object.assign($('chat').style, { left: '', top: '', bottom: '' });
+      chatSpostata = false;
+      $('chat').classList.remove('big');
+      $('chat-big').setAttribute('aria-pressed', false);
+      Object.assign($('chat').style, { width: '', height: '' });
+      vicinoAllaMascotte();
     });
-    window.addEventListener('resize', tieniDentro);
+    new ResizeObserver(() => tieniDentro($('chat'))).observe($('chat'));
+    window.addEventListener('resize', () => {
+      tieniDentro($('chat'));
+      tieniDentro($('chat-open'));
+    });
 
     // APERTURA E COMANDI
     $('chat-open').addEventListener('click', () => {
+      if (ignoraClic) {
+        ignoraClic = false;
+        return;
+      }
       $('chat').hidden = !$('chat').hidden;
       if ($('chat').hidden) return;
+      if (!chatSpostata) vicinoAllaMascotte();
       aggiornaContesto();
       controllaServer();
       $('chat-input').focus();
@@ -1569,8 +1642,9 @@
       $('chat').hidden = true;
     });
     $('chat-big').addEventListener('click', (e) => {
+      Object.assign($('chat').style, { width: '', height: '' });
       e.currentTarget.setAttribute('aria-pressed', $('chat').classList.toggle('big'));
-      tieniDentro();
+      tieniDentro($('chat'));
     });
     $('chat-clear').addEventListener('click', () => {
       storia.length = 0;
