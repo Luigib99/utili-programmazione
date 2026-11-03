@@ -367,31 +367,96 @@
     font-size: 12px;
   }
   /* CHAT DELLA MAPPA */
+  /* Mascotte in pixel art: fluttua, sbatte gli occhi e saltella mentre aspetta la risposta */
   #chat-open {
     position: fixed;
-    bottom: 20px;
-    left: 20px;
+    bottom: 14px;
+    left: 18px;
     z-index: 20;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 52px;
-    height: 52px;
+    width: 60px;
+    height: 66px;
     padding: 0;
-    background: var(--chat);
+    background: none;
     border: 0;
-    border-radius: 50%;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
-    color: #fff;
   }
 
   #chat-open:hover {
-    filter: brightness(1.15);
+    border: 0;
+  }
+
+  #chat-open .sprite {
+    display: block;
+    width: 48px;
+    height: 48px;
+    margin: 0 auto;
+    image-rendering: pixelated;
+    shape-rendering: crispEdges;
+    filter: drop-shadow(0 0 6px rgba(139, 92, 246, .55));
+    animation: chat-float 2.6s ease-in-out infinite;
+  }
+
+  #chat-open:hover .sprite {
+    animation: chat-float 2.6s ease-in-out infinite, chat-wiggle .4s ease-in-out 2;
+  }
+
+  #chat-open.pensa .sprite {
+    animation: chat-hop .5s ease-in-out infinite;
+  }
+
+  #chat-open::after {
+    content: "";
+    display: block;
+    width: 30px;
+    height: 6px;
+    margin: 6px auto 0;
+    background: rgba(0, 0, 0, .55);
+    border-radius: 50%;
+    animation: chat-shadow 2.6s ease-in-out infinite;
+  }
+
+  #chat-open .eye {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: chat-blink 4.5s infinite;
+  }
+
+  @keyframes chat-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-7px); }
+  }
+
+  @keyframes chat-shadow {
+    0%, 100% { transform: scaleX(1); opacity: .9; }
+    50% { transform: scaleX(.7); opacity: .5; }
+  }
+
+  @keyframes chat-wiggle {
+    0%, 100% { rotate: 0deg; }
+    25% { rotate: -8deg; }
+    75% { rotate: 8deg; }
+  }
+
+  @keyframes chat-hop {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+
+  @keyframes chat-blink {
+    0%, 92%, 100% { transform: scaleY(1); }
+    95% { transform: scaleY(.1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #chat-open .sprite,
+    #chat-open::after,
+    #chat-open .eye {
+      animation: none;
+    }
   }
 
   #chat-open .dot {
     position: absolute;
-    top: 2px;
+    top: 0;
     right: 2px;
     width: 12px;
     height: 12px;
@@ -438,6 +503,13 @@
     align-items: center;
     padding: 10px 12px;
     border-bottom: 1px solid var(--border);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+
+  #chat.dragging .chat-head {
+    cursor: grabbing;
   }
 
   #chat .chat-head b {
@@ -600,10 +672,10 @@
   <aside id="panel"></aside>
   <div id="toast" role="status" hidden></div>
 </main>
-<button id="chat-open" title="Chiedi sulla mappa"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M9 10h6M9 14h4"/></svg><i class="dot"></i></button>
+<button id="chat-open" title="Chiedi sulla mappa"><i class="dot"></i></button>
 <section id="chat" hidden>
   <div class="chat-head">
-    <b>Chiedi sulla mappa</b>
+    <b title="Trascina per spostare, doppio clic per rimetterla al suo posto">Chiedi sulla mappa</b>
     <button id="chat-clear" title="Ricomincia la conversazione">Nuova</button>
     <button id="chat-big" title="Alza / abbassa la chat">&#x2922;</button>
     <button id="chat-close" title="Chiudi (la conversazione resta finché la pagina è aperta)">&#x2715;</button>
@@ -1031,6 +1103,7 @@
       $('chat-input').value = '';
       inAttesa = true;
       $('chat-send').disabled = true;
+      $('chat-open').classList.add('pensa');
       const inizio = Date.now();
       const attesa = aggiungi('info', 'Sto pensando…');
       const timer = setInterval(() => {
@@ -1064,9 +1137,73 @@
         attesa.remove();
         inAttesa = false;
         $('chat-send').disabled = false;
+        $('chat-open').classList.remove('pensa');
         controllaServer();
       }
     }
+
+    // MASCOTTE
+    // Ogni carattere è un pixel: D contorno, P viola, L riflesso, W bianco occhio, K pupilla e bocca, R guance
+    const SPRITE = [
+      '..DDDDDDDD..',
+      '.DPPPPPPPPD.',
+      'DPLLPPPPPPPD',
+      'DPLPWWPPWWPD',
+      'DPPPWKPPWKPD',
+      'DPPPWKPPWKPD',
+      'DPRPPPPPPRPD',
+      'DPPPPKKKPPPD',
+      '.DPPPPPPPPD.',
+      '..DPDDDDDD..',
+      '..DD........',
+      '.DD.........',
+    ];
+    const PIXEL = { D: '#2e1065', P: '#8b5cf6', L: '#c4b5fd', W: '#ffffff', K: '#1e1b4b', R: '#f472b6' };
+    const pixel = (x, y, c) => `<rect x="${x}" y="${y}" width="1" height="1" fill="${PIXEL[c]}"/>`;
+    const corpo = SPRITE.flatMap((riga, y) => [...riga].map((c, x) => (PIXEL[c] && !(y >= 3 && y <= 5 && 'WK'.includes(c)) ? pixel(x, y, c) : ''))).join('');
+    const occhio = (x0) => `<g class="eye">${[3, 4, 5].flatMap((y) => [x0, x0 + 1].map((x) => pixel(x, y, SPRITE[y][x]))).join('')}</g>`;
+    $('chat-open').insertAdjacentHTML('afterbegin', `<svg class="sprite" viewBox="0 0 12 12" aria-hidden="true">${corpo}${occhio(4)}${occhio(8)}</svg>`);
+
+    // TRASCINAMENTO
+    // La chat si sposta tenendo premuta la barra del titolo; resta sempre dentro la finestra
+    const MARGINE = 8;
+    function tieniDentro() {
+      const chat = $('chat');
+      if (!chat.style.top) return;
+      const box = chat.getBoundingClientRect();
+      chat.style.left = `${Math.min(Math.max(box.left, MARGINE), window.innerWidth - box.width - MARGINE)}px`;
+      chat.style.top = `${Math.min(Math.max(box.top, MARGINE), window.innerHeight - box.height - MARGINE)}px`;
+    }
+
+    $('chat').querySelector('.chat-head').addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || e.target.closest('button')) return;
+      const chat = $('chat');
+      const head = e.currentTarget;
+      const box = chat.getBoundingClientRect();
+      const dx = e.clientX - box.left;
+      const dy = e.clientY - box.top;
+      Object.assign(chat.style, { left: `${box.left}px`, top: `${box.top}px`, bottom: 'auto' });
+      chat.classList.add('dragging');
+      head.setPointerCapture(e.pointerId);
+
+      const muovi = (ev) => {
+        chat.style.left = `${ev.clientX - dx}px`;
+        chat.style.top = `${ev.clientY - dy}px`;
+        tieniDentro();
+      };
+      const lascia = () => {
+        chat.classList.remove('dragging');
+        head.removeEventListener('pointermove', muovi);
+      };
+      head.addEventListener('pointermove', muovi);
+      head.addEventListener('pointerup', lascia, { once: true });
+      head.addEventListener('pointercancel', lascia, { once: true });
+    });
+    $('chat').querySelector('.chat-head').addEventListener('dblclick', (e) => {
+      if (e.target.closest('button')) return;
+      Object.assign($('chat').style, { left: '', top: '', bottom: '' });
+    });
+    window.addEventListener('resize', tieniDentro);
 
     // APERTURA E COMANDI
     $('chat-open').addEventListener('click', () => {
@@ -1081,6 +1218,7 @@
     });
     $('chat-big').addEventListener('click', (e) => {
       e.currentTarget.setAttribute('aria-pressed', $('chat').classList.toggle('big'));
+      tieniDentro();
     });
     $('chat-clear').addEventListener('click', () => {
       storia.length = 0;
