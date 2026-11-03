@@ -5,10 +5,10 @@ COSA CONTIENE
 La struttura della cartella rispecchia quella di ~/.claude:
 - CLAUDE.md       istruzioni globali di Claude Code
 - settings.json   impostazioni globali di Claude Code
-- skills/         skill personali (debug, lezione, modifica-maggiore, modifica-minore, revisione)
+- skills/         skill personali (lezione, modifica-maggiore, modifica-minore, revisione)
 - shared/         file usati dalle skill:
-                  - diagramma-flusso.md + template HTML (debug, modifica-maggiore, revisione)
-                  - diagramma-pagina.md + template HTML (modifica-maggiore, MAPPA struttura)
+                  - diagramma-flusso.md + template HTML (MAPPA dati)
+                  - diagramma-pagina.md + template HTML (MAPPA struttura)
                   - scheda-richiesta.md (tutte le skill)
                   NECESSARIO: senza questa cartella le skill non funzionano
 - plugins/        mod di Claude Code (NON si copia: si installa, vedi sotto)

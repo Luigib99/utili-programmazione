@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Diagramma pagina</title>
+<title>Mappa struttura</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -12,17 +12,8 @@
     --border: #30363d;
     --text: #e6edf3;
     --muted: #8b949e;
-    --component: #3b82f6;
-    --component-bg: #0f2547;
-    --view: #8b949e;
-    --view-bg: #161b22;
-    --control: #facc15;
-    --control-bg: #3a3008;
-    --text-box: #a5d6ff;
-    --text-box-bg: #0d1a2b;
-    --list: #d2a8ff;
-    --list-bg: #241a33;
-    --accent: #ffffff;
+    --accent: #ff4fd8;
+    --chip: #ff4fd8;
     --syn-var: #79c0ff;
     --syn-string: #a5d6ff;
     --syn-number: #ffa657;
@@ -64,27 +55,6 @@
     color: var(--muted);
   }
 
-  .legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 16px;
-    color: var(--muted);
-    font-size: 12px;
-  }
-
-  .legend span {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .swatch {
-    width: 14px;
-    height: 14px;
-    border: 2px solid;
-    border-radius: 3px;
-  }
-
   .controls {
     display: flex;
     gap: 8px;
@@ -105,21 +75,110 @@
     border-color: var(--muted);
   }
 
+  button[aria-pressed="true"] {
+    border-color: var(--accent);
+  }
+
   main {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 440px;
     height: calc(100vh - 74px);
   }
 
-  #page {
+  #stage {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
     overflow: auto;
-    padding: 24px;
+    padding: 20px 24px;
   }
 
-  #screen {
-    width: 100%;
-    max-width: 640px;
-    margin: 0 auto;
+  .screen-col {
+    flex: none;
+  }
+
+  .screen-name {
+    margin: 0 0 10px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  /* Cornice del telefono: la schermata dentro ha le misure reali, la cornice la rimpicciolisce */
+  .frame {
+    overflow: hidden;
+    border: 8px solid #000;
+    border-radius: 40px;
+    box-shadow: 0 0 0 2px var(--border), 0 12px 32px rgba(0, 0, 0, .5);
+  }
+
+  .device {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform-origin: top left;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+
+  /* Ogni elemento è un flex in colonna come in React Native */
+  .el {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    cursor: pointer;
+  }
+
+  .el.text {
+    display: block;
+    white-space: pre-wrap;
+  }
+
+  .el.image {
+    align-items: center;
+    justify-content: center;
+    background-image: repeating-linear-gradient(45deg, rgba(128, 128, 128, .18) 0 8px, rgba(128, 128, 128, .08) 8px 16px);
+    color: #6b6b6b;
+    font-size: 11px;
+    text-align: center;
+  }
+
+  .el.icon {
+    align-items: center;
+    justify-content: center;
+  }
+
+  .el.hover {
+    outline: 2px dashed var(--accent);
+    outline-offset: -2px;
+  }
+
+  .el.sel {
+    outline: 3px solid var(--accent);
+    outline-offset: -3px;
+  }
+
+  .chip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 5;
+    display: none;
+    padding: 0 5px;
+    background: var(--chip);
+    border-radius: 0 0 6px 0;
+    color: #000;
+    font: 700 11px/16px system-ui, sans-serif;
+    pointer-events: none;
+  }
+
+  .el.hover > .chip,
+  .el.sel > .chip,
+  body.numbers .chip {
+    display: block;
   }
 
   #panel {
@@ -141,144 +200,7 @@
     }
   }
 
-  .box {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    padding: 6px 8px 8px;
-    border: 2px solid;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: filter .15s;
-  }
-
-  .box.component {
-    background: var(--component-bg);
-    border-color: var(--component);
-  }
-
-  .box.view {
-    background: var(--view-bg);
-    border-color: var(--view);
-    border-style: dashed;
-  }
-
-  .box.control {
-    background: var(--control-bg);
-    border-color: var(--control);
-  }
-
-  .box.text {
-    background: var(--text-box-bg);
-    border-color: var(--text-box);
-  }
-
-  .box.list {
-    background: var(--list-bg);
-    border-color: var(--list);
-  }
-
-  .box.hover {
-    filter: brightness(1.3);
-  }
-
-  .box.sel {
-    border-color: var(--accent);
-    border-style: solid;
-  }
-
-  .box.grow {
-    flex: 1;
-  }
-
-  .box-head {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2px 8px;
-    align-items: baseline;
-  }
-
-  .num {
-    padding: 0 6px;
-    background: var(--bg);
-    border: 1px solid currentColor;
-    border-radius: 9px;
-    font-size: 11px;
-    font-weight: 700;
-  }
-
-  .box.component > .box-head .num { color: var(--component); }
-  .box.view > .box-head .num { color: var(--view); }
-  .box.control > .box-head .num { color: var(--control); }
-  .box.text > .box-head .num { color: var(--text-box); }
-  .box.list > .box-head .num { color: var(--list); }
-
-  .name {
-    font-weight: 700;
-  }
-
-  .file {
-    min-width: 0;
-    overflow: hidden;
-    color: var(--muted);
-    font-size: 12px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .badge {
-    padding: 0 6px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text);
-    font-size: 11px;
-  }
-
-  .badge.condition {
-    border-color: var(--syn-number);
-    color: var(--syn-number);
-  }
-
-  .label {
-    margin-top: 2px;
-    color: var(--muted);
-    font-size: 12.5px;
-  }
-
-  .children {
-    display: flex;
-    flex: 1;
-    gap: 8px;
-    margin-top: 6px;
-  }
-
-  .children.column {
-    flex-direction: column;
-  }
-
-  .children.row {
-    flex-direction: row;
-    align-items: stretch;
-  }
-
-  .children.row > .box {
-    flex: 1 1 0;
-  }
-
-  .children.row > .box.fixed {
-    flex: 0 1 auto;
-    max-width: 35%;
-  }
-
-  .box-head > * {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
   a.code-link {
-    min-width: 0;
     color: inherit;
     text-decoration: none;
   }
@@ -316,18 +238,28 @@
   .panel-tag {
     display: inline-block;
     padding: 1px 8px;
-    border: 1px solid;
+    border: 1px solid var(--accent);
     border-radius: 4px;
+    color: var(--accent);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: .08em;
   }
 
-  .panel-tag.component { color: var(--component); }
-  .panel-tag.view { color: var(--view); }
-  .panel-tag.control { color: var(--control); }
-  .panel-tag.text { color: var(--text-box); }
-  .panel-tag.list { color: var(--list); }
+  .badge {
+    display: inline-block;
+    margin: 0 4px 4px 0;
+    padding: 0 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 12px;
+  }
+
+  .badge.condition {
+    border-color: var(--syn-number);
+    color: var(--syn-number);
+  }
 
   #panel h2 {
     margin: 10px 0 4px;
@@ -343,7 +275,6 @@
   }
 
   .route {
-    margin: 0;
     color: var(--muted);
     font-size: 13px;
   }
@@ -360,8 +291,7 @@
   code .tk-type { color: var(--syn-type); }
   code .tk-file { color: var(--syn-file); }
 
-  #panel code,
-  .box code {
+  #panel code {
     padding: 0 4px;
     background: var(--surface-2);
     border-radius: 4px;
@@ -390,6 +320,39 @@
     font: 12.5px ui-monospace, Consolas, monospace;
   }
 
+  .swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 6px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    vertical-align: -1px;
+  }
+
+  .tree {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 13px;
+  }
+
+  .tree li {
+    padding: 2px 0;
+    cursor: pointer;
+  }
+
+  .tree li:hover {
+    color: var(--accent);
+  }
+
+  .tree .num {
+    display: inline-block;
+    min-width: 34px;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
   .hint {
     color: var(--muted);
     font-size: 13px;
@@ -409,70 +372,67 @@
     <h1 id="title"></h1>
     <p class="subtitle" id="subtitle"></p>
   </div>
-  <div class="legend">
-    <span><i class="swatch" style="border-color: var(--component); background: var(--component-bg)"></i>componente</span>
-    <span><i class="swatch" style="border-color: var(--view); background: var(--view-bg); border-style: dashed"></i>contenitore</span>
-    <span><i class="swatch" style="border-color: var(--list); background: var(--list-bg)"></i>lista / pagine</span>
-    <span><i class="swatch" style="border-color: var(--control); background: var(--control-bg)"></i>pulsante / input</span>
-    <span><i class="swatch" style="border-color: var(--text-box); background: var(--text-box-bg)"></i>testo / immagine</span>
-  </div>
   <div class="controls">
-    <button id="prev" title="Riquadro precedente (freccia su)">&uarr;</button>
-    <button id="next" title="Riquadro successivo (freccia giù)">&darr;</button>
+    <button id="numbers" aria-pressed="false" title="Mostra il numero S di ogni elemento">Numeri</button>
+    <button id="prev" title="Elemento precedente (freccia su)">&uarr;</button>
+    <button id="next" title="Elemento successivo (freccia giù)">&darr;</button>
   </div>
 </header>
 <main>
-  <div id="page"><div id="screen"></div></div>
+  <div id="stage"></div>
   <aside id="panel"></aside>
   <div id="toast" role="status" hidden></div>
 </main>
 
 <!--
-  DATI DELLA PAGINA (unica parte da modificare). La pagina è un albero di riquadri uno dentro l'altro,
-  disegnati nell'ordine e nella direzione in cui compaiono sullo schermo; i numeri S1, S2… sono assegnati
-  in automatico dall'alto in basso (prima il riquadro, poi i suoi figli).
-  - name: nome nel codice (componente, View con il suo stile, es. "footerContainer") o descrizione breve
-  - kind: "component" (componente del progetto) | "view" (contenitore) | "list" (lista, pager, ripetizioni)
-          | "control" (pulsante, input, interruttore) | "text" (testo, icona, immagine)
+  DATI DELLA STRUTTURA (unica parte da modificare). Ogni schermata coinvolta è disegnata come appare sul
+  telefono: gli elementi sono div flex in colonna come in React Native, con gli stili reali presi dal codice.
+  I numeri S1, S2… sono assegnati in automatico in ordine (schermata per schermata, prima un elemento poi i suoi figli).
+  - device: (opzionale) { "width": 390, "height": 844 } misure del telefono simulato
+  - screens: [{ "name": "cosa mostra", "background": colore di fondo, "root": elemento }]
+  Elemento:
+  - name: nome nel codice (componente o chiave di stile, es. "footer", "nextButton") o descrizione breve
+  - kind: "component" | "view" | "list" | "control" | "text" | "image" | "icon"
   - file, path, line: dove si trova; path assoluto con "/" e riga verificata: rendono cliccabile il nome
-  - label: (opzionale) cosa si vede, una riga (es. "titolo in maiuscolo", "freccia →")
-  - direction: (opzionale) "column" (predefinita) | "row": come sono messi i figli
-  - grow: (opzionale) true se il riquadro occupa lo spazio libero (flex: 1)
-  - fixed: (opzionale) true se in una riga ha larghezza fissa (es. un pulsante tondo)
-  - condition: (opzionale) quando compare (es. "solo admin", "pagina 9")
-  - badges: (opzionale) note brevi sul riquadro (es. "×10", "copia di S5", "position: absolute")
-  - explanation: cosa è e cosa fa il riquadro, 1-3 frasi semplici
-  - props: (opzionale) { "nomeProp": "valore o significato" }
-  - style: (opzionale) { "proprietà": "valore" } solo gli stili che contano per la grafica (colori, misure, posizione)
-  - terms: (opzionale) { "termine": "significato semplice" }
-  - children: (opzionale) riquadri contenuti, in ordine di comparsa
-  - nei testi, il codice va tra backtick (`esempio`) e viene mostrato come codice
+  - style: lo stile React Native REALE, già risolto: colori in esadecimale (non "colors.primary"), numeri in punti,
+           percentuali come stringhe ("100%"), fontWeight numerico al posto di fontFamily (Regular 400, SemiBold 600, Bold 700);
+           paddingHorizontal/Vertical, marginHorizontal/Vertical e elevation sono convertiti dal template
+  - styleSource: (opzionale) { "proprietà": "da dove arriva", es. "colors.secondary", "theme.textMuted", "globalStyles.tutorialTitle" }
+  - text: testo che si vede (traduzione nella lingua principale del progetto)
+  - glyph: per le icone, un carattere che le rappresenta (es. "←", "✕", "☰")
+  - image: per le immagini, cosa mostrano (es. "logo Cryptank"); le misure vanno in style
+  - condition: (opzionale) quando compare (es. "solo admin", "dalla 2ª pagina")
+  - badges: (opzionale) note brevi (es. "×11 pallini", "position: absolute")
+  - explanation: cosa è, 1-2 frasi semplici
+  - props, terms: (opzionali) { "nome": "valore o significato" }
+  - children: (opzionale) elementi contenuti, in ordine di comparsa
   Non inserire la sequenza </script> nel JSON.
 -->
 <script id="page-data" type="application/json">
 {
-  "title": "Titolo della pagina",
+  "title": "Titolo",
   "subtitle": "progetto · data · cosa rappresenta",
-  "root": {
-    "name": "Schermata", "kind": "component", "file": "Schermata.jsx",
-    "explanation": "Il componente principale della pagina.",
-    "children": [
-      { "name": "header", "kind": "view", "direction": "row", "label": "barra in alto",
-        "explanation": "Contenitore del titolo.",
+  "screens": [
+    {
+      "name": "Schermata",
+      "background": "#f1f1f0",
+      "root": {
+        "name": "root", "kind": "view", "style": { "flex": 1 },
+        "explanation": "La schermata.",
         "children": [
-          { "name": "Titolo", "kind": "text", "label": "testo del titolo", "explanation": "Il titolo della pagina." },
-          { "name": "Chiudi", "kind": "control", "fixed": true, "label": "X", "explanation": "Chiude la pagina." }
+          { "name": "header", "kind": "view", "style": { "backgroundColor": "#05364b", "padding": 20 },
+            "children": [ { "name": "titolo", "kind": "text", "text": "Titolo", "style": { "color": "#ffffff", "fontSize": 18, "fontWeight": 700 } } ] }
         ]
-      },
-      { "name": "contenuto", "kind": "list", "grow": true, "badges": ["×3"], "explanation": "Le pagine scorrevoli." }
-    ]
-  }
+      }
+    }
+  ]
 }
 </script>
 
 <script>
-  const PAGE = JSON.parse(document.getElementById('page-data').textContent);
-  const boxes = [];
+  const DATA = JSON.parse(document.getElementById('page-data').textContent);
+  const DEVICE = { width: 390, height: 844, ...(DATA.device || {}) };
+  const elements = [];
   const state = { selected: null };
 
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -498,9 +458,9 @@
     .map((part) => (/^`[^`]+`$/.test(part) ? `<code>${highlight(part.slice(1, -1))}</code>` : esc(part)))
     .join('');
 
-  const codeLink = (box, line, inner) => {
-    if (!box.path) return inner;
-    const target = `${box.path.replace(/\\/g, '/')}:${line || 1}`;
+  const codeLink = (item, line, inner) => {
+    if (!item.path) return inner;
+    const target = `${item.path.replace(/\\/g, '/')}:${line || 1}`;
     const href = encodeURI(`vscode://file/${target}:1`);
     return `<a class="code-link" href="${esc(href)}" data-copy="${esc(target)}" title="Apri in VS Code (nel browser integrato: copia il percorso per Ctrl+P)">${inner}</a>`;
   };
@@ -541,31 +501,51 @@
       : 'Copia non riuscita: apri il file in un browser esterno per usare il link diretto');
   });
 
-  // RENDER RIQUADRI
-  // Il file si mostra nel riquadro solo se cambia rispetto a quello del contenitore
-  function renderBox(box, parentFile = null) {
-    const index = boxes.length;
-    box.number = `S${index + 1}`;
-    boxes.push(box);
+  // CONVERSIONE STILE REACT NATIVE → CSS
+  const PX = /^(width|height|min|max|padding|margin|top|left|right|bottom|border.*(Radius|Width)|fontSize|lineHeight|gap|rowGap|columnGap|letterSpacing)/;
+  const IGNORED = new Set(['resizeMode', 'shadowColor', 'shadowOpacity', 'shadowRadius', 'shadowOffset', 'elevation', 'transform', 'tintColor', 'includeFontPadding', 'textAlignVertical']);
 
-    const kind = box.kind || 'view';
+  function toCss(style = {}) {
+    const css = {};
+    Object.entries(style).forEach(([key, value]) => {
+      if (IGNORED.has(key)) return;
+      const v = typeof value === 'number' && PX.test(key) ? `${value}px` : value;
+      if (key === 'paddingHorizontal') Object.assign(css, { paddingLeft: v, paddingRight: v });
+      else if (key === 'paddingVertical') Object.assign(css, { paddingTop: v, paddingBottom: v });
+      else if (key === 'marginHorizontal') Object.assign(css, { marginLeft: v, marginRight: v });
+      else if (key === 'marginVertical') Object.assign(css, { marginTop: v, marginBottom: v });
+      else if (key === 'flex' && typeof value === 'number') css.flex = value > 0 ? `${value} 1 0%` : 'none';
+      else css[key] = v;
+    });
+    if (Object.keys(style).some((key) => /^border\w*Width$/.test(key))) css.borderStyle = style.borderStyle || 'solid';
+    if (style.elevation || style.shadowOpacity) {
+      const blur = style.shadowRadius ?? (style.elevation || 4) * 1.5;
+      css.boxShadow = `0 ${style.shadowOffset?.height ?? 2}px ${blur}px rgba(0, 0, 0, ${style.shadowOpacity ?? 0.25})`;
+    }
+    return css;
+  }
+
+  // RENDER ELEMENTI
+  function renderElement(item, screenName) {
+    const index = elements.length;
+    item.number = `S${index + 1}`;
+    item.screenName = screenName;
+    elements.push(item);
+
+    const kind = item.kind || 'view';
     const div = document.createElement('div');
-    div.className = ['box', kind, box.grow ? 'grow' : '', box.fixed ? 'fixed' : ''].join(' ');
+    div.className = `el ${kind}`;
     div.dataset.i = index;
+    Object.assign(div.style, toCss(item.style));
 
-    const badges = [
-      box.condition ? `<span class="badge condition">${esc(box.condition)}</span>` : '',
-      ...(box.badges || []).map((b) => `<span class="badge">${esc(b)}</span>`),
-    ].join('');
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.textContent = item.number;
+    div.appendChild(chip);
 
-    div.innerHTML = `
-      <div class="box-head">
-        <span class="num">${box.number}</span>
-        ${codeLink(box, box.line, `<span class="name">${esc(box.name)}</span>`)}
-        ${box.file && box.file !== parentFile ? codeLink(box, 1, `<span class="file">${esc(box.file)}</span>`) : ''}
-        ${badges}
-      </div>
-      ${box.label ? `<div class="label">${fmt(box.label)}</div>` : ''}`;
+    if (item.text !== undefined) div.appendChild(document.createTextNode(item.text));
+    if (item.glyph) div.appendChild(document.createTextNode(item.glyph));
+    if (item.image) div.appendChild(document.createTextNode(item.image));
 
     div.addEventListener('click', (e) => {
       if (e.target.closest('a.code-link')) return;
@@ -574,18 +554,44 @@
     });
     div.addEventListener('mouseover', (e) => {
       e.stopPropagation();
-      document.querySelectorAll('.box.hover').forEach((b) => b.classList.remove('hover'));
+      document.querySelectorAll('.el.hover').forEach((el) => el.classList.remove('hover'));
       div.classList.add('hover');
     });
     div.addEventListener('mouseleave', () => div.classList.remove('hover'));
 
-    if (box.children && box.children.length) {
-      const children = document.createElement('div');
-      children.className = `children ${box.direction === 'row' ? 'row' : 'column'}`;
-      box.children.forEach((child) => children.appendChild(renderBox(child, box.file || parentFile)));
-      div.appendChild(children);
-    }
+    (item.children || []).forEach((child) => div.appendChild(renderElement(child, screenName)));
     return div;
+  }
+
+  // RENDER SCHERMATE
+  function renderScreens() {
+    const stage = document.getElementById('stage');
+    const available = Math.max(320, stage.clientHeight - 80);
+    const scale = Math.min(1, available / DEVICE.height);
+
+    DATA.screens.forEach((screen) => {
+      const col = document.createElement('div');
+      col.className = 'screen-col';
+      col.innerHTML = `<p class="screen-name">${esc(screen.name)}</p>`;
+
+      const frame = document.createElement('div');
+      frame.className = 'frame';
+      frame.style.width = `${DEVICE.width * scale + 16}px`;
+      frame.style.height = `${DEVICE.height * scale + 16}px`;
+
+      const device = document.createElement('div');
+      device.className = 'device';
+      Object.assign(device.style, {
+        width: `${DEVICE.width}px`,
+        height: `${DEVICE.height}px`,
+        transform: `scale(${scale})`,
+        background: screen.background || '#ffffff',
+      });
+      device.appendChild(renderElement(screen.root, screen.name));
+      frame.appendChild(device);
+      col.appendChild(frame);
+      stage.appendChild(col);
+    });
   }
 
   // RENDER PANNELLO
@@ -593,51 +599,73 @@
     const panel = document.getElementById('panel');
 
     if (state.selected === null) {
+      const byScreen = DATA.screens.map((screen) => {
+        const items = elements.filter((el) => el.screenName === screen.name);
+        return `<h3>${esc(screen.name)}</h3><ul class="tree">${items
+          .map((el) => `<li data-i="${elements.indexOf(el)}"><span class="num">${el.number}</span>${esc(el.name)}${el.text ? ` <span class="route">"${esc(el.text.slice(0, 30))}${el.text.length > 30 ? '…' : ''}"</span>` : ''}</li>`)
+          .join('')}</ul>`;
+      }).join('');
       panel.innerHTML = `
-        <h2>Come leggere il diagramma</h2>
-        <p class="hint">Ogni riquadro è un pezzo della pagina, messo dove compare sullo schermo: i riquadri dentro un altro sono i suoi contenuti. Le proporzioni sono indicative, ricavate dal codice.</p>
-        <p class="hint">I numeri <b>S1, S2…</b> sono il riferimento comune: puoi scrivere "sposta S4 sopra S2". Clicca un riquadro per vedere file, props e stile.</p>
-        <p class="hint">Usa <kbd>&uarr;</kbd> <kbd>&darr;</kbd> per scorrere i riquadri, <kbd>Esc</kbd> per tornare qui.</p>`;
+        <h2>Come leggere la mappa</h2>
+        <p class="hint">Ogni schermata è disegnata come appare sul telefono, con gli stili presi dal codice: le proporzioni sono simulate, testi e colori sono quelli reali.</p>
+        <p class="hint">Passa il mouse su un elemento per vedere il suo numero <b>S</b>, cliccalo per vedere file, props e stile. Con <b>Numeri</b> li vedi tutti insieme.</p>
+        <p class="hint">Usa <kbd>&uarr;</kbd> <kbd>&darr;</kbd> per scorrere gli elementi, <kbd>Esc</kbd> per tornare qui.</p>
+        ${byScreen}`;
+      panel.querySelectorAll('.tree li').forEach((li) => li.addEventListener('click', () => select(Number(li.dataset.i))));
       return;
     }
 
-    const box = boxes[state.selected];
-    const kind = box.kind || 'view';
-    const KIND_LABELS = { component: 'COMPONENTE', view: 'CONTENITORE', list: 'LISTA / PAGINE', control: 'PULSANTE / INPUT', text: 'TESTO / IMMAGINE' };
+    const item = elements[state.selected];
+    const KIND_LABELS = { component: 'COMPONENTE', view: 'CONTENITORE', list: 'LISTA / PAGINE', control: 'PULSANTE / INPUT', text: 'TESTO', image: 'IMMAGINE', icon: 'ICONA' };
+    const isColor = (v) => typeof v === 'string' && /^(#|rgb|hsl)/.test(v);
+    const styleRows = Object.entries(item.style || {}).map(([k, v]) => {
+      const value = typeof v === 'object' ? JSON.stringify(v) : String(v);
+      const source = item.styleSource?.[k] ? ` <span class="route">· ${esc(item.styleSource[k])}</span>` : '';
+      return `<dt>${esc(k)}</dt><dd>${isColor(v) ? `<i class="swatch" style="background:${esc(v)}"></i>` : ''}<code>${esc(value)}</code>${source}</dd>`;
+    }).join('');
     const list = (title, entries, cls) => (entries.length
       ? `<h3>${title}</h3><dl class="terms ${cls}">${entries.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${fmt(String(v))}</dd>`).join('')}</dl>`
       : '');
-    const children = (box.children || []).map((c) => `${c.number} ${esc(c.name)}`).join(' · ');
+    const children = (item.children || []).map((c) => `${c.number} ${esc(c.name)}`).join(' · ');
+    const badges = [
+      item.condition ? `<span class="badge condition">compare: ${esc(item.condition)}</span>` : '',
+      ...(item.badges || []).map((b) => `<span class="badge">${esc(b)}</span>`),
+    ].join('');
 
     panel.innerHTML = `
-      <span class="panel-tag ${kind}">${KIND_LABELS[kind] || kind}</span>
-      <h2>${box.number}. ${codeLink(box, box.line, esc(box.name))}${box.file ? ` ${codeLink(box, 1, `<span class="route">${esc(box.file)}</span>`)}` : ''}</h2>
-      ${box.path ? `<p class="hint">Clic sul nome per aprirlo in VS Code${box.line ? ` alla riga ${box.line}` : ''}.</p>` : ''}
-      ${box.condition ? `<p class="route">Compare: ${esc(box.condition)}</p>` : ''}
-      ${box.explanation ? `<h3>Cos'è</h3><p class="explanation">${fmt(box.explanation)}</p>` : ''}
+      <span class="panel-tag">${KIND_LABELS[item.kind] || 'ELEMENTO'}</span>
+      <h2>${item.number}. ${codeLink(item, item.line, esc(item.name))}${item.file ? ` <span class="route">·</span> ${codeLink(item, 1, `<span class="route">${esc(item.file)}</span>`)}` : ''}</h2>
+      <p class="route">${esc(item.screenName)}</p>
+      ${badges ? `<p>${badges}</p>` : ''}
+      ${item.explanation ? `<h3>Cos'è</h3><p class="explanation">${fmt(item.explanation)}</p>` : ''}
+      ${item.text ? `<h3>Testo</h3><p class="explanation">${esc(item.text)}</p>` : ''}
       ${children ? `<h3>Contiene</h3><p class="explanation">${children}</p>` : ''}
-      ${list('Props', Object.entries(box.props || {}), 'code')}
-      ${list('Stile', Object.entries(box.style || {}), 'code')}
-      ${list('Termini', Object.entries(box.terms || {}), '')}`;
+      ${list('Props', Object.entries(item.props || {}), 'code')}
+      ${styleRows ? `<h3>Stile</h3><dl class="terms code">${styleRows}</dl>` : ''}
+      ${list('Termini', Object.entries(item.terms || {}), '')}`;
   }
 
   // SELEZIONE E NAVIGAZIONE
   function select(i) {
     state.selected = i;
-    document.querySelectorAll('.box').forEach((b) => b.classList.toggle('sel', i !== null && Number(b.dataset.i) === i));
+    document.querySelectorAll('.el').forEach((el) => el.classList.toggle('sel', i !== null && Number(el.dataset.i) === i));
     renderPanel();
   }
 
   function move(delta) {
     const current = state.selected === null ? -1 : state.selected;
-    const next = Math.min(Math.max(current + delta, 0), boxes.length - 1);
+    const next = Math.min(Math.max(current + delta, 0), elements.length - 1);
     select(next);
-    document.querySelector(`.box[data-i="${next}"]`).scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    document.querySelector(`.el[data-i="${next}"]`).scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 
-  document.getElementById('title').textContent = PAGE.title;
-  document.getElementById('subtitle').textContent = PAGE.subtitle || '';
-  document.getElementById('screen').appendChild(renderBox(PAGE.root));
+  document.getElementById('title').textContent = DATA.title;
+  document.getElementById('subtitle').textContent = DATA.subtitle || '';
+  renderScreens();
+  document.getElementById('numbers').addEventListener('click', (e) => {
+    const on = document.body.classList.toggle('numbers');
+    e.currentTarget.setAttribute('aria-pressed', on);
+  });
   document.getElementById('prev').addEventListener('click', () => move(-1));
   document.getElementById('next').addEventListener('click', () => move(1));
   document.addEventListener('keydown', (e) => {
@@ -654,11 +682,11 @@
 
   renderPanel();
 
-  // Apertura diretta su un riquadro: file.html#S3
+  // Apertura diretta su un elemento: file.html#S3
   const fromHash = location.hash.match(/^#S(\d+)$/i);
   if (fromHash) {
     const target = Number(fromHash[1]) - 1;
-    if (target >= 0 && target < boxes.length) select(target);
+    if (target >= 0 && target < elements.length) select(target);
   }
 </script>
 </body>

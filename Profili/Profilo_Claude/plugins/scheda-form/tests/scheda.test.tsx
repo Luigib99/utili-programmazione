@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-const SCHEMA = '/modifica-maggiore\nTITOLO: \nOBIETTIVO: \nDOVE: \nMAPPA: \nNOTE: '
+const SCHEMA = '/modifica-maggiore\nTITOLO: \nOBIETTIVO: \nDOVE: \nMAPPA: \nPROBLEMA: \nNOTE: '
 
 test('senza testo riempie la casella con lo schema e non lancia la skill', async ($, on) => {
   const eseguiti: string[] = []
@@ -102,7 +102,7 @@ test('il TITOLO della scheda diventa il titolo della sessione', async ($, on) =>
   const conTitolo = await $.classic.UserPromptSubmit({
     prompt: '/modifica-maggiore\nTITOLO: Tutorial nuovo\nOBIETTIVO: pagine leggibili',
   })
-  const senzaTitolo = await $.classic.UserPromptSubmit({ prompt: '/debug\nATTESO: x' })
+  const senzaTitolo = await $.classic.UserPromptSubmit({ prompt: '/revisione\nFOCUS: logica' })
   const altroTesto = await $.classic.UserPromptSubmit({ prompt: 'ciao' })
 
   expect(conTitolo.sessionTitle).toBe('Tutorial nuovo')
@@ -110,7 +110,7 @@ test('il TITOLO della scheda diventa il titolo della sessione', async ($, on) =>
   expect(altroTesto.sessionTitle).toBeUndefined()
 })
 
-test('debug richiede TITOLO e MAPPA, lezione accetta la MAPPA vuota', async ($, on) => {
+test('revisione richiede TITOLO e MAPPA, lezione accetta la MAPPA vuota', async ($, on) => {
   const eseguiti: string[] = []
   on('prompt.fill', () => ({ isFilled: true }))
   on('command.run', (_, e) => {
@@ -118,12 +118,12 @@ test('debug richiede TITOLO e MAPPA, lezione accetta la MAPPA vuota', async ($, 
     return { text: 'skill avviata' }
   })
 
-  const debug = await $.command.run({
-    command: 'debug',
-    args: 'ATTESO: si apre\nOSSERVATO: resta bianca\nCOME RIPRODURLO: apro la chat',
+  const revisione = await $.command.run({
+    command: 'revisione',
+    args: 'COSA REVISIONARE: Chat.jsx\nFOCUS: logica',
   })
   await $.command.run({ command: 'lezione', args: 'TITOLO: useEffect\nARGOMENTO: useEffect\nMAPPA: ' })
 
-  expect(debug.text).toContain('compila TITOLO, MAPPA')
+  expect(revisione.text).toContain('compila TITOLO, MAPPA')
   expect(eseguiti).toEqual(['lezione: TITOLO: useEffect\nARGOMENTO: useEffect'])
 })

@@ -1,36 +1,38 @@
-# Diagramma della pagina
+# Diagramma della struttura
 
-Regole per il diagramma della **struttura** (`MAPPA` `struttura` delle skill): mostra **com'è fatta** una schermata (struttura e grafica), non come si muovono i dati. Le regole specifiche di una skill restano nel suo SKILL.md e hanno la precedenza su queste.
+Regole per il diagramma della **struttura** (`MAPPA` `struttura` delle skill): ogni schermata coinvolta è **disegnata come appare sul telefono**, così l'utente riconosce ogni elemento a colpo d'occhio, ne vede la posizione e, cliccandolo, le proprietà. Le regole specifiche di una skill restano nel suo SKILL.md e hanno la precedenza su queste.
 
 ## Formato
 
 - il diagramma è una pagina HTML interattiva, sfondo scuro, generata dal template `~/.claude/shared/diagramma-pagina-template.html`.
 - copia il template e sostituisci **solo** il JSON dentro `<script id="page-data">`: non modificare HTML, CSS o JS del template (le regole del JSON sono nel commento sopra il blocco).
 
-## Contenuto
+## Schermate
 
-- la pagina è un **albero di riquadri uno dentro l'altro**, disegnati nell'ordine e nella direzione (`direction`) in cui compaiono sullo schermo, ricavati da JSX e stili: chi sta sopra nel codice sta sopra nel disegno, un contenitore con `flexDirection: 'row'` mette i figli in riga.
-- un riquadro per ogni pezzo **visibile o strutturale** che serve alla richiesta: componenti del progetto, contenitori con uno stile proprio, liste e pager, pulsanti, testi e icone principali. Non disegnare i wrapper senza stile né ruolo.
-- `kind`: `component` per i componenti del progetto (anche importati da altri file), `view` per i contenitori, `list` per liste, pager e ripetizioni, `control` per ciò che si tocca, `text` per testi, icone e immagini.
-- `name`: il nome nel codice (es. `TutorialPage3`, `footerContainer`); per un elemento senza nome, una descrizione breve.
-- `file` + `path` + `line`: come nel diagramma del flusso (percorso **assoluto** con `/`, riga verificata leggendo il file).
-- `condition`: quando il riquadro compare solo in certi casi (es. "solo admin", "dopo l'ultima pagina"). Se due rami alternativi hanno una struttura diversa, disegnali entrambi, ognuno con la sua `condition`.
-- `badges`: fatti strutturali utili a decidere, brevi: ripetizioni (`×10`), duplicati (`copia di S5`), posizionamento fuori dal flusso (`position: absolute`), valori scritti a mano che si ripetono.
-- un componente figlio (es. le singole pagine) si **espande** con i suoi riquadri solo se la richiesta lo riguarda; altrimenti resta un riquadro unico con `badges` o `label` che dicono cosa contiene.
-- `style`: solo gli stili che contano per la grafica (colori, misure, margini, bordi, posizione), con i valori reali; per i colori del tema indica anche il token (es. `colors.primary`).
-- `props`: solo quelle che cambiano aspetto o comportamento del riquadro.
-- `explanation`: 1-3 frasi semplici con soggetto esplicito; `terms` come nel diagramma del flusso.
-- **dati sensibili**: stesse regole del diagramma del flusso, mai valori reali.
-- massimo ~25 riquadri: oltre, raggruppa le parti non interessate dalla richiesta.
+- una voce in `screens` per ogni schermata (o stato della stessa schermata) interessata dalla richiesta: più schermate coinvolte, più telefoni affiancati (es. "Pagina 1", "Ultima pagina" se cambiano pulsanti o contenuto).
+- `name` dice cosa mostra la schermata; nel `subtitle` indica piattaforma, tema e ruolo simulati (es. "Android, tema chiaro, admin").
+- `background`: il colore di fondo reale della schermata.
 
-## Riferimenti ai riquadri
+## Elementi
 
-- i numeri **S1, S2…** sono assegnati dal template dall'alto in basso (prima un riquadro, poi i suoi figli) e sono il riferimento comune per tutta la richiesta.
-- nelle fasi successive indica i riquadri come "S4 (`footerContainer`)".
-- l'utente può scrivere "sposta S4 sopra S2", "S3 più grande": interpreta ogni numero come il riquadro corrispondente; se non esiste o è ambiguo, chiedi.
-- non rigenerare il diagramma con una numerazione diversa durante la stessa richiesta; un disegno nuovo (es. la pagina dopo la modifica) va in un file nuovo, dichiarando che da quel momento i numeri si riferiscono a quel file.
+- l'albero degli elementi segue il JSX reale, dal componente più esterno (es. il modale) fino a testi, icone e immagini: ogni elemento visibile o con uno stile proprio è un nodo. Non disegnare i wrapper senza stile né ruolo.
+- `style`: lo stile **reale e completo** di quell'elemento, unendo tutti gli stili applicati (StyleSheet, `globalStyles`, stili inline, tema), con i valori **risolti**: colori in esadecimale, misure in numeri, percentuali come stringhe. `fontFamily` diventa `fontWeight` numerico (Regular 400, SemiBold 600, Bold 700). Per le misure calcolate a runtime usa una stima realistica e dillo in `explanation`.
+- `styleSource`: da dove arriva ogni valore che non è scritto nel componente stesso (es. `theme.textMuted`, `colors.secondary`, `globalStyles.tutorialTitle`).
+- `text`: il testo che si vede davvero, con la traduzione nella lingua principale del progetto; `glyph` per le icone; `image` per descrivere un'immagine, con le misure in `style`.
+- `kind`: `component` (componente del progetto), `view` (contenitore), `list` (liste, pager, ripetizioni), `control` (ciò che si tocca), `text`, `image`, `icon`.
+- liste e ripetizioni: disegna gli elementi ripetuti come appaiono (es. tutti i pallini), ma per liste lunghe di contenuti (es. 50 messaggi) disegnane 3-4 e indica il totale in `badges`.
+- `condition` per ciò che compare solo in certi casi; `badges` per i fatti utili a decidere (ripetizioni, duplicati, `position: absolute`, valori scritti a mano).
+- `name`, `file`, `path`, `line`, `explanation`, `props`, `terms`: come nel diagramma dei dati (percorso **assoluto** con `/`, riga verificata leggendo il file).
+- **dati sensibili**: stesse regole del diagramma dei dati; testi di esempio al posto di dati personali reali.
+
+## Riferimenti agli elementi
+
+- i numeri **S1, S2…** sono assegnati dal template in ordine (schermata per schermata, prima un elemento poi i suoi figli) e sono il riferimento comune per tutta la richiesta.
+- nelle fasi successive indica gli elementi come "S4 (`nextButton`)".
+- l'utente può scrivere "sposta S4 sopra S2", "S3 più grande": interpreta ogni numero come l'elemento corrispondente; se non esiste o è ambiguo, chiedi.
+- non rigenerare il diagramma con una numerazione diversa durante la stessa richiesta; un disegno nuovo (es. la schermata dopo la modifica) va in un file nuovo, dichiarando che da quel momento i numeri si riferiscono a quel file.
 
 ## Salvataggio
 
 - salva in `~/flussi/<nome-cartella-progetto>/<AAAA-MM-GG>-<titolo-in-kebab-case>-struttura.html` (il `TITOLO` della scheda); crea la cartella se non esiste.
-- in chat indica solo il percorso del file (cliccabile), nel blocco della skill che mostra il diagramma (MAPPA o DIAGRAMMA).
+- in chat indica solo il percorso del file (cliccabile), nel blocco della skill che mostra il diagramma.

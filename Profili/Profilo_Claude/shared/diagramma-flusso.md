@@ -1,6 +1,6 @@
 # Diagramma del flusso
 
-Regole comuni alle skill che, nella fase DIAGRAMMA (o MAPPA `dati`), devono generare un diagramma. Le regole specifiche di una skill (es. neutralità nel debug) restano nel suo SKILL.md e hanno la precedenza su queste.
+Regole comuni alle skill che, nella fase DIAGRAMMA (o MAPPA `dati`), devono generare un diagramma. Le regole specifiche di una skill (es. neutralità con un PROBLEMA in modifica-maggiore) restano nel suo SKILL.md e hanno la precedenza su queste.
 
 ## Formato
 

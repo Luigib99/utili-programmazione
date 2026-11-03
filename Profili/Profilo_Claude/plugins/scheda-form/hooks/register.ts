@@ -9,6 +9,7 @@ const SCHEDE: Record<string, readonly Campo[]> = {
     { nome: 'OBIETTIVO', obbligatorio: true, aiuto: 'cosa vuoi ottenere' },
     { nome: 'DOVE', obbligatorio: true, aiuto: 'pagina, flusso o file' },
     { nome: 'MAPPA', obbligatorio: true, aiuto: 'dati, struttura o entrambi', valori: ['dati', 'struttura', 'entrambi'] },
+    { nome: 'PROBLEMA', obbligatorio: false, aiuto: 'se è un bug: cosa succede, cosa ti aspettavi, come riprodurlo, dove (piattaforma, dispositivo)' },
     { nome: 'NOTE', obbligatorio: false, aiuto: 'tutto il resto: vincoli, dubbi, esempi' },
   ],
   'modifica-minore': [
@@ -18,17 +19,6 @@ const SCHEDE: Record<string, readonly Campo[]> = {
     { nome: 'VALORE NUOVO', obbligatorio: false, aiuto: 'il valore finale (vuoto: ti propongo quelli del progetto)' },
     { nome: 'VINCOLI', obbligatorio: false, aiuto: 'cosa non deve cambiare' },
     { nome: 'MAPPA', obbligatorio: false, aiuto: 'dati, struttura o entrambi (vuoto: nessun diagramma)', valori: ['dati', 'struttura', 'entrambi'] },
-  ],
-  debug: [
-    { nome: 'TITOLO', obbligatorio: true, aiuto: 'nome breve: diventa il titolo della sessione' },
-    { nome: 'ATTESO', obbligatorio: true, aiuto: 'cosa dovrebbe succedere' },
-    { nome: 'OSSERVATO', obbligatorio: true, aiuto: 'cosa succede invece: messaggio, schermata, comportamento' },
-    { nome: 'COME RIPRODURLO', obbligatorio: true, aiuto: 'i passi, e se succede sempre o solo a volte' },
-    { nome: 'AMBIENTE', obbligatorio: false, aiuto: 'piattaforma, ambiente, emulatore o fisico, debug o release (vuoto: te lo chiedo)' },
-    { nome: 'DA QUANDO', obbligatorio: false, aiuto: 'da sempre o da un aggiornamento, commit, branch' },
-    { nome: 'ERRORI', obbligatorio: false, aiuto: 'log o messaggi di errore' },
-    { nome: 'COSA NON SO', obbligatorio: false, aiuto: 'dubbi da chiarire prima di procedere' },
-    { nome: 'MAPPA', obbligatorio: true, aiuto: 'dati, struttura o entrambi', valori: ['dati', 'struttura', 'entrambi'] },
   ],
   revisione: [
     { nome: 'TITOLO', obbligatorio: true, aiuto: 'nome breve: diventa il titolo della sessione' },
