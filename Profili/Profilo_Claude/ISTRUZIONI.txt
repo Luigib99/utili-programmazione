@@ -9,6 +9,9 @@ La struttura della cartella rispecchia quella di ~/.claude:
 - shared/         file usati dalle skill:
                   - diagramma-flusso.md + template HTML (MAPPA dati)
                   - diagramma-pagina.md + template HTML (MAPPA struttura)
+                  - chat-mappa.md + chat-mappa-server.js (chat in basso a sinistra
+                    nelle mappe; serve Node.js, il gettone si crea da solo in
+                    ~/.claude/chat-mappa-token e NON va copiato nella repo)
                   - scheda-richiesta.md (tutte le skill)
                   NECESSARIO: senza questa cartella le skill non funzionano
 - plugins/        mod di Claude Code (NON si copia: si installa, vedi sotto)

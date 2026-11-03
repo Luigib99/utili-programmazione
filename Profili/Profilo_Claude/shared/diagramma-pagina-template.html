@@ -21,6 +21,8 @@
     --syn-function: #d2a8ff;
     --syn-type: #56d4dd;
     --syn-file: #8b949e;
+    --chat: #8b5cf6;
+    --chat-bg: #2a1f4a;
     color-scheme: dark;
   }
 
@@ -364,6 +366,221 @@
     border-radius: 4px;
     font-size: 12px;
   }
+  /* CHAT DELLA MAPPA */
+  #chat-open {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    background: var(--chat);
+    border: 0;
+    border-radius: 50%;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+    color: #fff;
+  }
+
+  #chat-open:hover {
+    filter: brightness(1.15);
+  }
+
+  #chat-open .dot {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    background: var(--muted);
+    border: 2px solid var(--bg);
+    border-radius: 50%;
+  }
+
+  #chat-open .dot.on {
+    background: #3fb950;
+  }
+
+  #chat-open .dot.off {
+    background: #f85149;
+  }
+
+  #chat {
+    position: fixed;
+    bottom: 84px;
+    left: 20px;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    width: min(400px, calc(100vw - 40px));
+    height: min(480px, calc(100vh - 110px));
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .6);
+  }
+
+  #chat[hidden] {
+    display: none;
+  }
+
+  #chat.big {
+    width: min(620px, calc(100vw - 40px));
+    height: calc(100vh - 110px);
+  }
+
+  #chat .chat-head {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #chat .chat-head b {
+    flex: 1;
+    font-size: 14px;
+  }
+
+  #chat .chat-head button {
+    padding: 2px 8px;
+    font-size: 13px;
+  }
+
+  #chat-log {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    overflow: auto;
+    padding: 12px;
+  }
+
+  #chat-log .msg {
+    max-width: 92%;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  #chat-log .msg.utente {
+    align-self: flex-end;
+    background: var(--chat-bg);
+    border: 1px solid var(--chat);
+  }
+
+  #chat-log .msg.claude {
+    align-self: flex-start;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+  }
+
+  #chat-log .msg.info {
+    align-self: stretch;
+    max-width: none;
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+
+  #chat-log .msg.errore {
+    align-self: stretch;
+    max-width: none;
+    border: 1px solid #f85149;
+    color: #ffa198;
+  }
+
+  #chat-log .msg .ctx {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  #chat-log code {
+    padding: 0 4px;
+    background: var(--bg);
+    border-radius: 4px;
+    font: 12.5px ui-monospace, Consolas, monospace;
+  }
+
+  #chat-log pre {
+    margin: 6px 0;
+    padding: 8px 10px;
+    overflow-x: auto;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font: 12.5px/1.5 ui-monospace, Consolas, monospace;
+  }
+
+  #chat-log pre code {
+    padding: 0;
+  }
+
+  #chat-log .par {
+    margin: 0 0 6px;
+  }
+
+  #chat-log .par:last-child {
+    margin-bottom: 0;
+  }
+
+  #chat-log ul {
+    margin: 0 0 6px;
+    padding-left: 18px;
+  }
+
+  #chat .chat-ctx {
+    padding: 6px 12px 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  #chat .chat-ctx b {
+    color: var(--chat);
+  }
+
+  #chat form {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px 12px;
+  }
+
+  #chat textarea {
+    flex: 1;
+    min-height: 40px;
+    max-height: 140px;
+    padding: 8px 10px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font: inherit;
+    font-size: 13.5px;
+    resize: none;
+  }
+
+  #chat textarea:focus {
+    border-color: var(--chat);
+    outline: none;
+  }
+
+  #chat form button {
+    align-self: flex-end;
+    background: var(--chat);
+    border-color: var(--chat);
+    color: #fff;
+  }
+
+  #chat form button:disabled {
+    opacity: .5;
+    cursor: default;
+  }
 </style>
 </head>
 <body>
@@ -383,6 +600,21 @@
   <aside id="panel"></aside>
   <div id="toast" role="status" hidden></div>
 </main>
+<button id="chat-open" title="Chiedi sulla mappa"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M9 10h6M9 14h4"/></svg><i class="dot"></i></button>
+<section id="chat" hidden>
+  <div class="chat-head">
+    <b>Chiedi sulla mappa</b>
+    <button id="chat-clear" title="Ricomincia la conversazione">Nuova</button>
+    <button id="chat-big" title="Alza / abbassa la chat">&#x2922;</button>
+    <button id="chat-close" title="Chiudi (la conversazione resta finché la pagina è aperta)">&#x2715;</button>
+  </div>
+  <div id="chat-log"></div>
+  <div class="chat-ctx" id="chat-ctx"></div>
+  <form id="chat-form">
+    <textarea id="chat-input" rows="2" placeholder="Fai una domanda… (Invio invia, Shift+Invio va a capo)"></textarea>
+    <button type="submit" id="chat-send">Invia</button>
+  </form>
+</section>
 
 <!--
   DATI DELLA STRUTTURA (unica parte da modificare). Ogni schermata coinvolta è disegnata come appare sul
@@ -406,6 +638,8 @@
   - explanation: cosa è, 1-2 frasi semplici
   - props, terms: (opzionali) { "nome": "valore o significato" }
   - children: (opzionale) elementi contenuti, in ordine di comparsa
+  - chat: { "token": contenuto di ~/.claude/chat-mappa-token, "project": percorso assoluto del progetto con "/" }
+    attiva la chat in basso a sinistra (server: ~/.claude/shared/chat-mappa-server.js)
   Non inserire la sequenza </script> nel JSON.
 -->
 <script id="page-data" type="application/json">
@@ -688,6 +922,184 @@
     const target = Number(fromHash[1]) - 1;
     if (target >= 0 && target < elements.length) select(target);
   }
+</script>
+<script>
+  // Cosa la chat sa della mappa: i dati (con i numeri S assegnati) e l'elemento selezionato
+  const MAPPA_CHAT = {
+    tipo: 'struttura',
+    dati: DATA,
+    mappa: () => ({ ...DATA, chat: undefined }),
+    selezione: () => {
+      const item = elements[state.selected];
+      return item ? `${item.number} · ${item.name} (${item.screenName})` : null;
+    },
+  };
+</script>
+<script>
+  // CHAT DELLA MAPPA
+  // Le domande vanno al server locale (~/.claude/shared/chat-mappa-server.js), che le passa a claude -p in sola lettura.
+  (() => {
+    const CONFIG = MAPPA_CHAT.dati.chat || {};
+    const SERVER = `http://127.0.0.1:${CONFIG.port || 4517}`;
+    const AVVIO = 'node "$HOME/.claude/shared/chat-mappa-server.js" --sfondo';
+    const MAX_STORIA = 10;
+    const storia = [];
+    const $ = (id) => document.getElementById(id);
+    let inAttesa = false;
+
+    const inline = (s) => s
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+      .replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?![*\w])/g, '$1<i>$2</i>');
+
+    // FORMATTAZIONE RISPOSTA
+    // Markdown essenziale: blocchi di codice, `codice`, **grassetto**, elenchi puntati, paragrafi.
+    function paragrafo(testo) {
+      let html = '';
+      let lista = [];
+      const chiudiLista = () => {
+        if (lista.length) html += `<ul>${lista.join('')}</ul>`;
+        lista = [];
+      };
+      testo.split('\n').forEach((riga) => {
+        const punto = riga.match(/^\s*[-*] (.*)/);
+        if (punto) return lista.push(`<li>${inline(punto[1])}</li>`);
+        chiudiLista();
+        html += `${html && !html.endsWith('</ul>') ? '<br>' : ''}${inline(riga)}`;
+      });
+      chiudiLista();
+      return `<div class="par">${html}</div>`;
+    }
+
+    const markdown = (testo) => esc(testo)
+      .split(/```[\w-]*\n?([\s\S]*?)```/)
+      .map((parte, i) => (i % 2
+        ? `<pre><code>${parte.replace(/\n$/, '')}</code></pre>`
+        : parte.split(/\n{2,}/).filter((p) => p.trim()).map(paragrafo).join('')))
+      .join('');
+
+    function aggiungi(classe, html, contesto) {
+      const msg = document.createElement('div');
+      msg.className = `msg ${classe}`;
+      msg.innerHTML = (contesto ? `<span class="ctx">su ${esc(contesto)}</span>` : '') + html;
+      $('chat-log').appendChild(msg);
+      $('chat-log').scrollTop = $('chat-log').scrollHeight;
+      return msg;
+    }
+
+    function benvenuto() {
+      aggiungi('info', 'Chiedimi qualcosa su questa mappa: un passo, un elemento, un termine o un dubbio di programmazione. Se selezioni un riquadro, la domanda parte da lì. La conversazione non viene salvata: ricaricando la pagina riparte da zero.');
+    }
+
+    function serverSpento() {
+      const msg = aggiungi('errore', `La chat non risponde: il server locale è spento. Avvialo da un terminale con<br><code>${esc(AVVIO)}</code><br><button type="button">Copia comando</button>`);
+      msg.querySelector('button').addEventListener('click', async () => {
+        if (await copyText(AVVIO)) showToast('Comando copiato: incollalo in un terminale e riprova');
+      });
+    }
+
+    // STATO SERVER
+    async function controllaServer() {
+      const dot = document.querySelector('#chat-open .dot');
+      try {
+        const res = await fetch(`${SERVER}/stato`);
+        dot.className = res.ok ? 'dot on' : 'dot off';
+      } catch {
+        dot.className = 'dot off';
+      }
+    }
+
+    function aggiornaContesto() {
+      const selezione = MAPPA_CHAT.selezione();
+      $('chat-ctx').innerHTML = selezione
+        ? `Domanda su <b>${esc(selezione)}</b>`
+        : 'Nessun elemento selezionato: la domanda riguarda tutta la mappa';
+    }
+
+    // INVIO DOMANDA
+    async function invia(e) {
+      e.preventDefault();
+      const domanda = $('chat-input').value.trim();
+      if (!domanda || inAttesa) return;
+      if (!CONFIG.token || !CONFIG.project) {
+        aggiungi('errore', 'Chat non configurata: in questa mappa mancano <code>chat.token</code> e <code>chat.project</code>. Chiedi a Claude di rigenerarla.');
+        return;
+      }
+
+      const selezione = MAPPA_CHAT.selezione();
+      aggiungi('utente', paragrafo(esc(domanda)), selezione);
+      $('chat-input').value = '';
+      inAttesa = true;
+      $('chat-send').disabled = true;
+      const inizio = Date.now();
+      const attesa = aggiungi('info', 'Sto pensando…');
+      const timer = setInterval(() => {
+        attesa.textContent = `Sto pensando… ${Math.round((Date.now() - inizio) / 1000)} s`;
+      }, 1000);
+
+      try {
+        const res = await fetch(`${SERVER}/chiedi`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: CONFIG.token,
+            project: CONFIG.project,
+            tipo: MAPPA_CHAT.tipo,
+            titolo: MAPPA_CHAT.dati.title,
+            mappa: JSON.stringify(MAPPA_CHAT.mappa()),
+            selezione,
+            storia: storia.slice(-MAX_STORIA),
+            domanda,
+          }),
+        });
+        const corpo = await res.json();
+        if (!res.ok) throw new Error(corpo.errore || `errore ${res.status}`);
+        storia.push({ ruolo: 'utente', testo: selezione ? `[su ${selezione}] ${domanda}` : domanda }, { ruolo: 'claude', testo: corpo.risposta });
+        aggiungi('claude', markdown(corpo.risposta));
+      } catch (err) {
+        if (err instanceof TypeError) serverSpento();
+        else aggiungi('errore', esc(err.message));
+      } finally {
+        clearInterval(timer);
+        attesa.remove();
+        inAttesa = false;
+        $('chat-send').disabled = false;
+        controllaServer();
+      }
+    }
+
+    // APERTURA E COMANDI
+    $('chat-open').addEventListener('click', () => {
+      $('chat').hidden = !$('chat').hidden;
+      if ($('chat').hidden) return;
+      aggiornaContesto();
+      controllaServer();
+      $('chat-input').focus();
+    });
+    $('chat-close').addEventListener('click', () => {
+      $('chat').hidden = true;
+    });
+    $('chat-big').addEventListener('click', (e) => {
+      e.currentTarget.setAttribute('aria-pressed', $('chat').classList.toggle('big'));
+    });
+    $('chat-clear').addEventListener('click', () => {
+      storia.length = 0;
+      $('chat-log').innerHTML = '';
+      benvenuto();
+    });
+    $('chat-form').addEventListener('submit', invia);
+    // I tasti scritti nella chat non devono muovere la selezione della mappa
+    $('chat').addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'Escape') $('chat').hidden = true;
+      if (e.key === 'Enter' && !e.shiftKey && e.target.id === 'chat-input') invia(e);
+    });
+    document.addEventListener('click', aggiornaContesto);
+    document.addEventListener('keyup', aggiornaContesto);
+
+    benvenuto();
+    controllaServer();
+  })();
 </script>
 </body>
 </html>

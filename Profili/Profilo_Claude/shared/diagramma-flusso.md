@@ -7,6 +7,7 @@ Regole comuni alle skill che, nella fase DIAGRAMMA (o MAPPA `dati`), devono gene
 - il diagramma è una pagina HTML interattiva, sfondo scuro, generata dal template `~/.claude/shared/diagramma-flusso-template.html`.
 - copia il template e sostituisci **solo** il JSON dentro `<script id="flow-data">`: non modificare HTML, CSS o JS del template (le regole del JSON sono nel commento sopra il blocco).
 - se la skill lo prevede, il diagramma sostituisce la spiegazione a passi in chat: tutto il dettaglio (oggetti, spiegazioni) va nei dati del diagramma.
+- **chat**: segui `~/.claude/shared/chat-mappa.md` (server avviato e campo `chat` nel JSON).
 
 ## Contenuto
 
