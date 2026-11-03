@@ -86,7 +86,9 @@ function chiediClaude(progetto, prompt) {
       '--restricted', '--strict-mcp-config', '--tools', 'Read,Grep,Glob',
       '--permission-mode', 'dontAsk', '--system-prompt', ISTRUZIONI,
     ];
-    const figlio = spawn(trovaClaude(), args, { cwd: progetto, windowsHide: true });
+    // Senza chiavi API nell'ambiente claude può usare solo il login dell'abbonamento, mai la fatturazione a consumo
+    const { ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, ...ambiente } = process.env;
+    const figlio = spawn(trovaClaude(), args, { cwd: progetto, windowsHide: true, env: ambiente });
     let out = '';
     let err = '';
     const timer = setTimeout(() => figlio.kill(), TIMEOUT_MS);
