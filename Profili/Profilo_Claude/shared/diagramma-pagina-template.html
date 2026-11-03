@@ -365,6 +365,31 @@
     font-weight: 700;
   }
 
+  /* RIEPILOGO nel pannello di destra */
+  .files {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 13.5px;
+  }
+
+  .files li {
+    margin-bottom: 4px;
+  }
+
+  .howto {
+    margin-top: 24px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .howto summary {
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
   .hint {
     color: var(--muted);
     font-size: 13px;
@@ -840,6 +865,9 @@
   - explanation: cosa è, 1-2 frasi semplici
   - props, terms: (opzionali) { "nome": "valore o significato" }
   - children: (opzionale) elementi contenuti, in ordine di comparsa
+  - overview: (opzionale) riepilogo nel pannello all'apertura e cliccando fuori:
+    { "goal": obiettivo, "problem": problema, "todo": cosa deve fare ora l'utente, "files": [{ "file", "path", "role" }], "notes": [..] }
+    senza "files" il pannello elenca da solo i file della mappa
   - indizi: (opzionale) [{ "testo": cosa osservare, "punti": ["S12", "S13"] }, { "testo", "punti": ["S13"] }]
     tasto Indizio della chat: il primo illumina la zona, il secondo il punto; mai la soluzione
   - chat: { "token": contenuto di ~/.claude/chat-mappa-token, "project": percorso assoluto del progetto con "/" }
@@ -1032,24 +1060,50 @@
     });
   }
 
+  // RIEPILOGO
+  // Si vede all'apertura e cliccando fuori: obiettivo, problema, cosa fare e file coinvolti
+  function fileCoinvolti() {
+    const perPercorso = new Map();
+    elements.forEach((item) => {
+      if (!item.file) return;
+      const chiave = item.path || item.file;
+      if (!perPercorso.has(chiave)) perPercorso.set(chiave, { file: item.file, path: item.path, punti: [] });
+      perPercorso.get(chiave).punti.push(item.number);
+    });
+    return [...perPercorso.values()].map((f) => ({ ...f, role: f.punti.join(', ') }));
+  }
+
+  function riepilogoHtml() {
+    const o = DATA.overview || {};
+    const files = o.files || fileCoinvolti();
+    const sezione = (titolo, testo) => (testo ? `<h3>${titolo}</h3><p class="explanation">${fmt(testo)}</p>` : '');
+    return `
+      <span class="panel-tag">RIEPILOGO</span>
+      <h2>${esc(DATA.title)}</h2>
+      ${sezione('Obiettivo', o.goal)}
+      ${sezione('Problema', o.problem)}
+      ${sezione('Cosa fare', o.todo)}
+      <h3>File coinvolti</h3>
+      <ul class="files">${files.map((f) => `<li>${codeLink(f, 1, `<b>${esc(f.file)}</b>`)}${f.role ? ` <span class="route">· ${fmt(f.role)}</span>` : ''}</li>`).join('')}</ul>
+      ${(o.notes || []).length ? `<h3>Da sapere</h3><ul class="files">${o.notes.map((n) => `<li>${fmt(n)}</li>`).join('')}</ul>` : ''}
+      ${DATA.screens.map((screen) => `<h3>${esc(screen.name)}</h3><ul class="tree">${elements
+        .filter((item) => item.screenName === screen.name)
+        .map((item) => `<li data-i="${elements.indexOf(item)}"><span class="num">${item.number}</span>${esc(item.name)}${item.text ? ` <span class="route">"${esc(item.text.slice(0, 30))}${item.text.length > 30 ? '…' : ''}"</span>` : ''}</li>`)
+        .join('')}</ul>`).join('')}
+      <details class="howto"><summary>Come leggere la mappa</summary>
+        <p class="hint">Ogni schermata è disegnata come appare sul telefono, con gli stili presi dal codice: le proporzioni sono simulate, testi e colori sono quelli reali.</p>
+        <p class="hint">Passa il mouse su un elemento per vedere il suo numero <b>S</b>, cliccalo per vedere file, props e stile. Con <b>Numeri</b> li vedi tutti insieme. Clicca fuori dai telefoni per tornare a questo riepilogo.</p>
+        <p class="hint">Trascina per muoverti, <kbd>Ctrl</kbd> + rotella o i pulsanti <b>− +</b> per ingrandire e ridurre.</p>
+        <p class="hint">Usa <kbd>&uarr;</kbd> <kbd>&darr;</kbd> per scorrere gli elementi, <kbd>Esc</kbd> per tornare qui.</p>
+      </details>`;
+  }
+
   // RENDER PANNELLO
   function renderPanel() {
     const panel = document.getElementById('panel');
 
     if (state.selected === null) {
-      const byScreen = DATA.screens.map((screen) => {
-        const items = elements.filter((el) => el.screenName === screen.name);
-        return `<h3>${esc(screen.name)}</h3><ul class="tree">${items
-          .map((el) => `<li data-i="${elements.indexOf(el)}"><span class="num">${el.number}</span>${esc(el.name)}${el.text ? ` <span class="route">"${esc(el.text.slice(0, 30))}${el.text.length > 30 ? '…' : ''}"</span>` : ''}</li>`)
-          .join('')}</ul>`;
-      }).join('');
-      panel.innerHTML = `
-        <h2>Come leggere la mappa</h2>
-        <p class="hint">Ogni schermata è disegnata come appare sul telefono, con gli stili presi dal codice: le proporzioni sono simulate, testi e colori sono quelli reali.</p>
-        <p class="hint">Passa il mouse su un elemento per vedere il suo numero <b>S</b>, cliccalo per vedere file, props e stile. Con <b>Numeri</b> li vedi tutti insieme.</p>
-        <p class="hint">Trascina per muoverti, <kbd>Ctrl</kbd> + rotella o i pulsanti <b>− +</b> per ingrandire e ridurre.</p>
-        <p class="hint">Usa <kbd>&uarr;</kbd> <kbd>&darr;</kbd> per scorrere gli elementi, <kbd>Esc</kbd> per tornare qui.</p>
-        ${byScreen}`;
+      panel.innerHTML = riepilogoHtml();
       panel.querySelectorAll('.tree li').forEach((li) => li.addEventListener('click', () => select(Number(li.dataset.i))));
       return;
     }
@@ -1107,6 +1161,10 @@
   });
   document.getElementById('prev').addEventListener('click', () => move(-1));
   document.getElementById('next').addEventListener('click', () => move(1));
+  // Cliccando fuori dai telefoni torna il riepilogo
+  document.getElementById('stage').addEventListener('click', (e) => {
+    if (!e.target.closest('.el')) select(null);
+  });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -1402,6 +1460,7 @@
         bottom: 'auto',
       });
       tieniDentro(chat);
+      mascotteSottoChat();
     }
 
     function mostraIndizio(i) {
@@ -1464,19 +1523,47 @@
     $('chat-open').insertAdjacentHTML('afterbegin', `<svg class="sprite" viewBox="0 0 12 12" aria-hidden="true">${corpo}${occhio(4)}${occhio(8)}${spirale(5, 4.5)}${spirale(9, 4.5)}</svg>`);
 
     // TRASCINAMENTO
-    // Chat (dalla barra del titolo) e mascotte si spostano con il puntatore e restano sempre dentro la finestra
+    // Chat e mascotte sono incollate: la chat sta sempre sopra la mascotte e chi viene spostato si porta dietro l'altro
     const MARGINE = 8;
+    const STACCO = 6;
     const SOGLIA = 4;
-    let chatSpostata = false;
+
+    const sposta = (el, left, top) => Object.assign(el.style, { left: `${left}px`, top: `${top}px`, bottom: 'auto' });
 
     function tieniDentro(el) {
       if (!el.style.top || el.hidden) return;
       const box = el.getBoundingClientRect();
-      el.style.left = `${Math.min(Math.max(box.left, MARGINE), window.innerWidth - box.width - MARGINE)}px`;
-      el.style.top = `${Math.min(Math.max(box.top, MARGINE), window.innerHeight - box.height - MARGINE)}px`;
+      sposta(
+        el,
+        Math.min(Math.max(box.left, MARGINE), window.innerWidth - box.width - MARGINE),
+        Math.min(Math.max(box.top, MARGINE), window.innerHeight - box.height - MARGINE),
+      );
     }
 
-    function rendiTrascinabile(el, maniglia, quandoLasci) {
+    // La chat si mette sopra la mascotte; se sopra non c'è spazio scendono insieme
+    function chatSopraMascotte() {
+      const chat = $('chat');
+      if (chat.hidden) return;
+      const omino = $('chat-open').getBoundingClientRect();
+      const left = Math.min(Math.max(omino.left, MARGINE), window.innerWidth - chat.offsetWidth - MARGINE);
+      const top = Math.max(MARGINE, omino.top - chat.offsetHeight - STACCO);
+      sposta(chat, left, top);
+      sposta($('chat-open'), left, top + chat.offsetHeight + STACCO);
+    }
+
+    // La mascotte si mette sotto la chat; se sotto non c'è spazio salgono insieme
+    function mascotteSottoChat() {
+      const chat = $('chat');
+      if (chat.hidden || !chat.style.top) return;
+      const box = chat.getBoundingClientRect();
+      const omino = $('chat-open');
+      const sfora = box.bottom + STACCO + omino.offsetHeight - (window.innerHeight - MARGINE);
+      const top = Math.max(MARGINE, box.top - Math.max(0, sfora));
+      sposta(chat, box.left, top);
+      sposta(omino, box.left, top + chat.offsetHeight + STACCO);
+    }
+
+    function rendiTrascinabile(el, maniglia, { mentreSposti, quandoLasci }) {
       maniglia.addEventListener('pointerdown', (e) => {
         const bottone = e.target.closest('button');
         if (e.button !== 0 || (bottone && bottone !== maniglia)) return;
@@ -1491,17 +1578,16 @@
           if (!mosso && Math.hypot(ev.clientX - e.clientX, ev.clientY - e.clientY) < SOGLIA) return;
           if (!mosso) {
             mosso = true;
-            Object.assign(el.style, { left: `${box.left}px`, top: `${box.top}px`, bottom: 'auto' });
             el.classList.add('dragging');
           }
-          el.style.left = `${ev.clientX - dx}px`;
-          el.style.top = `${ev.clientY - dy}px`;
+          sposta(el, ev.clientX - dx, ev.clientY - dy);
           tieniDentro(el);
+          mentreSposti();
         };
         const lascia = () => {
           maniglia.removeEventListener('pointermove', muovi);
           el.classList.remove('dragging');
-          if (mosso) quandoLasci();
+          if (mosso) quandoLasci?.();
         };
         maniglia.addEventListener('pointermove', muovi);
         maniglia.addEventListener('pointerup', lascia, { once: true });
@@ -1509,42 +1595,29 @@
       });
     }
 
-    // La chat si apre sopra la mascotte, o sotto se sopra non c'è spazio
-    function vicinoAllaMascotte() {
-      const chat = $('chat');
-      const omino = $('chat-open').getBoundingClientRect();
-      const sopra = omino.top - chat.offsetHeight - MARGINE;
-      Object.assign(chat.style, {
-        left: `${omino.left}px`,
-        top: `${sopra >= MARGINE ? sopra : omino.bottom + MARGINE}px`,
-        bottom: 'auto',
-      });
-      tieniDentro(chat);
-    }
-
     // Dopo un trascinamento il browser manda comunque un clic: va ignorato
     let ignoraClic = false;
     $('chat-open').addEventListener('pointerdown', () => {
       ignoraClic = false;
     });
-    rendiTrascinabile($('chat-open'), $('chat-open'), () => {
-      ignoraClic = true;
+    rendiTrascinabile($('chat-open'), $('chat-open'), {
+      mentreSposti: chatSopraMascotte,
+      quandoLasci: () => {
+        ignoraClic = true;
+      },
     });
-    rendiTrascinabile($('chat'), $('chat').querySelector('.chat-head'), () => {
-      chatSpostata = true;
-    });
+    rendiTrascinabile($('chat'), $('chat').querySelector('.chat-head'), { mentreSposti: mascotteSottoChat });
     $('chat').querySelector('.chat-head').addEventListener('dblclick', (e) => {
       if (e.target.closest('button')) return;
-      chatSpostata = false;
       $('chat').classList.remove('big');
       $('chat-big').setAttribute('aria-pressed', false);
       Object.assign($('chat').style, { width: '', height: '' });
-      vicinoAllaMascotte();
+      chatSopraMascotte();
     });
-    new ResizeObserver(() => tieniDentro($('chat'))).observe($('chat'));
+    new ResizeObserver(mascotteSottoChat).observe($('chat'));
     window.addEventListener('resize', () => {
-      tieniDentro($('chat'));
       tieniDentro($('chat-open'));
+      chatSopraMascotte();
     });
 
     // APERTURA E COMANDI
@@ -1556,7 +1629,7 @@
       $('chat').hidden = !$('chat').hidden;
       if ($('chat').hidden) return;
       document.querySelector('#chat-open .dot').classList.remove('pronta');
-      if (!chatSpostata) vicinoAllaMascotte();
+      chatSopraMascotte();
       aggiornaContesto();
       controllaServer();
       $('chat-input').focus();
@@ -1567,7 +1640,7 @@
     $('chat-big').addEventListener('click', (e) => {
       Object.assign($('chat').style, { width: '', height: '' });
       e.currentTarget.setAttribute('aria-pressed', $('chat').classList.toggle('big'));
-      tieniDentro($('chat'));
+      mascotteSottoChat();
     });
     $('chat-clear').addEventListener('click', () => {
       storia.length = 0;

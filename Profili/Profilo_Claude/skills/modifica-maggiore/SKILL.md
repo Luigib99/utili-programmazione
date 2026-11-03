@@ -47,6 +47,7 @@ In qualsiasi fase:
 - `MAPPA` `dati` o `entrambi`: leggi e applica le regole in `~/.claude/shared/diagramma-flusso.md` (riferimenti **D1, D2…**); ogni oggetto, lista o json nei `payload` deve essere completo.
 - `MAPPA` `struttura` o `entrambi`: leggi e applica le regole in `~/.claude/shared/diagramma-pagina.md` (riferimenti **S1, S2…**).
 - in questa fase sai di che argomento si tratta ma **non** cosa e come l'utente vuole cambiarlo: il diagramma e le note descrivono com'è adesso, senza proporre modifiche.
+- **riepilogo**: nel JSON di ogni mappa aggiungi `overview`: `goal` = l'`OBIETTIVO`, `problem` = il `PROBLEMA` come l'ha descritto l'utente, `todo` = cosa deve fare ora (la RICHIESTA di questa fase), `files` = tutti i file della mappa con il loro ruolo in poche parole. Con `PROBLEMA` resta neutro come il resto: nessun file è indicato più degli altri.
 - **indizi**: nel JSON di ogni mappa aggiungi `indizi` con 2 voci, che l'utente apre solo se vuole dal tasto 💡 della chat della mappa:
   - 1 · **zona**: `punti` con 2-5 riferimenti vicini (es. `["D4", "D5", "D6"]`) dove va fatta la modifica dell'`OBIETTIVO` o, con `PROBLEMA`, dove nasce il bug.
   - 2 · **punto**: `punti` con un solo riferimento, quello preciso.

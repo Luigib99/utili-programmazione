@@ -355,10 +355,21 @@
     line-height: 1.4;
   }
 
-  .node .tecnico p {
+  .node .passi {
     margin: 6px 0 0;
+    padding-left: 16px;
     font-size: 12.5px;
     line-height: 1.45;
+  }
+
+  .node .passi li {
+    margin-bottom: 3px;
+  }
+
+  .node .passa {
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
   }
 
   .node .toggle {
@@ -543,6 +554,31 @@
 
   .obj .c {
     color: #7ee787;
+  }
+
+  /* RIEPILOGO nel pannello di destra */
+  .files {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 13.5px;
+  }
+
+  .files li {
+    margin-bottom: 4px;
+  }
+
+  .howto {
+    margin-top: 24px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .howto summary {
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    cursor: pointer;
   }
 
   .hint {
@@ -1015,7 +1051,8 @@
   - physical: sezione "Cosa succede fisicamente", la prima del pannello: solo ciò che l'utente vede e fa
   - simple: sezione "Spiegazione semplice", la seconda del pannello
   - short: frase brevissima e semplice (max ~60 caratteri, niente termini tecnici) scritta in grigio nel riquadro chiuso;
-    cliccando il riquadro si apre e mostra la versione tecnica (action + does)
+    cliccando il riquadro si apre e mostra la versione tecnica a punti
+  - steps: (opzionale) 2-5 punti tecnici brevi del riquadro aperto, uno per azione; senza, il template divide does in frasi
   - does / purpose / receives / returns: sezioni "Cosa fa", "A cosa serve", "Riceve", "Restituisce" del pannello
   - terms: { "termine": "significato semplice" } mostrati come glossario del passo
   - nei testi, il codice va tra backtick (`esempio`) e viene mostrato come codice
@@ -1029,6 +1066,9 @@
     { "kind": "http" | "socket" | "navigation" | "function" | "event" | "storage" | "process", "label": "POST /auth/login", "note": "frase semplice" }
   - fields: { "percorso.del.campo": "spiegazione" }, gli array usano "lista[]", "" è il valore intero
   - per mostrare un valore undefined scrivi "__undefined__"
+  - overview: (opzionale) riepilogo nel pannello all'apertura e cliccando fuori:
+    { "goal": obiettivo, "problem": problema, "todo": cosa deve fare ora l'utente, "files": [{ "file", "path", "role" }], "notes": [..] }
+    senza "files" il pannello elenca da solo i file della mappa
   - indizi: (opzionale) [{ "testo": cosa osservare, "punti": ["D4", "D5"] }, { "testo", "punti": ["D5"] }]
     tasto Indizio della chat: il primo illumina la zona, il secondo il punto; mai la soluzione
   - chat: { "token": contenuto di ~/.claude/chat-mappa-token, "project": percorso assoluto del progetto con "/" }
@@ -1164,12 +1204,14 @@
   // CONTENUTO RIQUADRO
   // Chiuso: una frase semplice in grigio. Aperto: la versione tecnica (action + does). p va da 0 (chiuso) a 1 (aperto)
   const primaFrase = (testo) => (testo || '').split(/(?<=[.!?])\s/)[0];
+  // Una frase per punto: si va a capo dopo . o ; seguiti da una maiuscola o da codice
+  const dividiInFrasi = (testo) => (testo || '').split(/(?<=[.;])\s+(?=[A-ZÀ-Ý`])/).map((frase) => frase.trim()).filter(Boolean);
 
   function contenutoNodo(node, p) {
     const breve = node.short || primaFrase(node.simple) || node.action;
-    const tecnico = node.does || node.explanation;
+    const punti = node.steps || dividiInFrasi(node.does || node.explanation || node.action);
     const corpo = p > 0
-      ? `<div class="tecnico" style="opacity: ${p.toFixed(2)}"><div class="action">${fmt(node.action)}</div>${tecnico ? `<p>${fmt(tecnico)}</p>` : ''}</div>`
+      ? `<div class="tecnico" style="opacity: ${p.toFixed(2)}"><ul class="passi">${punti.map((punto) => `<li>${fmt(punto)}</li>`).join('')}</ul>${node.payloadName ? `<div class="passa">passa: <code>${esc(node.payloadName)}</code></div>` : ''}</div>`
       : `<div class="breve">${fmt(breve)}</div>`;
     return `
       <div class="node ${node.side}${p > 0 ? ' open' : ''}">
@@ -1478,6 +1520,40 @@
       ${list.map(renderTrackedCard).join('')}`;
   }
 
+  // RIEPILOGO
+  // Si vede all'apertura e cliccando fuori: obiettivo, problema, cosa fare e file coinvolti
+  function fileCoinvolti() {
+    const perPercorso = new Map();
+    FLOW.nodes.forEach((node) => {
+      const chiave = node.path || node.file;
+      if (!perPercorso.has(chiave)) perPercorso.set(chiave, { file: node.file, path: node.path, punti: [] });
+      perPercorso.get(chiave).punti.push(`D${node.number}`);
+    });
+    return [...perPercorso.values()].map((f) => ({ ...f, role: f.punti.join(', ') }));
+  }
+
+  function riepilogoHtml() {
+    const o = FLOW.overview || {};
+    const files = o.files || fileCoinvolti();
+    const sezione = (titolo, testo) => (testo ? `<h3>${titolo}</h3><p class="explanation">${fmt(testo)}</p>` : '');
+    return `
+      <span class="panel-tag">RIEPILOGO</span>
+      <h2>${esc(FLOW.title)}</h2>
+      ${sezione('Obiettivo', o.goal)}
+      ${sezione('Problema', o.problem)}
+      ${sezione('Cosa fare', o.todo)}
+      <h3>File coinvolti</h3>
+      <ul class="files">${files.map((f) => `<li>${codeLink(f, 1, `<b>${esc(f.file)}</b>`)}${f.role ? ` <span class="route">· ${fmt(f.role)}</span>` : ''}</li>`).join('')}</ul>
+      ${(o.notes || []).length ? `<h3>Da sapere</h3><ul class="files">${o.notes.map((n) => `<li>${fmt(n)}</li>`).join('')}</ul>` : ''}
+      <details class="howto"><summary>Come leggere la mappa</summary>
+        <p class="hint">Il flusso si legge dall'alto verso il basso. A sinistra la corsia FRONTEND (blu), a destra la corsia BACKEND (giallo): quando una freccia cambia corsia, i dati passano tra app e server.</p>
+        <p class="hint">Ogni riquadro mostra una frase semplice: cliccalo per aprirlo e leggere i punti tecnici, e qui a destra tutti i dettagli. Clicca una freccia per vedere che chiamata è e cosa trasporta. Clicca fuori per tornare a questo riepilogo.</p>
+        <p class="hint">Trascina lo sfondo per muoverti, <kbd>Ctrl</kbd> + rotella o i pulsanti <b>− +</b> per ingrandire e ridurre.</p>
+        <p class="hint">I numeri <b>D1, D2…</b> sono il riferimento comune: puoi scrivere "al passo D4…".</p>
+        <p class="hint">Usa <kbd>&uarr;</kbd> <kbd>&darr;</kbd> per scorrere i passi. Con <b>Passo-passo</b> attivo i passi successivi restano oscurati.</p>
+      </details>`;
+  }
+
   // RENDER PANNELLO
   const CALL_LABELS = {
     http: 'Chiamata HTTP al server',
@@ -1524,13 +1600,7 @@
     const panel = document.getElementById('panel');
 
     if (state.selected === null) {
-      panel.innerHTML = `
-        <h2>Come leggere il diagramma</h2>
-        <p class="hint">Il flusso si legge dall'alto verso il basso. A sinistra la corsia FRONTEND (blu), a destra la corsia BACKEND (giallo): quando una freccia cambia corsia, i dati passano tra app e server.</p>
-        <p class="hint">Ogni riquadro mostra una frase semplice: cliccalo per aprirlo e leggere la versione tecnica, e qui a destra tutti i dettagli. Clicca una freccia per vedere che chiamata è e cosa trasporta.</p>
-        <p class="hint">Trascina lo sfondo per muoverti, <kbd>Ctrl</kbd> + rotella o i pulsanti <b>− +</b> per ingrandire e ridurre.</p>
-        <p class="hint">I numeri <b>D1, D2…</b> sono il riferimento comune: puoi scrivere "al passo D4…".</p>
-        <p class="hint">Usa <kbd>&uarr;</kbd> <kbd>&darr;</kbd> per scorrere i passi. Con <b>Passo-passo</b> attivo i passi successivi restano oscurati.</p>`;
+      panel.innerHTML = riepilogoHtml();
       return;
     }
 
@@ -1575,7 +1645,7 @@
     document.querySelectorAll('.item').forEach((g) => {
       const gi = Number(g.dataset.i);
       const isEdge = g.classList.contains('edge');
-      const isSelected = i !== null && gi === i && (isEdge || !state.edge);
+      const isSelected = i !== null && gi === i && isEdge === state.edge;
       g.classList.toggle('sel', isSelected);
       g.classList.toggle('dim', state.stepMode && i !== null && gi > i);
       const edge = g.querySelector('.edge-path');
@@ -1602,6 +1672,10 @@
   document.getElementById('subtitle').textContent = FLOW.subtitle || '';
   document.getElementById('prev').addEventListener('click', () => move(-1));
   document.getElementById('next').addEventListener('click', () => move(1));
+  // Cliccando fuori da riquadri e frecce torna il riepilogo
+  document.getElementById('diagram').addEventListener('click', (e) => {
+    if (!e.target.closest('.item, #tracked')) select(null);
+  });
   document.getElementById('mode').addEventListener('click', (e) => {
     state.stepMode = !state.stepMode;
     e.currentTarget.setAttribute('aria-pressed', state.stepMode);
@@ -1910,6 +1984,7 @@
         bottom: 'auto',
       });
       tieniDentro(chat);
+      mascotteSottoChat();
     }
 
     function mostraIndizio(i) {
@@ -1972,19 +2047,47 @@
     $('chat-open').insertAdjacentHTML('afterbegin', `<svg class="sprite" viewBox="0 0 12 12" aria-hidden="true">${corpo}${occhio(4)}${occhio(8)}${spirale(5, 4.5)}${spirale(9, 4.5)}</svg>`);
 
     // TRASCINAMENTO
-    // Chat (dalla barra del titolo) e mascotte si spostano con il puntatore e restano sempre dentro la finestra
+    // Chat e mascotte sono incollate: la chat sta sempre sopra la mascotte e chi viene spostato si porta dietro l'altro
     const MARGINE = 8;
+    const STACCO = 6;
     const SOGLIA = 4;
-    let chatSpostata = false;
+
+    const sposta = (el, left, top) => Object.assign(el.style, { left: `${left}px`, top: `${top}px`, bottom: 'auto' });
 
     function tieniDentro(el) {
       if (!el.style.top || el.hidden) return;
       const box = el.getBoundingClientRect();
-      el.style.left = `${Math.min(Math.max(box.left, MARGINE), window.innerWidth - box.width - MARGINE)}px`;
-      el.style.top = `${Math.min(Math.max(box.top, MARGINE), window.innerHeight - box.height - MARGINE)}px`;
+      sposta(
+        el,
+        Math.min(Math.max(box.left, MARGINE), window.innerWidth - box.width - MARGINE),
+        Math.min(Math.max(box.top, MARGINE), window.innerHeight - box.height - MARGINE),
+      );
     }
 
-    function rendiTrascinabile(el, maniglia, quandoLasci) {
+    // La chat si mette sopra la mascotte; se sopra non c'è spazio scendono insieme
+    function chatSopraMascotte() {
+      const chat = $('chat');
+      if (chat.hidden) return;
+      const omino = $('chat-open').getBoundingClientRect();
+      const left = Math.min(Math.max(omino.left, MARGINE), window.innerWidth - chat.offsetWidth - MARGINE);
+      const top = Math.max(MARGINE, omino.top - chat.offsetHeight - STACCO);
+      sposta(chat, left, top);
+      sposta($('chat-open'), left, top + chat.offsetHeight + STACCO);
+    }
+
+    // La mascotte si mette sotto la chat; se sotto non c'è spazio salgono insieme
+    function mascotteSottoChat() {
+      const chat = $('chat');
+      if (chat.hidden || !chat.style.top) return;
+      const box = chat.getBoundingClientRect();
+      const omino = $('chat-open');
+      const sfora = box.bottom + STACCO + omino.offsetHeight - (window.innerHeight - MARGINE);
+      const top = Math.max(MARGINE, box.top - Math.max(0, sfora));
+      sposta(chat, box.left, top);
+      sposta(omino, box.left, top + chat.offsetHeight + STACCO);
+    }
+
+    function rendiTrascinabile(el, maniglia, { mentreSposti, quandoLasci }) {
       maniglia.addEventListener('pointerdown', (e) => {
         const bottone = e.target.closest('button');
         if (e.button !== 0 || (bottone && bottone !== maniglia)) return;
@@ -1999,17 +2102,16 @@
           if (!mosso && Math.hypot(ev.clientX - e.clientX, ev.clientY - e.clientY) < SOGLIA) return;
           if (!mosso) {
             mosso = true;
-            Object.assign(el.style, { left: `${box.left}px`, top: `${box.top}px`, bottom: 'auto' });
             el.classList.add('dragging');
           }
-          el.style.left = `${ev.clientX - dx}px`;
-          el.style.top = `${ev.clientY - dy}px`;
+          sposta(el, ev.clientX - dx, ev.clientY - dy);
           tieniDentro(el);
+          mentreSposti();
         };
         const lascia = () => {
           maniglia.removeEventListener('pointermove', muovi);
           el.classList.remove('dragging');
-          if (mosso) quandoLasci();
+          if (mosso) quandoLasci?.();
         };
         maniglia.addEventListener('pointermove', muovi);
         maniglia.addEventListener('pointerup', lascia, { once: true });
@@ -2017,42 +2119,29 @@
       });
     }
 
-    // La chat si apre sopra la mascotte, o sotto se sopra non c'è spazio
-    function vicinoAllaMascotte() {
-      const chat = $('chat');
-      const omino = $('chat-open').getBoundingClientRect();
-      const sopra = omino.top - chat.offsetHeight - MARGINE;
-      Object.assign(chat.style, {
-        left: `${omino.left}px`,
-        top: `${sopra >= MARGINE ? sopra : omino.bottom + MARGINE}px`,
-        bottom: 'auto',
-      });
-      tieniDentro(chat);
-    }
-
     // Dopo un trascinamento il browser manda comunque un clic: va ignorato
     let ignoraClic = false;
     $('chat-open').addEventListener('pointerdown', () => {
       ignoraClic = false;
     });
-    rendiTrascinabile($('chat-open'), $('chat-open'), () => {
-      ignoraClic = true;
+    rendiTrascinabile($('chat-open'), $('chat-open'), {
+      mentreSposti: chatSopraMascotte,
+      quandoLasci: () => {
+        ignoraClic = true;
+      },
     });
-    rendiTrascinabile($('chat'), $('chat').querySelector('.chat-head'), () => {
-      chatSpostata = true;
-    });
+    rendiTrascinabile($('chat'), $('chat').querySelector('.chat-head'), { mentreSposti: mascotteSottoChat });
     $('chat').querySelector('.chat-head').addEventListener('dblclick', (e) => {
       if (e.target.closest('button')) return;
-      chatSpostata = false;
       $('chat').classList.remove('big');
       $('chat-big').setAttribute('aria-pressed', false);
       Object.assign($('chat').style, { width: '', height: '' });
-      vicinoAllaMascotte();
+      chatSopraMascotte();
     });
-    new ResizeObserver(() => tieniDentro($('chat'))).observe($('chat'));
+    new ResizeObserver(mascotteSottoChat).observe($('chat'));
     window.addEventListener('resize', () => {
-      tieniDentro($('chat'));
       tieniDentro($('chat-open'));
+      chatSopraMascotte();
     });
 
     // APERTURA E COMANDI
@@ -2064,7 +2153,7 @@
       $('chat').hidden = !$('chat').hidden;
       if ($('chat').hidden) return;
       document.querySelector('#chat-open .dot').classList.remove('pronta');
-      if (!chatSpostata) vicinoAllaMascotte();
+      chatSopraMascotte();
       aggiornaContesto();
       controllaServer();
       $('chat-input').focus();
@@ -2075,7 +2164,7 @@
     $('chat-big').addEventListener('click', (e) => {
       Object.assign($('chat').style, { width: '', height: '' });
       e.currentTarget.setAttribute('aria-pressed', $('chat').classList.toggle('big'));
-      tieniDentro($('chat'));
+      mascotteSottoChat();
     });
     $('chat-clear').addEventListener('click', () => {
       storia.length = 0;

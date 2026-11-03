@@ -7,6 +7,7 @@ Regole per il diagramma della **struttura** (`MAPPA` `struttura` delle skill): o
 - il diagramma è una pagina HTML interattiva, sfondo scuro, generata dal template `~/.claude/shared/diagramma-pagina-template.html`.
 - copia il template e sostituisci **solo** il JSON dentro `<script id="page-data">`: non modificare HTML, CSS o JS del template (le regole del JSON sono nel commento sopra il blocco).
 - **chat**: segui `~/.claude/shared/chat-mappa.md` (server avviato e campo `chat` nel JSON).
+- `overview`: il riepilogo del pannello di destra all'apertura e cliccando fuori dai telefoni, con le stesse regole del diagramma dei dati (`goal`, `problem`, `todo`, `files`, `notes`).
 
 ## Schermate
 
