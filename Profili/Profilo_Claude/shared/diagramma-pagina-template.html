@@ -21,8 +21,8 @@
     --syn-function: #d2a8ff;
     --syn-type: #56d4dd;
     --syn-file: #8b949e;
-    --chat: #8b5cf6;
-    --chat-bg: #2a1f4a;
+    --chat: #d97757;
+    --chat-bg: #3d2219;
     color-scheme: dark;
   }
 
@@ -95,8 +95,18 @@
     padding: 20px 24px;
   }
 
+  #stage {
+    cursor: grab;
+  }
+
+  #stage.panning {
+    cursor: grabbing;
+    user-select: none;
+  }
+
   .screen-col {
     flex: none;
+    zoom: var(--zoom, 1);
   }
 
   .screen-name {
@@ -397,7 +407,7 @@
     margin: 0 auto;
     image-rendering: pixelated;
     shape-rendering: crispEdges;
-    filter: drop-shadow(0 0 6px rgba(139, 92, 246, .55));
+    filter: drop-shadow(0 0 6px rgba(217, 119, 87, .6));
     animation: chat-float 2.6s ease-in-out infinite;
   }
 
@@ -590,6 +600,13 @@
     padding: 12px;
   }
 
+  #chat-log:empty::before {
+    content: "Fai una domanda";
+    margin: auto;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
   #chat-log .msg {
     max-width: 92%;
     padding: 8px 12px;
@@ -771,6 +788,9 @@
     <p class="subtitle" id="subtitle"></p>
   </div>
   <div class="controls">
+    <button id="zoom-out" title="Riduci (Ctrl + rotella)">&minus;</button>
+    <button id="zoom-reset" title="Torna al 100%">100%</button>
+    <button id="zoom-in" title="Ingrandisci (Ctrl + rotella)">+</button>
     <button id="numbers" aria-pressed="false" title="Mostra il numero S di ogni elemento">Numeri</button>
     <button id="prev" title="Elemento precedente (freccia su)">&uarr;</button>
     <button id="next" title="Elemento successivo (freccia giù)">&darr;</button>
@@ -793,7 +813,7 @@
   <div id="chat-log"></div>
   <div class="chat-ctx" id="chat-ctx"></div>
   <form id="chat-form">
-    <textarea id="chat-input" rows="2" placeholder="Fai una domanda… (Invio invia, Shift+Invio va a capo)"></textarea>
+    <textarea id="chat-input" rows="2" placeholder="Fai una domanda…"></textarea>
     <button type="submit" id="chat-send">Invia</button>
   </form>
 </section>
@@ -1027,6 +1047,7 @@
         <h2>Come leggere la mappa</h2>
         <p class="hint">Ogni schermata è disegnata come appare sul telefono, con gli stili presi dal codice: le proporzioni sono simulate, testi e colori sono quelli reali.</p>
         <p class="hint">Passa il mouse su un elemento per vedere il suo numero <b>S</b>, cliccalo per vedere file, props e stile. Con <b>Numeri</b> li vedi tutti insieme.</p>
+        <p class="hint">Trascina per muoverti, <kbd>Ctrl</kbd> + rotella o i pulsanti <b>− +</b> per ingrandire e ridurre.</p>
         <p class="hint">Usa <kbd>&uarr;</kbd> <kbd>&darr;</kbd> per scorrere gli elementi, <kbd>Esc</kbd> per tornare qui.</p>
         ${byScreen}`;
       panel.querySelectorAll('.tree li').forEach((li) => li.addEventListener('click', () => select(Number(li.dataset.i))));
@@ -1108,6 +1129,80 @@
   }
 </script>
 <script>
+  // NAVIGAZIONE MAPPA
+  // Trascinando la mappa si scorre; con i pulsanti − + o Ctrl + rotella si ingrandisce e si riduce
+  (() => {
+    const area = document.querySelector('#stage');
+    const MIN = 0.4;
+    const MAX = 2.5;
+    const PASSO = 1.2;
+    const SOGLIA = 4;
+    let zoom = 1;
+    let trascinato = false;
+
+    function impostaZoom(valore, cx, cy) {
+      const nuovo = Math.min(MAX, Math.max(MIN, valore));
+      const box = area.getBoundingClientRect();
+      const px = (cx ?? box.left + box.width / 2) - box.left;
+      const py = (cy ?? box.top + box.height / 2) - box.top;
+      const fx = (area.scrollLeft + px) / zoom;
+      const fy = (area.scrollTop + py) / zoom;
+      zoom = nuovo;
+      area.style.setProperty('--zoom', zoom);
+      // Il punto sotto il puntatore resta fermo mentre la mappa cambia dimensione
+      area.scrollLeft = fx * zoom - px;
+      area.scrollTop = fy * zoom - py;
+      document.getElementById('zoom-reset').textContent = `${Math.round(zoom * 100)}%`;
+    }
+
+    document.getElementById('zoom-in').addEventListener('click', () => impostaZoom(zoom * PASSO));
+    document.getElementById('zoom-out').addEventListener('click', () => impostaZoom(zoom / PASSO));
+    document.getElementById('zoom-reset').addEventListener('click', () => impostaZoom(1));
+    area.addEventListener('wheel', (e) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      impostaZoom(zoom * Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY);
+    }, { passive: false });
+
+    // TRASCINAMENTO MAPPA
+    // Sotto la soglia è un clic (seleziona); oltre, la mappa segue il puntatore e il clic finale viene ignorato
+    area.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || e.target.closest('a, button, input, textarea')) return;
+      trascinato = false;
+      const x0 = e.clientX;
+      const y0 = e.clientY;
+      const sl = area.scrollLeft;
+      const st = area.scrollTop;
+      let preso = false;
+
+      const muovi = (ev) => {
+        if (!preso && Math.hypot(ev.clientX - x0, ev.clientY - y0) < SOGLIA) return;
+        if (!preso) {
+          preso = true;
+          area.setPointerCapture(e.pointerId);
+          area.classList.add('panning');
+        }
+        area.scrollLeft = sl - (ev.clientX - x0);
+        area.scrollTop = st - (ev.clientY - y0);
+      };
+      const lascia = () => {
+        area.removeEventListener('pointermove', muovi);
+        area.classList.remove('panning');
+        trascinato = preso;
+      };
+      area.addEventListener('pointermove', muovi);
+      area.addEventListener('pointerup', lascia, { once: true });
+      area.addEventListener('pointercancel', lascia, { once: true });
+    });
+    area.addEventListener('click', (e) => {
+      if (!trascinato) return;
+      trascinato = false;
+      e.stopPropagation();
+      e.preventDefault();
+    }, true);
+  })();
+</script>
+<script>
   // Cosa la chat sa della mappa: i dati (con i numeri S assegnati) e l'elemento selezionato
   const MAPPA_CHAT = {
     tipo: 'struttura',
@@ -1173,9 +1268,6 @@
       return msg;
     }
 
-    function benvenuto() {
-      aggiungi('info', 'Chiedimi qualcosa su questa mappa: un passo, un elemento, un termine o un dubbio di programmazione. Se selezioni un riquadro, la domanda parte da lì. La conversazione non viene salvata: ricaricando la pagina riparte da zero.');
-    }
 
     function serverSpento() {
       const msg = aggiungi('errore', `La chat non risponde: il server locale è spento. Avvialo da un terminale con<br><code>${esc(AVVIO)}</code><br><button type="button">Copia comando</button>`);
@@ -1262,17 +1354,31 @@
     const INDIZI = Array.isArray(MAPPA_CHAT.dati.indizi) ? MAPPA_CHAT.dati.indizi : [];
     let indiziUsati = 0;
 
-    function spegniLuce() {
-      document.querySelectorAll('.luce').forEach((el) => el.classList.remove('luce', 'luce-zoom'));
-      document.body.classList.remove('con-indizio');
-    }
+    let luceAttiva = null;
 
-    function accendiLuce(indizio) {
-      spegniLuce();
+    function illumina(indizio) {
+      document.querySelectorAll('.luce').forEach((el) => el.classList.remove('luce', 'luce-zoom'));
       const trovati = indizio.punti.map(MAPPA_CHAT.trova).filter(Boolean);
       trovati.forEach((el) => el.classList.add('luce'));
       if (trovati.length === 1) trovati[0].classList.add('luce-zoom');
       document.body.classList.add('con-indizio');
+      return trovati;
+    }
+
+    function spegniLuce() {
+      luceAttiva = null;
+      document.querySelectorAll('.luce').forEach((el) => el.classList.remove('luce', 'luce-zoom'));
+      document.body.classList.remove('con-indizio');
+    }
+
+    // La mappa dati si ridisegna quando apri un riquadro: la luce va riaccesa sui riquadri nuovi
+    document.addEventListener('mappa-ridisegnata', () => {
+      if (luceAttiva) illumina(luceAttiva);
+    });
+
+    function accendiLuce(indizio) {
+      luceAttiva = indizio;
+      const trovati = illumina(indizio);
       if (!trovati.length) return;
       // Nella mappa struttura si scorre il telefono intero: scorrere dentro lo schermo simulato lo sposterebbe
       (trovati[0].closest('.frame') || trovati[0]).scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
@@ -1327,7 +1433,7 @@
     $('chat-hint').addEventListener('click', chiediIndizio);
 
     // MASCOTTE
-    // Ogni carattere è un pixel: D contorno, P viola, L riflesso, W bianco occhio, K pupilla e bocca, R guance
+    // Ogni carattere è un pixel: D contorno, P arancione, L riflesso, W bianco occhio, K pupilla e bocca, R guance
     const SPRITE = [
       '..DDDDDDDD..',
       '.DPPPPPPPPD.',
@@ -1342,7 +1448,7 @@
       '..DD........',
       '.DD.........',
     ];
-    const PIXEL = { D: '#2e1065', P: '#8b5cf6', L: '#c4b5fd', W: '#ffffff', K: '#1e1b4b', R: '#f472b6' };
+    const PIXEL = { D: '#5c2414', P: '#d97757', L: '#f5c4ad', W: '#ffffff', K: '#2b130b', R: '#f9a8a0' };
     const pixel = (x, y, c) => `<rect x="${x}" y="${y}" width="1" height="1" fill="${PIXEL[c]}"/>`;
     // Sotto gli occhi va il viola: si vede quando gli occhi diventano spirali
     const corpo = SPRITE.flatMap((riga, y) => [...riga].map((c, x) => (PIXEL[c] ? pixel(x, y, y >= 3 && y <= 5 && 'WK'.includes(c) ? 'P' : c) : ''))).join('');
@@ -1466,7 +1572,6 @@
     $('chat-clear').addEventListener('click', () => {
       storia.length = 0;
       $('chat-log').innerHTML = '';
-      benvenuto();
     });
     $('chat-form').addEventListener('submit', invia);
     // I tasti scritti nella chat non devono muovere la selezione della mappa
@@ -1478,7 +1583,6 @@
     document.addEventListener('click', aggiornaContesto);
     document.addEventListener('keyup', aggiornaContesto);
 
-    benvenuto();
     controllaServer();
   })();
 </script>

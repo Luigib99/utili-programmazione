@@ -61,7 +61,7 @@ In qualsiasi fase:
 ### Con un problema
 
 - se mancano informazioni per riprodurre il problema (passi, ambiente, log), chiedile prima della mappa.
-- il diagramma deve coprire tutti i punti in cui può trovarsi il problema ed essere **neutro**: ogni passo o elemento con lo stesso peso; niente `incoming: "lost"`; né `action`, né `payloadName`, né i testi (`physical`, `simple`, `does`, `purpose`, `receives`, `returns`, `explanation`), né `fields`, `badges` o `label` mettono in risalto il punto del bug; descrivi cosa fa il codice, non cosa manca o cosa è sbagliato. Raggruppando parti per restare nei limiti, non isolare né escludere il punto del bug.
+- il diagramma deve coprire tutti i punti in cui può trovarsi il problema ed essere **neutro**: ogni passo o elemento con lo stesso peso; niente `incoming: "lost"`; né `action`, né `short`, né `payloadName`, né `call`, né i testi (`physical`, `simple`, `does`, `purpose`, `receives`, `returns`, `explanation`), né `fields`, `badges` o `label` mettono in risalto il punto del bug; descrivi cosa fa il codice, non cosa manca o cosa è sbagliato. Raggruppando parti per restare nei limiti, non isolare né escludere il punto del bug.
 - gli `indizi` sono l'unica parte della mappa che porta verso il punto del bug: restano nascosti finché l'utente non li apre e seguono le regole sopra.
 - anche le **NOTE** sono neutre: aiutano a leggere il diagramma (es. da dove arriva un dato, in che ordine partono due chiamate) senza indicare né far intuire dov'è il bug.
 - la RICHIESTA diventa: "Scrivimi per punti cosa correggeresti e come, anche se non sei sicuro."

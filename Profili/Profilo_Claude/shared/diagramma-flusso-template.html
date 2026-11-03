@@ -25,8 +25,8 @@
     --syn-function: #d2a8ff;
     --syn-type: #56d4dd;
     --syn-file: #8b949e;
-    --chat: #8b5cf6;
-    --chat-bg: #2a1f4a;
+    --chat: #d97757;
+    --chat-bg: #3d2219;
     color-scheme: dark;
   }
 
@@ -124,6 +124,15 @@
     align-items: flex-start;
     overflow: auto;
     padding: 16px;
+  }
+
+  #diagram {
+    cursor: grab;
+  }
+
+  #diagram.panning {
+    cursor: grabbing;
+    user-select: none;
   }
 
   #diagram svg {
@@ -338,6 +347,40 @@
     font: 12.5px ui-monospace, Consolas, monospace;
   }
 
+  /* Riquadro chiuso: frase semplice in grigio; aperto: versione tecnica */
+  .node .breve {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .node .tecnico p {
+    margin: 6px 0 0;
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
+
+  .node .toggle {
+    float: right;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  .call-kind {
+    display: inline-block;
+    padding: 2px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-weight: 600;
+  }
+
+  #diagram > svg {
+    zoom: var(--zoom, 1);
+  }
+
   .node .action {
     margin-top: 2px;
     color: var(--text);
@@ -544,7 +587,7 @@
     margin: 0 auto;
     image-rendering: pixelated;
     shape-rendering: crispEdges;
-    filter: drop-shadow(0 0 6px rgba(139, 92, 246, .55));
+    filter: drop-shadow(0 0 6px rgba(217, 119, 87, .6));
     animation: chat-float 2.6s ease-in-out infinite;
   }
 
@@ -737,6 +780,13 @@
     padding: 12px;
   }
 
+  #chat-log:empty::before {
+    content: "Fai una domanda";
+    margin: auto;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
   #chat-log .msg {
     max-width: 92%;
     padding: 8px 12px;
@@ -924,6 +974,9 @@
     <span><i class="swatch-line" style="border-color: var(--lost); border-top-style: dashed"></i>non arriva</span>
   </div>
   <div class="controls">
+    <button id="zoom-out" title="Riduci (Ctrl + rotella)">&minus;</button>
+    <button id="zoom-reset" title="Torna al 100%">100%</button>
+    <button id="zoom-in" title="Ingrandisci (Ctrl + rotella)">+</button>
     <button id="prev" title="Passo precedente (freccia su)">&uarr;</button>
     <button id="next" title="Passo successivo (freccia giù)">&darr;</button>
     <button id="mode" aria-pressed="false" title="Oscura i passi successivi a quello selezionato">Passo-passo</button>
@@ -948,7 +1001,7 @@
   <div id="chat-log"></div>
   <div class="chat-ctx" id="chat-ctx"></div>
   <form id="chat-form">
-    <textarea id="chat-input" rows="2" placeholder="Fai una domanda… (Invio invia, Shift+Invio va a capo)"></textarea>
+    <textarea id="chat-input" rows="2" placeholder="Fai una domanda…"></textarea>
     <button type="submit" id="chat-send">Invia</button>
   </form>
 </section>
@@ -961,6 +1014,8 @@
   - path, line: percorso assoluto del file e riga dell'element; rendono cliccabili i nomi (aprono VS Code)
   - physical: sezione "Cosa succede fisicamente", la prima del pannello: solo ciò che l'utente vede e fa
   - simple: sezione "Spiegazione semplice", la seconda del pannello
+  - short: frase brevissima e semplice (max ~60 caratteri, niente termini tecnici) scritta in grigio nel riquadro chiuso;
+    cliccando il riquadro si apre e mostra la versione tecnica (action + does)
   - does / purpose / receives / returns: sezioni "Cosa fa", "A cosa serve", "Riceve", "Restituisce" del pannello
   - terms: { "termine": "significato semplice" } mostrati come glossario del passo
   - nei testi, il codice va tra backtick (`esempio`) e viene mostrato come codice
@@ -970,6 +1025,8 @@
   - section: (opzionale) inizia un nuovo flusso con un titolo, senza freccia dal nodo precedente
   - incoming: (opzionale) "lost" se la freccia dal nodo precedente non arriva (rossa tratteggiata)
   - payloadName / payload / fields: cosa passa al nodo successivo (payload null se nulla)
+  - call: (opzionale) cosa succede sulla freccia in uscita, mostrato cliccandola:
+    { "kind": "http" | "socket" | "navigation" | "function" | "event" | "storage" | "process", "label": "POST /auth/login", "note": "frase semplice" }
   - fields: { "percorso.del.campo": "spiegazione" }, gli array usano "lista[]", "" è il valore intero
   - per mostrare un valore undefined scrivi "__undefined__"
   - indizi: (opzionale) [{ "testo": cosa osservare, "punti": ["D4", "D5"] }, { "testo", "punti": ["D5"] }]
@@ -1010,7 +1067,8 @@
   const LANE_W = 330;
   const LANE_GAP = 40;
   const NODE_W = 290;
-  const NODE_H = 96;
+  const NODE_MIN_H = 84;
+  const ANIM_MS = 260;
   const GAP = 76;
   const SECTION_H = 44;
   const HEADER_H = 46;
@@ -1103,6 +1161,62 @@
       : 'Copia non riuscita: apri il file in un browser esterno per usare il link diretto');
   });
 
+  // CONTENUTO RIQUADRO
+  // Chiuso: una frase semplice in grigio. Aperto: la versione tecnica (action + does). p va da 0 (chiuso) a 1 (aperto)
+  const primaFrase = (testo) => (testo || '').split(/(?<=[.!?])\s/)[0];
+
+  function contenutoNodo(node, p) {
+    const breve = node.short || primaFrase(node.simple) || node.action;
+    const tecnico = node.does || node.explanation;
+    const corpo = p > 0
+      ? `<div class="tecnico" style="opacity: ${p.toFixed(2)}"><div class="action">${fmt(node.action)}</div>${tecnico ? `<p>${fmt(tecnico)}</p>` : ''}</div>`
+      : `<div class="breve">${fmt(breve)}</div>`;
+    return `
+      <div class="node ${node.side}${p > 0 ? ' open' : ''}">
+        <div class="tag">${node.side}<span class="toggle">${p > 0 ? 'meno' : 'più'} ${p > 0 ? '&#9652;' : '&#9662;'}</span></div>
+        <div class="title" title="${esc(node.element ? `${node.element} · ${node.file}` : node.file)}">${codeLink(node, node.line, `<span class="element">${esc(node.element || node.file)}</span>`)}${node.element ? `<span class="sep">·</span>${codeLink(node, 1, `<span class="file">${esc(node.file)}</span>`)}` : ''}</div>
+        ${corpo}
+      </div>`;
+  }
+
+  // ALTEZZA RIQUADRI
+  // Misura fuori schermo ogni riquadro chiuso e aperto, con la stessa larghezza che ha nel diagramma
+  function misuraAltezze() {
+    const prova = document.createElement('div');
+    prova.style.cssText = `position: absolute; left: -9999px; top: 0; width: ${NODE_W}px; visibility: hidden`;
+    document.body.appendChild(prova);
+    FLOW.nodes.forEach((node) => {
+      [['hClosed', 0], ['hOpen', 1]].forEach(([chiave, p]) => {
+        prova.innerHTML = contenutoNodo(node, p);
+        const div = prova.firstElementChild;
+        div.style.height = 'auto';
+        node[chiave] = Math.max(NODE_MIN_H, Math.ceil(div.getBoundingClientRect().height));
+      });
+      node.p = node.open ? 1 : 0;
+      node.h = node.open ? node.hOpen : node.hClosed;
+    });
+    prova.remove();
+  }
+
+  // APERTURA RIQUADRO
+  // L'altezza cresce un fotogramma alla volta e i riquadri sotto scorrono giù: è l'effetto di scorrimento
+  function apriChiudi(i) {
+    const node = FLOW.nodes[i];
+    node.open = !node.open;
+    const da = node.h;
+    const a = node.open ? node.hOpen : node.hClosed;
+    const inizio = performance.now();
+    const passo = (ora) => {
+      const t = Math.min(1, (ora - inizio) / ANIM_MS);
+      const e = 1 - (1 - t) ** 3;
+      node.h = da + (a - da) * e;
+      node.p = node.open ? e : 1 - e;
+      renderDiagram();
+      if (t < 1) requestAnimationFrame(passo);
+    };
+    requestAnimationFrame(passo);
+  }
+
   // POSIZIONI NODI
   function layout() {
     let y = HEADER_H + 24;
@@ -1114,13 +1228,15 @@
         y += SECTION_H + extra;
       }
       node.y = y;
-      y += NODE_H + GAP;
+      y += node.h + GAP;
     });
     return y - GAP + 24;
   }
 
   // RENDER DIAGRAMMA
+  // Ridisegnato da zero a ogni apertura di un riquadro; dopo, la selezione (e la luce degli indizi) si riapplica
   function renderDiagram() {
+    document.querySelector('#diagram > svg')?.remove();
     const height = layout();
     const width = PAD * 2 + LANE_W * 2 + LANE_GAP;
     const svg = el('svg', { width, height, viewBox: `0 0 ${width} ${height}` });
@@ -1150,6 +1266,8 @@
     });
 
     FLOW.nodes.forEach((node, i) => renderNode(svg, node, i));
+    applicaSelezione();
+    document.dispatchEvent(new Event('mappa-ridisegnata'));
   }
 
   // RENDER FRECCIA
@@ -1158,15 +1276,15 @@
     const color = lost ? cv('lost') : LANES[from.side].stroke;
     const marker = lost ? 'lost' : from.side;
     const x1 = centerX(from);
-    const y1 = from.y + NODE_H;
+    const y1 = from.y + from.h;
     const x2 = centerX(to);
     const y2 = to.y - 2;
     const mid = (y1 + y2) / 2;
     const straight = x1 === x2;
     const d = straight ? `M${x1},${y1} V${y2}` : `M${x1},${y1} V${mid} H${x2} V${y2}`;
 
-    const g = el('g', { class: 'item', 'data-i': fromIndex }, svg);
-    g.addEventListener('click', () => select(fromIndex));
+    const g = el('g', { class: 'item edge', 'data-i': fromIndex }, svg);
+    g.addEventListener('click', () => select(fromIndex, 'freccia'));
     el('path', { d, fill: 'none', stroke: 'transparent', 'stroke-width': 16 }, g);
     el('path', { class: 'edge-path', d, fill: 'none', stroke: color, 'stroke-width': 2, 'stroke-dasharray': lost ? '6 4' : '', 'marker-end': `url(#head-${marker})`, 'data-marker': marker }, g);
 
@@ -1193,16 +1311,17 @@
   function renderNode(svg, node, i) {
     const x = centerX(node) - NODE_W / 2;
     const g = el('g', { class: 'item', 'data-i': i }, svg);
-    g.addEventListener('click', () => select(i));
+    g.addEventListener('click', (e) => {
+      if (e.target.closest('a.code-link')) return;
+      select(i);
+      apriChiudi(i);
+    });
 
-    const fo = el('foreignObject', { x, y: node.y, width: NODE_W, height: NODE_H }, g);
-    const div = document.createElementNS(XHTML_NS, 'div');
-    div.className = `node ${node.side}`;
-    div.innerHTML = `
-      <div class="tag">${node.side}</div>
-      <div class="title" title="${esc(node.element ? `${node.element} · ${node.file}` : node.file)}">${codeLink(node, node.line, `<span class="element">${esc(node.element || node.file)}</span>`)}${node.element ? `<span class="sep">·</span>${codeLink(node, 1, `<span class="file">${esc(node.file)}</span>`)}` : ''}</div>
-      <div class="action">${fmt(node.action)}</div>`;
-    fo.appendChild(div);
+    const fo = el('foreignObject', { x, y: node.y, width: NODE_W, height: node.h }, g);
+    const wrap = document.createElementNS(XHTML_NS, 'div');
+    wrap.style.height = '100%';
+    wrap.innerHTML = contenutoNodo(node, node.p);
+    fo.appendChild(wrap);
 
     const color = LANES[node.side].stroke;
     el('circle', { cx: x, cy: node.y, r: 15, fill: cv('bg'), stroke: color, 'stroke-width': 2 }, g);
@@ -1360,6 +1479,47 @@
   }
 
   // RENDER PANNELLO
+  const CALL_LABELS = {
+    http: 'Chiamata HTTP al server',
+    socket: 'Messaggio socket',
+    navigation: 'Navigazione verso un\'altra schermata',
+    function: 'Chiamata di funzione',
+    event: 'Evento',
+    storage: 'Lettura o scrittura nella memoria del dispositivo',
+    process: 'Avvio di un altro programma',
+  };
+
+  function oggettoHtml(node) {
+    const hasPayload = node.payload !== null && node.payload !== undefined;
+    return hasPayload
+      ? `<div class="obj stacked">${renderObject(node.payload, node.fields || {})}</div>`
+      : `<p class="hint">${node.payloadName ? `${esc(node.payloadName)}: nessun oggetto` : 'Non passa nessun oggetto.'}</p>`;
+  }
+
+  // PANNELLO FRECCIA
+  // Che tipo di passaggio è (chiamata HTTP, navigazione, funzione…) e cosa trasporta
+  function renderEdgePanel(panel) {
+    const from = FLOW.nodes[state.selected];
+    const to = FLOW.nodes[state.selected + 1];
+    const call = from.call;
+    const dentro = from.side === 'FRONTEND' ? 'dentro l\'app' : 'dentro il server';
+    const tipo = call
+      ? (CALL_LABELS[call.kind] || call.kind)
+      : (from.side !== to.side ? 'Passaggio tra app e server' : `Passaggio ${dentro}`);
+
+    panel.innerHTML = `
+      <span class="panel-tag ${from.side}">${from.side}</span> &rarr; <span class="panel-tag ${to.side}">${to.side}</span>
+      <h2>D${from.number} &rarr; D${to.number}</h2>
+      <p class="route">${esc(from.element || from.file)} &rarr; ${esc(to.element || to.file)}${to.incoming === 'lost' ? ' — <b style="color: var(--lost)">non arriva</b>' : ''}</p>
+      <h3>Cosa succede su questa freccia</h3>
+      <p><span class="call-kind">${esc(tipo)}</span></p>
+      ${call?.label ? `<p><code>${highlight(call.label)}</code></p>` : ''}
+      ${call?.note ? `<p class="explanation">${fmt(call.note)}</p>` : ''}
+      ${call ? '' : '<p class="hint">Per questa freccia la mappa non indica una chiamata: il dato passa e basta.</p>'}
+      <h3>Cosa passa · ${esc(from.payloadName || 'oggetto')}</h3>
+      ${oggettoHtml(from)}`;
+  }
+
   function renderPanel() {
     const panel = document.getElementById('panel');
 
@@ -1367,9 +1527,15 @@
       panel.innerHTML = `
         <h2>Come leggere il diagramma</h2>
         <p class="hint">Il flusso si legge dall'alto verso il basso. A sinistra la corsia FRONTEND (blu), a destra la corsia BACKEND (giallo): quando una freccia cambia corsia, i dati passano tra app e server.</p>
-        <p class="hint">L'etichetta sulla freccia dice cosa passa al passo successivo. Clicca un riquadro o una freccia per vedere l'oggetto completo e la spiegazione.</p>
+        <p class="hint">Ogni riquadro mostra una frase semplice: cliccalo per aprirlo e leggere la versione tecnica, e qui a destra tutti i dettagli. Clicca una freccia per vedere che chiamata è e cosa trasporta.</p>
+        <p class="hint">Trascina lo sfondo per muoverti, <kbd>Ctrl</kbd> + rotella o i pulsanti <b>− +</b> per ingrandire e ridurre.</p>
         <p class="hint">I numeri <b>D1, D2…</b> sono il riferimento comune: puoi scrivere "al passo D4…".</p>
         <p class="hint">Usa <kbd>&uarr;</kbd> <kbd>&darr;</kbd> per scorrere i passi. Con <b>Passo-passo</b> attivo i passi successivi restano oscurati.</p>`;
+      return;
+    }
+
+    if (state.edge) {
+      renderEdgePanel(panel);
       return;
     }
 
@@ -1380,9 +1546,6 @@
     const destination = goesOn
       ? `<p class="route">passa a: <span class="panel-tag ${next.side}">${next.side}</span> ${esc(next.file)}${next.incoming === 'lost' ? ' — <b style="color: var(--lost)">non arriva</b>' : ''}</p>`
       : '<p class="route">ultimo passo di questo flusso</p>';
-    const objectHtml = hasPayload
-      ? `<div class="obj stacked">${renderObject(node.payload, node.fields || {})}</div>`
-      : `<p class="hint">${node.payloadName ? `${esc(node.payloadName)}: nessun oggetto` : 'Non passa nessun oggetto.'}</p>`;
 
     const section = (title, text) => (text ? `<h3>${title}</h3><p class="explanation">${fmt(text)}</p>` : '');
     const terms = Object.entries(node.terms || {});
@@ -1401,21 +1564,29 @@
       ${section('Restituisce', node.returns)}
       <h3>${hasPayload ? `Cosa passa al passo successivo · ${esc(node.payloadName || 'oggetto')}` : 'Cosa passa al passo successivo'}</h3>
       ${destination}
-      ${objectHtml}
+      ${oggettoHtml(node)}
       ${termsHtml}`;
   }
 
   // SELEZIONE E NAVIGAZIONE
-  function select(i) {
-    state.selected = i;
+  // tipo "freccia": è selezionata la freccia che esce dal passo i, non il riquadro
+  function applicaSelezione() {
+    const i = state.selected;
     document.querySelectorAll('.item').forEach((g) => {
       const gi = Number(g.dataset.i);
-      const isSelected = i !== null && gi === i;
+      const isEdge = g.classList.contains('edge');
+      const isSelected = i !== null && gi === i && (isEdge || !state.edge);
       g.classList.toggle('sel', isSelected);
       g.classList.toggle('dim', state.stepMode && i !== null && gi > i);
       const edge = g.querySelector('.edge-path');
       if (edge) edge.setAttribute('marker-end', `url(#head-${isSelected ? 'sel' : edge.dataset.marker})`);
     });
+  }
+
+  function select(i, tipo = 'nodo') {
+    state.selected = i;
+    state.edge = i !== null && tipo === 'freccia';
+    applicaSelezione();
     renderPanel();
     renderTracked();
   }
@@ -1434,7 +1605,7 @@
   document.getElementById('mode').addEventListener('click', (e) => {
     state.stepMode = !state.stepMode;
     e.currentTarget.setAttribute('aria-pressed', state.stepMode);
-    select(state.selected);
+    select(state.selected, state.edge ? 'freccia' : 'nodo');
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowDown') {
@@ -1448,6 +1619,7 @@
     if (e.key === 'Escape') select(null);
   });
 
+  misuraAltezze();
   renderDiagram();
   renderPanel();
   renderTracked();
@@ -1460,19 +1632,95 @@
   }
 </script>
 <script>
+  // NAVIGAZIONE MAPPA
+  // Trascinando la mappa si scorre; con i pulsanti − + o Ctrl + rotella si ingrandisce e si riduce
+  (() => {
+    const area = document.querySelector('#diagram');
+    const MIN = 0.4;
+    const MAX = 2.5;
+    const PASSO = 1.2;
+    const SOGLIA = 4;
+    let zoom = 1;
+    let trascinato = false;
+
+    function impostaZoom(valore, cx, cy) {
+      const nuovo = Math.min(MAX, Math.max(MIN, valore));
+      const box = area.getBoundingClientRect();
+      const px = (cx ?? box.left + box.width / 2) - box.left;
+      const py = (cy ?? box.top + box.height / 2) - box.top;
+      const fx = (area.scrollLeft + px) / zoom;
+      const fy = (area.scrollTop + py) / zoom;
+      zoom = nuovo;
+      area.style.setProperty('--zoom', zoom);
+      // Il punto sotto il puntatore resta fermo mentre la mappa cambia dimensione
+      area.scrollLeft = fx * zoom - px;
+      area.scrollTop = fy * zoom - py;
+      document.getElementById('zoom-reset').textContent = `${Math.round(zoom * 100)}%`;
+    }
+
+    document.getElementById('zoom-in').addEventListener('click', () => impostaZoom(zoom * PASSO));
+    document.getElementById('zoom-out').addEventListener('click', () => impostaZoom(zoom / PASSO));
+    document.getElementById('zoom-reset').addEventListener('click', () => impostaZoom(1));
+    area.addEventListener('wheel', (e) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      impostaZoom(zoom * Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY);
+    }, { passive: false });
+
+    // TRASCINAMENTO MAPPA
+    // Sotto la soglia è un clic (seleziona); oltre, la mappa segue il puntatore e il clic finale viene ignorato
+    area.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || e.target.closest('a, button, input, textarea')) return;
+      trascinato = false;
+      const x0 = e.clientX;
+      const y0 = e.clientY;
+      const sl = area.scrollLeft;
+      const st = area.scrollTop;
+      let preso = false;
+
+      const muovi = (ev) => {
+        if (!preso && Math.hypot(ev.clientX - x0, ev.clientY - y0) < SOGLIA) return;
+        if (!preso) {
+          preso = true;
+          area.setPointerCapture(e.pointerId);
+          area.classList.add('panning');
+        }
+        area.scrollLeft = sl - (ev.clientX - x0);
+        area.scrollTop = st - (ev.clientY - y0);
+      };
+      const lascia = () => {
+        area.removeEventListener('pointermove', muovi);
+        area.classList.remove('panning');
+        trascinato = preso;
+      };
+      area.addEventListener('pointermove', muovi);
+      area.addEventListener('pointerup', lascia, { once: true });
+      area.addEventListener('pointercancel', lascia, { once: true });
+    });
+    area.addEventListener('click', (e) => {
+      if (!trascinato) return;
+      trascinato = false;
+      e.stopPropagation();
+      e.preventDefault();
+    }, true);
+  })();
+</script>
+<script>
   // Cosa la chat sa della mappa: i dati (senza posizioni e configurazione) e il passo selezionato
   const MAPPA_CHAT = {
     tipo: 'dati',
     dati: FLOW,
     // Gli indizi non vanno al Claude della chat: potrebbe svelare il punto prima che l'utente lo chieda
-    mappa: () => ({ ...FLOW, chat: undefined, indizi: undefined, nodes: FLOW.nodes.map(({ y, sectionY, ...node }) => node) }),
+    mappa: () => ({ ...FLOW, chat: undefined, indizi: undefined, nodes: FLOW.nodes.map(({ y, sectionY, h, hOpen, hClosed, p, open, ...node }) => node) }),
     trova: (punto) => {
       const i = Number(String(punto).replace(/^D/i, '')) - 1;
       return [...document.querySelectorAll(`.item[data-i="${i}"]`)].find((g) => g.querySelector('foreignObject'));
     },
     selezione: () => {
       const node = FLOW.nodes[state.selected];
-      return node ? `D${node.number} · ${node.element || node.file}${node.element ? ` (${node.file})` : ''}` : null;
+      if (!node) return null;
+      if (state.edge) return `freccia D${node.number} → D${node.number + 1}${node.call?.label ? ` (${node.call.label})` : ''}`;
+      return `D${node.number} · ${node.element || node.file}${node.element ? ` (${node.file})` : ''}`;
     },
   };
 </script>
@@ -1528,9 +1776,6 @@
       return msg;
     }
 
-    function benvenuto() {
-      aggiungi('info', 'Chiedimi qualcosa su questa mappa: un passo, un elemento, un termine o un dubbio di programmazione. Se selezioni un riquadro, la domanda parte da lì. La conversazione non viene salvata: ricaricando la pagina riparte da zero.');
-    }
 
     function serverSpento() {
       const msg = aggiungi('errore', `La chat non risponde: il server locale è spento. Avvialo da un terminale con<br><code>${esc(AVVIO)}</code><br><button type="button">Copia comando</button>`);
@@ -1617,17 +1862,31 @@
     const INDIZI = Array.isArray(MAPPA_CHAT.dati.indizi) ? MAPPA_CHAT.dati.indizi : [];
     let indiziUsati = 0;
 
-    function spegniLuce() {
-      document.querySelectorAll('.luce').forEach((el) => el.classList.remove('luce', 'luce-zoom'));
-      document.body.classList.remove('con-indizio');
-    }
+    let luceAttiva = null;
 
-    function accendiLuce(indizio) {
-      spegniLuce();
+    function illumina(indizio) {
+      document.querySelectorAll('.luce').forEach((el) => el.classList.remove('luce', 'luce-zoom'));
       const trovati = indizio.punti.map(MAPPA_CHAT.trova).filter(Boolean);
       trovati.forEach((el) => el.classList.add('luce'));
       if (trovati.length === 1) trovati[0].classList.add('luce-zoom');
       document.body.classList.add('con-indizio');
+      return trovati;
+    }
+
+    function spegniLuce() {
+      luceAttiva = null;
+      document.querySelectorAll('.luce').forEach((el) => el.classList.remove('luce', 'luce-zoom'));
+      document.body.classList.remove('con-indizio');
+    }
+
+    // La mappa dati si ridisegna quando apri un riquadro: la luce va riaccesa sui riquadri nuovi
+    document.addEventListener('mappa-ridisegnata', () => {
+      if (luceAttiva) illumina(luceAttiva);
+    });
+
+    function accendiLuce(indizio) {
+      luceAttiva = indizio;
+      const trovati = illumina(indizio);
       if (!trovati.length) return;
       // Nella mappa struttura si scorre il telefono intero: scorrere dentro lo schermo simulato lo sposterebbe
       (trovati[0].closest('.frame') || trovati[0]).scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
@@ -1682,7 +1941,7 @@
     $('chat-hint').addEventListener('click', chiediIndizio);
 
     // MASCOTTE
-    // Ogni carattere è un pixel: D contorno, P viola, L riflesso, W bianco occhio, K pupilla e bocca, R guance
+    // Ogni carattere è un pixel: D contorno, P arancione, L riflesso, W bianco occhio, K pupilla e bocca, R guance
     const SPRITE = [
       '..DDDDDDDD..',
       '.DPPPPPPPPD.',
@@ -1697,7 +1956,7 @@
       '..DD........',
       '.DD.........',
     ];
-    const PIXEL = { D: '#2e1065', P: '#8b5cf6', L: '#c4b5fd', W: '#ffffff', K: '#1e1b4b', R: '#f472b6' };
+    const PIXEL = { D: '#5c2414', P: '#d97757', L: '#f5c4ad', W: '#ffffff', K: '#2b130b', R: '#f9a8a0' };
     const pixel = (x, y, c) => `<rect x="${x}" y="${y}" width="1" height="1" fill="${PIXEL[c]}"/>`;
     // Sotto gli occhi va il viola: si vede quando gli occhi diventano spirali
     const corpo = SPRITE.flatMap((riga, y) => [...riga].map((c, x) => (PIXEL[c] ? pixel(x, y, y >= 3 && y <= 5 && 'WK'.includes(c) ? 'P' : c) : ''))).join('');
@@ -1821,7 +2080,6 @@
     $('chat-clear').addEventListener('click', () => {
       storia.length = 0;
       $('chat-log').innerHTML = '';
-      benvenuto();
     });
     $('chat-form').addEventListener('submit', invia);
     // I tasti scritti nella chat non devono muovere la selezione della mappa
@@ -1833,7 +2091,6 @@
     document.addEventListener('click', aggiornaContesto);
     document.addEventListener('keyup', aggiornaContesto);
 
-    benvenuto();
     controllaServer();
   })();
 </script>
