@@ -7,3 +7,6 @@ desktop.ini
 
 # Repo private annidate (ognuna ha il suo git)
 Privato/
+
+# Dati privati della sala di controllo (gettone, progetti, attività)
+Profili/Profilo_Claude/sala-controllo/dati/

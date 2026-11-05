@@ -1,6 +1,6 @@
 # scheda-form
 
-Mod di Claude Code per le skill del Profilo Claude (`modifica-maggiore`, `modifica-minore`, `revisione`, `lezione`).
+Mod di Claude Code per le skill del Profilo Claude (`revisione`, `lezione`; per `/piano` imposta solo il titolo della sessione dalla riga `PIANO`).
 
 Lanciando una skill **senza testo**, la casella dei messaggi si riempie con lo schema dei campi della sua scheda richiesta e sopra compare l'aiuto di ogni campo. All'invio la mod controlla i campi obbligatori: se ne manca uno la skill non parte e il testo torna nella casella; altrimenti toglie i campi vuoti e lancia la skill. Con testo libero la skill parte come sempre.
 

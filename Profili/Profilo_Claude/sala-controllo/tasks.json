@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Sala di controllo",
+      "type": "shell",
+      "command": "node",
+      "args": ["${userHome}/.claude/sala-controllo/server.js", "--terminale"],
+      "isBackground": true,
+      "problemMatcher": [],
+      "runOptions": { "runOn": "folderOpen" },
+      "presentation": { "reveal": "silent", "focus": false, "panel": "dedicated", "echo": false, "showReuseMessage": false }
+    }
+  ]
+}

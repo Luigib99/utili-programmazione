@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-const SCHEMA = '/modifica-maggiore\nTITOLO: \nOBIETTIVO: \nPROBLEMA: \nDOVE: \nMAPPA: \nNOTE: '
+const SCHEMA = '/revisione\nTITOLO: \nCOSA REVISIONARE: \nCOSA DOVREBBE FARE: \nFOCUS: \nMODALITÀ: \nMAPPA: '
 
 test('senza testo riempie la casella con lo schema e non lancia la skill', async ($, on) => {
   const eseguiti: string[] = []
@@ -14,7 +14,7 @@ test('senza testo riempie la casella con lo schema e non lancia la skill', async
     return { text: 'skill avviata' }
   })
 
-  const risultato = await $.command.run({ command: 'modifica-maggiore', args: '' })
+  const risultato = await $.command.run({ command: 'revisione', args: '' })
 
   expect(casella).toEqual([SCHEMA])
   expect(risultato.text).toContain('MAPPA *')
@@ -33,11 +33,11 @@ test('con un obbligatorio vuoto non parte e rimette il testo nella casella', asy
     return { text: 'skill avviata' }
   })
 
-  const args = '\nTITOLO: tutorial\nOBIETTIVO: rifare le pagine\nDOVE: WelcomeTutorial\nMAPPA: '
-  const risultato = await $.command.run({ command: 'modifica-maggiore', args })
+  const args = '\nTITOLO: login\nCOSA REVISIONARE: LoginScreen.jsx\nMAPPA: '
+  const risultato = await $.command.run({ command: 'revisione', args })
 
   expect(risultato.text).toContain('compila MAPPA')
-  expect(casella).toEqual(['/modifica-maggiore\nTITOLO: tutorial\nOBIETTIVO: rifare le pagine\nDOVE: WelcomeTutorial\nMAPPA: '])
+  expect(casella).toEqual(['/revisione\nTITOLO: login\nCOSA REVISIONARE: LoginScreen.jsx\nMAPPA: '])
   expect(eseguiti).toEqual([])
 })
 
@@ -49,8 +49,8 @@ test('MAPPA con un valore non previsto non parte', async ($, on) => {
     return { text: 'skill avviata' }
   })
 
-  const args = 'TITOLO: tutorial\nOBIETTIVO: rifare le pagine\nDOVE: WelcomeTutorial\nMAPPA: grafica'
-  const risultato = await $.command.run({ command: 'modifica-maggiore', args })
+  const args = 'TITOLO: login\nCOSA REVISIONARE: LoginScreen.jsx\nMAPPA: grafica'
+  const risultato = await $.command.run({ command: 'revisione', args })
 
   expect(risultato.text).toContain('valore non valido in MAPPA (dati, struttura, entrambi)')
   expect(eseguiti).toEqual([])
@@ -64,22 +64,22 @@ test('scheda completa: toglie i campi vuoti, tiene i valori su più righe e lanc
   })
 
   const args = [
-    'DOVE: WelcomeTutorial',
-    'TITOLO: tutorial nuovo',
-    'OBIETTIVO: pagine più leggibili',
-    'e una sola versione per admin e utenti',
-    'MAPPA: Struttura',
-    'NOTE: ',
+    'COSA REVISIONARE: LoginScreen.jsx',
+    'TITOLO: login nuovo',
+    'COSA DOVREBBE FARE: entrare con email e password',
+    'e mostrare l\'errore se sono sbagliate',
+    'MAPPA: Dati',
+    'FOCUS: ',
   ].join('\n')
-  const risultato = await $.command.run({ command: 'modifica-maggiore', args })
+  const risultato = await $.command.run({ command: 'revisione', args })
 
   expect(risultato.text).toBe('skill avviata')
   expect(eseguiti).toEqual([
     [
-      'TITOLO: tutorial nuovo',
-      'OBIETTIVO: pagine più leggibili\ne una sola versione per admin e utenti',
-      'DOVE: WelcomeTutorial',
-      'MAPPA: Struttura',
+      'TITOLO: login nuovo',
+      'COSA REVISIONARE: LoginScreen.jsx',
+      'COSA DOVREBBE FARE: entrare con email e password\ne mostrare l\'errore se sono sbagliate',
+      'MAPPA: Dati',
     ].join('\n'),
   ])
 })
@@ -91,26 +91,26 @@ test('testo libero senza campi: la skill parte così com\'è', async ($, on) => 
     return { text: 'skill avviata' }
   })
 
-  await $.command.run({ command: 'modifica-maggiore', args: 'sposta il pulsante' })
+  await $.command.run({ command: 'revisione', args: 'guarda il login' })
 
-  expect(eseguiti).toEqual(['sposta il pulsante'])
+  expect(eseguiti).toEqual(['guarda il login'])
 })
 
-test('il TITOLO della scheda diventa il titolo della sessione', async ($, on) => {
+test('il TITOLO della scheda e la riga PIANO di /piano diventano il titolo della sessione', async ($, on) => {
   on('classic.UserPromptSubmit', () => ({}))
 
-  const conTitolo = await $.classic.UserPromptSubmit({
-    prompt: '/modifica-maggiore\nTITOLO: Tutorial nuovo\nOBIETTIVO: pagine leggibili',
-  })
+  const conTitolo = await $.classic.UserPromptSubmit({ prompt: '/revisione\nTITOLO: Login nuovo\nMAPPA: dati' })
+  const piano = await $.classic.UserPromptSubmit({ prompt: '/piano\nPIANO: Errore al login\nID PIANO: 123\nTIPO: Bug fix' })
   const senzaTitolo = await $.classic.UserPromptSubmit({ prompt: '/revisione\nFOCUS: logica' })
   const altroTesto = await $.classic.UserPromptSubmit({ prompt: 'ciao' })
 
-  expect(conTitolo.sessionTitle).toBe('Tutorial nuovo')
+  expect(conTitolo.sessionTitle).toBe('Login nuovo')
+  expect(piano.sessionTitle).toBe('Errore al login')
   expect(senzaTitolo.sessionTitle).toBeUndefined()
   expect(altroTesto.sessionTitle).toBeUndefined()
 })
 
-test('revisione richiede TITOLO e MAPPA, lezione accetta la MAPPA vuota', async ($, on) => {
+test('/piano non ha una scheda: parte con il testo incollato, lezione accetta la MAPPA vuota', async ($, on) => {
   const eseguiti: string[] = []
   on('prompt.fill', () => ({ isFilled: true }))
   on('command.run', (_, e) => {
@@ -118,12 +118,11 @@ test('revisione richiede TITOLO e MAPPA, lezione accetta la MAPPA vuota', async 
     return { text: 'skill avviata' }
   })
 
-  const revisione = await $.command.run({
-    command: 'revisione',
-    args: 'COSA REVISIONARE: Chat.jsx\nFOCUS: logica',
-  })
+  await $.command.run({ command: 'piano', args: 'PIANO: Errore al login\nID PIANO: 123' })
   await $.command.run({ command: 'lezione', args: 'TITOLO: useEffect\nARGOMENTO: useEffect\nMAPPA: ' })
 
-  expect(revisione.text).toContain('compila TITOLO, MAPPA')
-  expect(eseguiti).toEqual(['lezione: TITOLO: useEffect\nARGOMENTO: useEffect'])
+  expect(eseguiti).toEqual([
+    'piano: PIANO: Errore al login\nID PIANO: 123',
+    'lezione: TITOLO: useEffect\nARGOMENTO: useEffect',
+  ])
 })

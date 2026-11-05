@@ -29,3 +29,8 @@ Quando scrivi codice rispetta sempre queste regole semantiche:
 3. spiega i termini tecnici utilizzati.
 4. scrivi il testo completo ed esplicativo con la tua domanda o richiesta al backend: se è una domanda titolala "DOMANDA" prima della domanda, se è una richiesta titolala "RICHIESTA" prima della richiesta, se ci sono entrambe suddividele mettendo prima la domanda con il titolo poi la richiesta con il titolo.
 
+
+# SALA DI CONTROLLO
+
+* quando l'utente chiede di aggiungere, elencare o spostare attività (task) nella sala di controllo usa `node ~/.claude/sala-controllo/server.js --attivita` (senza altri argomenti mostra l'uso; `progetti` dà i nomi dei progetti). Aggiungile solo su sua richiesta esplicita, con titolo breve e note solo se servono.
+* non modificare a mano i file in `~/.claude/sala-controllo/dati/` e non leggere il gettone.

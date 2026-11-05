@@ -16,17 +16,27 @@ const MAX_BODY = 2 * 1024 * 1024;
 const TIMEOUT_MS = 4 * 60 * 1000;
 
 const ISTRUZIONI = `Sei il tutor di programmazione di uno sviluppatore che sta imparando (React Native, JavaScript).
-Ti scrive da una chat dentro una mappa interattiva del suo progetto: i passi del flusso dati si chiamano D1, D2…, gli elementi di una schermata S1, S2…
-Nel messaggio hai la mappa completa (JSON), l'elemento selezionato e la conversazione finora. La cartella corrente è il progetto: leggi il codice con Read, Grep e Glob solo quando serve per rispondere bene.
-Regole:
+Ti scrive da una chat dentro una mappa interattiva del suo progetto (i passi del flusso dati si chiamano D1, D2…, gli elementi di una schermata S1, S2…) oppure dalla sua sala di controllo, la pagina in cui gestisce sessioni di Claude Code, branch git e attività del progetto.
+Nel messaggio hai i dati completi (JSON) della mappa o della sala, cosa sta guardando e la conversazione finora. La cartella corrente è il progetto: leggi il codice con Read, Grep e Glob solo quando serve per rispondere bene.
+Regole valide in ogni modalità:
 - rispondi sempre in italiano; i termini tecnici restano in inglese e li spieghi la prima volta.
-- stile mini-lezione: spiega in modo semplice, con un esempio concreto (un paragone della vita reale o un mini snippet generico di poche righe) e collega la spiegazione alla mappa (es. "in D4…", "S3 è…").
-- breve: al massimo 3 blocchi numerati con un titolo in grassetto, ognuno di 2-4 righe; niente premesse né convenevoli.
+- quando c'entra, collega la risposta alla mappa (es. "in D4…", "S3 è…") o alla sala; niente premesse né convenevoli.
 - non dare la soluzione della modifica che l'utente sta progettando né il codice finale da incollare, a meno che la chieda esplicitamente (es. "dammi la soluzione"); se chiede aiuto o indizi, dai suggerimenti che lo indirizzano.
 - se la domanda parte da un'idea sbagliata, correggila in modo chiaro.
 - non fare domande di verifica o quiz all'utente.
 - puoi solo leggere: non proporti di modificare file.
 - se una cosa non è nella mappa né nel codice, dillo invece di inventarla.`;
+
+// MODALITÀ DELLA CHAT
+// L'utente la sceglie nella chat; le pagine vecchie non la mandano e restano sull'insegnante, lo stile di sempre
+const MODALITA = {
+  normale: `Modalità NORMALE: rispondi direttamente alla domanda, in modo chiaro e breve (poche righe o al massimo 3 punti), senza lezioni.`,
+  insegnante: `Modalità INSEGNANTE: prendi quello di cui chiede (codice, passo della mappa, concetto) e spiegalo pezzo per pezzo nell'ordine in cui si legge: per ogni pezzo scrivi il pezzo tra backtick e cosa fa in parole semplici, così sa cosa sta leggendo. Chiudi con un esempio concreto (un paragone della vita reale o un mini snippet generico di poche righe). Al massimo 3 blocchi numerati con un titolo in grassetto.`,
+  traduttore: `Modalità TRADUTTORE: l'utente ti scrive codice (o indica un pezzo della mappa o del progetto); traducilo in italiano normale, come lo racconteresti a voce a chi non programma: blocco per blocco nello stesso ordine, ogni riga o gruppo di righe tra backtick seguito dalla sua traduzione. Solo cosa dice il codice: niente giudizi, consigli o correzioni. Se ti scrive una domanda e non del codice, rispondi in una riga che in questa modalità traduci il codice che incolla.`,
+  senior: `Modalità SENIOR DEVELOPER: fai da mentore esperto: di' qual è la cosa giusta da fare e perché (struttura, nomi, convenzioni, sicurezza, manutenzione), quali errori fa di solito chi sceglie la strada sbagliata e cosa controlleresti tu. Sii diretto: se l'idea dell'utente non è la migliore, dillo e indica l'alternativa. Spiega cosa fare a parole; il codice completo solo se lo chiede esplicitamente. Al massimo 3 blocchi numerati con un titolo in grassetto.`,
+};
+
+const istruzioni = (modalita) => `${ISTRUZIONI}\n\n${Object.hasOwn(MODALITA, modalita) ? MODALITA[modalita] : MODALITA.insegnante}`;
 
 // GETTONE
 // Senza gettone qualsiasi pagina web aperta nel browser potrebbe usare il server.
@@ -69,7 +79,7 @@ function costruisciPrompt({ tipo, titolo, mappa, selezione, storia, domanda }) {
     .map((m) => `${m.ruolo === 'utente' ? 'Utente' : 'Tu'}: ${m.testo}`)
     .join('\n\n');
   return [
-    `MAPPA ${tipo === 'struttura' ? 'STRUTTURA (elementi S)' : 'DATI (passi D)'}: ${titolo || ''}`,
+    `${{ struttura: 'MAPPA STRUTTURA (elementi S)', sala: 'SALA DI CONTROLLO (sessioni, branch, attività)' }[tipo] || 'MAPPA DATI (passi D)'}: ${titolo || ''}`,
     String(mappa || ''),
     `ELEMENTO SELEZIONATO: ${selezione || 'nessuno'}`,
     conversazione ? `CONVERSAZIONE FINORA:\n${conversazione}` : '',
@@ -79,12 +89,12 @@ function costruisciPrompt({ tipo, titolo, mappa, selezione, storia, domanda }) {
 
 // CHIAMATA CLAUDE
 // --restricted limita la lettura dei file alla cartella del progetto; --no-session-persistence non salva la chat.
-function chiediClaude(progetto, prompt) {
+function chiediClaude(progetto, prompt, modalita) {
   return new Promise((resolve, reject) => {
     const args = [
       '-p', '--output-format', 'json', '--no-session-persistence',
       '--restricted', '--strict-mcp-config', '--tools', 'Read,Grep,Glob',
-      '--permission-mode', 'dontAsk', '--system-prompt', ISTRUZIONI,
+      '--permission-mode', 'dontAsk', '--system-prompt', istruzioni(modalita),
     ];
     // Senza chiavi API nell'ambiente claude può usare solo il login dell'abbonamento, mai la fatturazione a consumo
     const { ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, ...ambiente } = process.env;
@@ -209,7 +219,7 @@ function avvia() {
 
     occupato = true;
     try {
-      rispondi(res, 200, { risposta: await chiediClaude(progetto, costruisciPrompt(dati)) });
+      rispondi(res, 200, { risposta: await chiediClaude(progetto, costruisciPrompt(dati), dati.modalita) });
     } catch (e) {
       rispondi(res, 500, { errore: e.message });
     } finally {

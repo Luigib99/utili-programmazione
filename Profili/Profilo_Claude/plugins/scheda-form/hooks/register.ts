@@ -3,23 +3,8 @@ import type { Register } from 'claude-code'
 type Campo = { nome: string; obbligatorio: boolean; aiuto: string; valori?: readonly string[] }
 
 // I campi devono restare allineati alla fase SCHEDA dello SKILL.md della skill.
+// /piano non ha una scheda: il testo arriva già pronto dalla sala di controllo.
 const SCHEDE: Record<string, readonly Campo[]> = {
-  'modifica-maggiore': [
-    { nome: 'TITOLO', obbligatorio: true, aiuto: 'nome breve: diventa il titolo della sessione' },
-    { nome: 'OBIETTIVO', obbligatorio: true, aiuto: 'cosa vuoi ottenere' },
-    { nome: 'PROBLEMA', obbligatorio: false, aiuto: 'se è un bug: cosa succede, cosa ti aspettavi, come riprodurlo, dove (piattaforma, dispositivo)' },
-    { nome: 'DOVE', obbligatorio: true, aiuto: 'pagina, flusso o file' },
-    { nome: 'MAPPA', obbligatorio: true, aiuto: 'dati, struttura o entrambi', valori: ['dati', 'struttura', 'entrambi'] },
-    { nome: 'NOTE', obbligatorio: false, aiuto: 'tutto il resto: vincoli, dubbi, esempi' },
-  ],
-  'modifica-minore': [
-    { nome: 'TITOLO', obbligatorio: true, aiuto: 'nome breve: diventa il titolo della sessione' },
-    { nome: 'COSA', obbligatorio: true, aiuto: 'cosa cambiare: testo, colore, dimensione, posizione, formattazione' },
-    { nome: 'DOVE', obbligatorio: false, aiuto: 'schermata, componente o file (vuoto: il file aperto)' },
-    { nome: 'VALORE NUOVO', obbligatorio: false, aiuto: 'il valore finale (vuoto: ti propongo quelli del progetto)' },
-    { nome: 'VINCOLI', obbligatorio: false, aiuto: 'cosa non deve cambiare' },
-    { nome: 'MAPPA', obbligatorio: false, aiuto: 'dati, struttura o entrambi (vuoto: nessun diagramma)', valori: ['dati', 'struttura', 'entrambi'] },
-  ],
   revisione: [
     { nome: 'TITOLO', obbligatorio: true, aiuto: 'nome breve: diventa il titolo della sessione' },
     { nome: 'COSA REVISIONARE', obbligatorio: false, aiuto: 'file, porzione di codice o branch (vuoto: selezione, file aperto o branch)' },
@@ -114,6 +99,11 @@ export const register: Register = on => {
   on('classic.UserPromptSubmit', async ($, e, next) => {
     const risultato = await next(e)
     const comando = e.prompt.trimStart().match(/^\/(?:[\w-]+:)?([\w-]+)/)?.[1]
+    // Il piano copiato dalla sala ha il titolo nella riga PIANO
+    if (comando === 'piano') {
+      const titolo = e.prompt.match(/^PIANO: *(.+)$/m)?.[1]?.trim()
+      return titolo ? { ...risultato, sessionTitle: titolo } : risultato
+    }
     const campi = comando ? SCHEDE[comando] : undefined
     if (!campi?.some(campo => campo.nome === 'TITOLO')) return risultato
 

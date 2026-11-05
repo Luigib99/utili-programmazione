@@ -1,0 +1,2568 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sala di controllo</title>
+<style>
+  :root {
+    --bg: #1a1918;
+    --bg-input: #141312;
+    --surface: #252422;
+    --surface-2: #2f2d2a;
+    --border: #3a3834;
+    --border-forte: #4a4741;
+    --text: #f4f2ec;
+    --muted: #a6a298;
+    --accent: #d97757;
+    --accent-chiaro: #f0a988;
+    --accent-bg: rgba(217, 119, 87, .14);
+    --ok: #6cc07e;
+    --ok-bg: rgba(108, 192, 126, .12);
+    --danger: #e5534b;
+    --danger-text: #ff9f97;
+    --chat: var(--accent);
+    --chat-bg: var(--accent-bg);
+    --raggio: 12px;
+    --ombra: 0 1px 2px rgba(0, 0, 0, .25), 0 8px 24px rgba(0, 0, 0, .18);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(1200px 500px at 50% -220px, rgba(217, 119, 87, .13), transparent 70%),
+      var(--bg);
+    color: var(--text);
+    font: 14px/1.5 -apple-system, "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: rgba(217, 119, 87, .35); }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 22px;
+    padding: 14px 28px;
+    background: rgba(26, 25, 24, .78);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+  }
+
+  h1 {
+    display: flex;
+    align-items: center;
+    gap: .25em;
+    margin: 0;
+    font: 500 20px/1 ui-serif, Georgia, "Times New Roman", serif;
+    letter-spacing: -.01em;
+  }
+
+  h1 span { color: var(--accent); }
+
+  h1::before {
+    content: "";
+    width: 22px;
+    height: 22px;
+    margin-right: 6px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, var(--accent-chiaro), var(--accent));
+    box-shadow: 0 0 18px rgba(217, 119, 87, .45);
+  }
+
+  /* Filtri squadrati con gli angoli appena arrotondati */
+  .pillole {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 3px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .pillola {
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+
+  .pillole .pillola { border-color: transparent; }
+
+  .pillola:hover { color: var(--text); background: var(--surface-2); }
+
+  .pillola.attiva {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .aggiornato {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  nav {
+    display: flex;
+    gap: 6px;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 18px 28px 0;
+  }
+
+  nav button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 500;
+    transition: background .15s, color .15s;
+  }
+
+  nav button:hover { color: var(--text); background: var(--surface); }
+
+  nav button.attiva {
+    border-color: var(--border);
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: inset 0 -2px 0 var(--accent);
+  }
+
+  nav .conta {
+    min-width: 22px;
+    padding: 0 6px;
+    border-radius: 4px;
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+  }
+
+  nav button.attiva .conta { background: var(--accent-bg); color: var(--accent-chiaro); }
+
+  main {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 22px 28px 120px;
+  }
+
+  button.btn {
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    white-space: nowrap;
+    transition: background .15s, border-color .15s, color .15s, transform .1s;
+  }
+
+  button.btn:hover:not(:disabled) { border-color: var(--border-forte); background: #37352f; }
+  button.btn:active:not(:disabled) { transform: translateY(1px); }
+  button.btn:disabled { opacity: .35; cursor: default; }
+  button.btn.primario { border-color: var(--accent); background: var(--accent); color: #fff; font-weight: 500; }
+  button.btn.primario:hover:not(:disabled) { border-color: var(--accent-chiaro); background: #e0866a; }
+  button.btn.pericolo { border-color: var(--danger); background: rgba(229, 83, 75, .12); color: var(--danger-text); }
+
+  input, textarea, select {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-input);
+    color: var(--text);
+    font: inherit;
+    transition: border-color .15s, box-shadow .15s;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(217, 119, 87, .18);
+  }
+
+  .barra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .barra .spazio { flex: 1; }
+
+  .riepilogo { color: var(--muted); }
+  .riepilogo b { color: var(--text); }
+
+  /* Ogni riga è una scheda a sé, staccata dalle altre */
+  .lista {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .riga, .scheda, .lista > .vuoto {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--raggio);
+    box-shadow: var(--ombra);
+    transition: border-color .15s, background .15s;
+  }
+
+  .riga:hover, .scheda:hover { border-color: var(--border-forte); }
+
+  .riga {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 20px;
+  }
+
+  .riga .corpo, .scheda .corpo {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .riga .titolo, .scheda .titolo {
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -.005em;
+  }
+
+  .riga .meta, .contesto .meta, .scheda .meta {
+    color: var(--muted);
+    font-size: 12.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Larghezza fissa: con o senza Chiudi la barra del contesto resta allineata in tutte le righe */
+  .riga .azioni {
+    display: flex;
+    flex-shrink: 0;
+    justify-content: flex-end;
+    gap: 8px;
+    width: 250px;
+  }
+
+  .stato {
+    min-width: 80px;
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--muted);
+    font-size: 11.5px;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .stato.corrente {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .scheda.branch.corrente,
+  .scheda.branch.corrente:hover,
+  .riga.aperta,
+  .riga.aperta:hover,
+  .scheda.attiva,
+  .scheda.attiva:hover {
+    border-color: var(--accent);
+    background: linear-gradient(var(--accent-bg), var(--accent-bg)), var(--surface);
+    box-shadow: 0 0 0 1px rgba(217, 119, 87, .25), 0 8px 28px rgba(217, 119, 87, .12);
+  }
+
+  .scheda.branch.corrente .titolo code { color: #fff; }
+  .riga.aperta .titolo, .scheda.attiva .titolo { color: #fff; }
+
+  .stato.lavoro {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .stato.aperta {
+    border-color: var(--accent);
+    color: var(--accent-chiaro);
+    font-weight: 600;
+  }
+
+  .contesto {
+    width: 190px;
+    flex-shrink: 0;
+  }
+
+  .contesto .tubo {
+    height: 8px;
+    margin-bottom: 7px;
+    border-radius: 999px;
+    background: var(--bg-input);
+    overflow: hidden;
+  }
+
+  .contesto .tubo span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+  }
+
+  .avanti { color: var(--ok); }
+  .indietro { color: var(--danger-text); }
+
+  code {
+    font: 12px ui-monospace, Consolas, monospace;
+    color: var(--accent-chiaro);
+  }
+
+  .vuoto {
+    padding: 32px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .modulo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 18px;
+    margin-bottom: 18px;
+    padding: 22px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--raggio);
+    box-shadow: var(--ombra);
+  }
+
+  .lista .modulo {
+    margin: 0;
+    border-color: var(--accent);
+  }
+
+  .modulo label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    color: var(--muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+  }
+
+  .modulo label :is(input, textarea, select) {
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  .modulo label.largo { grid-column: 1 / -1; }
+  .modulo label b { color: var(--accent); }
+
+  .modulo textarea {
+    min-height: 68px;
+    resize: vertical;
+  }
+
+  .modulo .piede {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .scheda .testa {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px;
+    border-radius: var(--raggio);
+    cursor: pointer;
+  }
+
+  .scheda .freccia {
+    color: var(--muted);
+    font-size: 11px;
+    transition: transform .25s;
+  }
+
+  .scheda.aperta { border-color: var(--border-forte); }
+  .scheda.aperta .freccia { transform: rotate(90deg); color: var(--accent); }
+
+  /* Altezza animata da 0 al contenuto con le righe della griglia, senza misurare in JavaScript */
+  .scheda .dettagli {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows .3s ease;
+  }
+
+  .scheda.aperta .dettagli { grid-template-rows: 1fr; }
+
+  .scheda .dettagli > div { overflow: hidden; }
+
+  .scheda .interno {
+    margin: 0 20px;
+    padding: 18px 0 18px 26px;
+    border-top: 1px solid var(--border);
+  }
+
+  .scheda dl {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 22px 16px;
+    margin: 4px 0 22px;
+    line-height: 1.6;
+  }
+
+  .scheda dt {
+    padding-top: 2px;
+    color: var(--muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+  }
+
+  .scheda dd {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .scheda .piede {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .scheda .piede .spazio { flex: 1; }
+
+  .btn.icona {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 34px;
+    padding: 0;
+    color: var(--muted);
+  }
+
+  .btn.icona:hover:not(:disabled) { color: var(--text); }
+  .btn.icona.pericolo { width: auto; padding: 0 12px; }
+
+  .scheda .azioni {
+    display: flex;
+    gap: 8px;
+  }
+
+  button.btn svg { vertical-align: -3px; }
+
+  .commit {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .commit li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    padding: 6px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .commit li:first-child { border-top: 0; }
+
+  .commit .messaggio {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .commit .chi, .nota {
+    color: var(--muted);
+    font-size: 12.5px;
+    white-space: nowrap;
+  }
+
+  .commit .partenza-titolo {
+    min-height: 0;
+    padding: 14px 0 2px;
+    color: var(--muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  .commit .partenza { border-top: 0; opacity: .75; }
+
+  .nessuno {
+    margin: 4px 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .commit .qui {
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--accent-bg);
+    color: var(--accent-chiaro);
+    font-size: 11.5px;
+  }
+
+  .file {
+    max-height: 220px;
+    margin: 0;
+    padding: 10px 14px;
+    overflow: auto;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font: 12.5px/1.7 ui-monospace, Consolas, monospace;
+    letter-spacing: 0;
+    list-style: none;
+  }
+
+  /* PIANI */
+  .riga.piano { cursor: pointer; }
+  .senza-titolo { color: var(--muted); font-style: italic; }
+
+  .stato.tipo { min-width: 112px; }
+
+  .testa-piano + .passi { margin-top: 0; }
+  a.btn { text-decoration: none; display: inline-flex; align-items: center; }
+  .fase-piano .piede .nota { flex: 1; align-self: center; }
+
+  .tipo-piano {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    color: var(--muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+  }
+
+  .filtri-tipo {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .filtri-tipo .pillola { letter-spacing: 0; font-weight: 400; }
+
+  .modulo label span i {
+    margin-left: 6px;
+    color: var(--muted);
+    font-style: normal;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .tacche {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .tacche span {
+    width: 20px;
+    height: 7px;
+    border-radius: 2px;
+    background: var(--bg-input);
+  }
+
+  .tacche span.iniziata { background: var(--accent); }
+  .tacche span.completa { background: var(--ok); }
+
+  .tacche b {
+    margin-left: 8px;
+    color: var(--muted);
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+
+  .testa-piano { grid-template-columns: 1fr 1fr; }
+
+  .collegata {
+    padding: 8px 0;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  .passi {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 18px;
+  }
+
+  .passo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px 7px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+  }
+
+  .passo .numero {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    background: var(--bg-input);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .passo .numero svg { width: 14px; height: 14px; }
+  .passo.iniziata { color: var(--text); }
+  .passo.iniziata .numero { background: var(--accent-bg); color: var(--accent-chiaro); }
+  .passo.completa { color: var(--text); }
+  .passo.completa .numero { background: var(--ok); color: #1a1918; }
+  .passo.attiva { border-color: var(--accent); background: var(--accent-bg); color: #fff; }
+
+  .fase-piano h2 {
+    margin: 0;
+    font: 500 19px/1.2 ui-serif, Georgia, "Times New Roman", serif;
+    color: var(--text);
+    letter-spacing: 0;
+  }
+
+  .fase-piano textarea { min-height: 84px; }
+
+  .spunte {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .spunta {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 12px !important;
+    padding: 11px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-input);
+    color: var(--text) !important;
+    cursor: pointer;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .spunta:has(input:checked) { border-color: rgba(108, 192, 126, .55); }
+
+  .spunta input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--ok);
+  }
+
+  .naviga-fasi {
+    display: flex;
+    gap: 8px;
+  }
+
+  .salvataggio {
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+
+  .scheda .stati {
+    display: flex;
+    gap: 4px;
+    padding: 3px;
+    background: var(--bg-input);
+    border-radius: 8px;
+  }
+
+  .scheda .stati .btn.icona {
+    width: 32px;
+    height: 28px;
+    border-color: transparent;
+    border-radius: 5px;
+    background: transparent;
+  }
+
+  .scheda[draggable="true"] .testa { cursor: grab; }
+  .scheda.trascinata { opacity: .45; border-style: dashed; border-color: var(--accent); }
+
+  .scheda .aggiunta {
+    color: var(--muted);
+    font-size: 12.5px;
+    white-space: nowrap;
+  }
+
+  .btn.icona.attuale { color: #1a1918; cursor: default; }
+  .scheda .stati .btn.icona.attuale.da-fare { background: var(--text); }
+  .scheda .stati .btn.icona.attuale.in-corso { background: var(--accent); color: #fff; }
+  .scheda .stati .btn.icona.attuale.fatto { background: var(--ok); }
+
+  .etichetta {
+    padding: 1px 7px;
+    border-radius: 4px;
+    background: var(--accent-bg);
+    color: var(--accent-chiaro);
+    font: 11px ui-monospace, Consolas, monospace;
+  }
+
+  #avviso {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 30;
+    max-width: 420px;
+    padding: 12px 16px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-forte);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .45);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity .2s, transform .2s;
+    pointer-events: none;
+  }
+
+  #avviso.visibile {
+    opacity: 1;
+    transform: none;
+  }
+
+  #avviso.errore { border-color: var(--danger); color: var(--danger-text); }
+
+  @media (max-width: 800px) {
+    header, nav, main { padding-left: 16px; padding-right: 16px; }
+    .modulo, .scheda dl { grid-template-columns: 1fr; }
+    .riga { flex-wrap: wrap; }
+    .riga .azioni { width: auto; }
+  }
+
+  /* Bottoni della chat: stesso stile degli altri */
+  #chat button {
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+  }
+
+  #chat button:hover:not(:disabled) { border-color: var(--border-forte); }
+  #chat button[aria-pressed="true"] { border-color: var(--accent); }
+
+  /* CHATTINO */
+  /* Mascotte in pixel art: fluttua, sbatte gli occhi e saltella mentre aspetta la risposta */
+  #chat-open {
+    position: fixed;
+    bottom: 14px;
+    left: 18px;
+    z-index: 21;
+    width: 72px;
+    height: 82px;
+    padding: 0;
+    background: none;
+    border: 0;
+  }
+
+  #chat-open:hover {
+    border: 0;
+  }
+
+  #chat-open,
+  #chat-open .sprite {
+    cursor: grab;
+    touch-action: none;
+  }
+
+  #chat-open .sprite {
+    display: block;
+    width: 72px;
+    height: 64px;
+    margin: 0 auto;
+    image-rendering: pixelated;
+    shape-rendering: crispEdges;
+    filter: drop-shadow(0 0 6px rgba(217, 119, 87, .6));
+    animation: chat-float 2.6s ease-in-out infinite;
+  }
+
+  #chat-open:hover .sprite {
+    animation: chat-float 2.6s ease-in-out infinite, chat-wiggle .4s ease-in-out 2;
+  }
+
+  #chat-open.pensa .sprite {
+    animation: chat-hop .5s ease-in-out infinite;
+  }
+
+  #chat-open::after {
+    content: "";
+    display: block;
+    width: 30px;
+    height: 6px;
+    margin: 6px auto 0;
+    background: rgba(0, 0, 0, .55);
+    border-radius: 50%;
+    animation: chat-shadow 2.6s ease-in-out infinite;
+  }
+
+  #chat-open .eye {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: chat-blink 4.5s infinite;
+  }
+
+  @keyframes chat-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-7px); }
+  }
+
+  @keyframes chat-shadow {
+    0%, 100% { transform: scaleX(1); opacity: .9; }
+    50% { transform: scaleX(.7); opacity: .5; }
+  }
+
+  @keyframes chat-wiggle {
+    0%, 100% { rotate: 0deg; }
+    25% { rotate: -8deg; }
+    75% { rotate: 8deg; }
+  }
+
+  @keyframes chat-hop {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+
+  @keyframes chat-blink {
+    0%, 92%, 100% { transform: scaleY(1); }
+    95% { transform: scaleY(.1); }
+  }
+
+  /* DECORAZIONI DELLE MODALITÀ: si vede solo quella della modalità scelta */
+  #chat-open .acc,
+  #chat-open .scintille {
+    display: none;
+  }
+
+  #chat-open[data-modo="insegnante"] .acc-insegnante,
+  #chat-open[data-modo="traduttore"] .acc-traduttore,
+  #chat-open[data-modo="senior"] .acc-senior,
+  #chat-open.cambia .scintille {
+    display: inline;
+  }
+
+  /* Occhiali e occhiali da sole spariscono quando urla o quando gli occhi girano a spirale */
+  #chat-open.dragging .viso,
+  #chat-open.pensa .acc-senior .viso {
+    display: none;
+  }
+
+  #chat-open .occhiali {
+    shape-rendering: geometricPrecision;
+  }
+
+  /* Cambio di modalità: salto a scatti, come un vecchio videogioco, con le stelline che lampeggiano */
+  #chat-open.cambia .sprite {
+    animation: chat-cambia .7s steps(7) 1;
+  }
+
+  @keyframes chat-cambia {
+    0% { transform: translateY(0) scale(1); }
+    30% { transform: translateY(-14px) scale(1.15, .85); }
+    45% { transform: translateY(-16px) scaleX(-1); }
+    60% { transform: translateY(-14px) scale(1.15); }
+    100% { transform: translateY(0) scale(1); }
+  }
+
+  #chat-open.cambia .scintille {
+    animation: chat-scintille .35s steps(2) infinite;
+  }
+
+  @keyframes chat-scintille {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #chat-open.cambia .sprite,
+    #chat-open.cambia .scintille {
+      animation: none;
+    }
+  }
+
+  /* Presa in mano: si ingrandisce e trema dalla paura */
+  #chat-open.dragging .sprite {
+    cursor: grabbing;
+    animation: chat-trema .12s linear infinite;
+  }
+
+  @keyframes chat-trema {
+    0%, 100% { transform: scale(1.15) translate(0, 0) rotate(-4deg); }
+    25% { transform: scale(1.15) translate(-1px, 1px) rotate(4deg); }
+    50% { transform: scale(1.15) translate(1px, -1px) rotate(-4deg); }
+    75% { transform: scale(1.15) translate(-1px, -1px) rotate(4deg); }
+  }
+
+  #chat-open.dragging::after {
+    animation: none;
+    opacity: .3;
+  }
+
+  /* Mentre aspetta la risposta gli occhi diventano spirali che girano */
+  #chat-open .ipno {
+    display: none;
+    shape-rendering: geometricPrecision;
+  }
+
+  #chat-open.pensa .ipno {
+    display: inline;
+  }
+
+  #chat-open.pensa .eye {
+    display: none;
+  }
+
+  #chat-open .spirale {
+    transform-box: view-box;
+    animation: chat-spin .9s linear infinite;
+  }
+
+  @keyframes chat-spin {
+    to { rotate: 360deg; }
+  }
+
+  /* Faccia che urla mentre la trascini: ha la precedenza anche sugli occhi a spirale */
+  #chat-open .paura {
+    display: none;
+  }
+
+  #chat-open.dragging .paura {
+    display: inline;
+  }
+
+  #chat-open.dragging .eye,
+  #chat-open.dragging .bocca,
+  #chat-open.dragging .ipno {
+    display: none;
+  }
+
+  @keyframes chat-ping {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(63, 185, 80, .7); }
+    50% { box-shadow: 0 0 0 5px rgba(63, 185, 80, 0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #chat-open .sprite,
+    #chat-open::after,
+    #chat-open .eye,
+    #chat-open .spirale,
+    #chat-open .dot {
+      animation: none;
+    }
+  }
+
+  /* Verde: risposta pronta e non ancora vista; rosso: server spento */
+  #chat-open .dot {
+    position: absolute;
+    top: 0;
+    right: 2px;
+    display: none;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--bg);
+    border-radius: 50%;
+  }
+
+  #chat-open .dot.off {
+    display: block;
+    background: #f85149;
+  }
+
+  #chat-open .dot.pronta {
+    display: block;
+    background: #3fb950;
+    animation: chat-ping 1.2s ease-in-out infinite;
+  }
+
+  #chat {
+    position: fixed;
+    bottom: 84px;
+    left: 20px;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    width: min(400px, calc(100vw - 40px));
+    height: min(480px, calc(100vh - 110px));
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .6);
+    /* Maniglia di ridimensionamento nell'angolo in basso a destra */
+    resize: both;
+    overflow: hidden;
+    min-width: 300px;
+    min-height: 260px;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+  }
+
+  #chat[hidden] {
+    display: none;
+  }
+
+  #chat.big {
+    width: min(620px, calc(100vw - 40px));
+    height: calc(100vh - 110px);
+  }
+
+  #chat .chat-head {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+
+  #chat.dragging .chat-head {
+    cursor: grabbing;
+  }
+
+  #chat .chat-head b {
+    flex: 1;
+    font-size: 14px;
+  }
+
+  #chat .chat-head button {
+    padding: 2px 8px;
+    font-size: 13px;
+  }
+
+  #chat-log {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 10px;
+    overflow: auto;
+    padding: 12px;
+  }
+
+  #chat-log:empty::before {
+    content: "Fai una domanda";
+    margin: auto;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  #chat-log .msg {
+    max-width: 92%;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  #chat-log .msg.utente {
+    align-self: flex-end;
+    background: var(--chat-bg);
+    border: 1px solid var(--chat);
+  }
+
+  #chat-log .msg.claude {
+    align-self: flex-start;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+  }
+
+  #chat-log .msg.info {
+    align-self: stretch;
+    max-width: none;
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+
+  #chat-log .msg.errore {
+    align-self: stretch;
+    max-width: none;
+    border: 1px solid #f85149;
+    color: #ffa198;
+  }
+
+  #chat-log .msg.suggerimento {
+    align-self: stretch;
+    max-width: none;
+    background: rgba(250, 204, 21, .08);
+    border: 1px solid #facc15;
+  }
+
+  #chat-log .msg button {
+    margin-top: 8px;
+    padding: 3px 10px;
+    font-size: 12.5px;
+  }
+
+  #chat .chat-head select {
+    padding: 3px 6px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+
+  #chat .chat-head select:focus {
+    border-color: var(--chat);
+    outline: none;
+  }
+
+  #chat-log .msg .ctx {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  #chat-log code {
+    padding: 0 4px;
+    background: var(--bg);
+    border-radius: 4px;
+    font: 12.5px ui-monospace, Consolas, monospace;
+  }
+
+  #chat-log pre {
+    margin: 6px 0;
+    padding: 8px 10px;
+    overflow-x: auto;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font: 12.5px/1.5 ui-monospace, Consolas, monospace;
+  }
+
+  #chat-log pre code {
+    padding: 0;
+  }
+
+  #chat-log .par {
+    margin: 0 0 6px;
+  }
+
+  #chat-log .par:last-child {
+    margin-bottom: 0;
+  }
+
+  #chat-log ul {
+    margin: 0 0 6px;
+    padding-left: 18px;
+  }
+
+  #chat .chat-ctx {
+    padding: 6px 12px 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  #chat .chat-ctx b {
+    color: var(--chat);
+  }
+
+  #chat form {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px 12px;
+  }
+
+  #chat textarea {
+    flex: 1;
+    min-height: 40px;
+    max-height: 140px;
+    padding: 8px 10px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font: inherit;
+    font-size: 13.5px;
+    resize: none;
+  }
+
+  #chat textarea:focus {
+    border-color: var(--chat);
+    outline: none;
+  }
+
+  #chat form button {
+    align-self: flex-end;
+    background: var(--chat);
+    border-color: var(--chat);
+    color: #fff;
+  }
+
+  #chat form button:disabled {
+    opacity: .5;
+    cursor: default;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Sala di <span>controllo</span></h1>
+  <div class="pillole" id="progetti"></div>
+  <span class="aggiornato" id="aggiornato"></span>
+  <button class="btn" id="ricarica" title="Aggiorna adesso">Aggiorna</button>
+</header>
+<nav id="sezioni">
+  <button data-sezione="sessioni">Sessioni Claude<span class="conta" id="conta-sessioni"></span></button>
+  <button data-sezione="branch">Branch<span class="conta" id="conta-branch"></span></button>
+  <button data-sezione="attivita">Attività<span class="conta" id="conta-attivita"></span></button>
+  <button data-sezione="piani">Piani<span class="conta" id="conta-piani"></span></button>
+</nav>
+<main id="contenuto"></main>
+<div id="avviso"></div>
+<button id="chat-open" title="Chiedi a Chattino (trascinami per spostarmi)"><i class="dot"></i></button>
+<section id="chat" hidden>
+  <div class="chat-head">
+    <b title="Trascina per spostare · angolo in basso a destra per ridimensionare · doppio clic per rimetterla vicino alla mascotte">Chiedi a Chattino</b>
+    <select id="chat-modo" title="Come ti risponde Chattino">
+      <option value="normale">Normale</option>
+      <option value="insegnante">Insegnante</option>
+      <option value="traduttore">Traduttore</option>
+      <option value="senior">Senior developer</option>
+    </select>
+    <button id="chat-clear" title="Ricomincia la conversazione">Nuova</button>
+    <button id="chat-big" title="Alza / abbassa la chat">&#x2922;</button>
+    <button id="chat-close" title="Chiudi (la conversazione resta finché la pagina è aperta)">&#x2715;</button>
+  </div>
+  <div id="chat-log"></div>
+  <div class="chat-ctx" id="chat-ctx"></div>
+  <form id="chat-form">
+    <textarea id="chat-input" rows="2" placeholder="Fai una domanda…"></textarea>
+    <button type="submit" id="chat-send">Invia</button>
+  </form>
+</section>
+
+<script>
+  const GETTONE = '__GETTONE__';
+  const AGGIORNA_MS = 15000;
+  const STATI = [['in-corso', 'In corso'], ['da-fare', 'Da fare'], ['fatto', 'Fatto']];
+  // Le attività mai trascinate non hanno ancora un ordine: vanno in fondo, dalla più recente
+  const perOrdine = (a, b) => (a.ordine ?? Infinity) - (b.ordine ?? Infinity) || b.creata - a.creata;
+  const SOGLIA_CONTESTO = 0.4;
+  const MAX_COMMIT = 40;
+  const COLORI_CONTESTO = [
+    ['#3fb950', 'va benissimo', 0.5],
+    ['#d29922', 'inizia a essere lunga', 0.75],
+    ['#db6d28', 'conviene preparare una chat nuova', 1],
+    ['#f85149', 'apri una chat nuova', Infinity],
+  ];
+  const FILTRI = [['tutte', 'Tutte'], ['correnti', 'Non archiviate'], ['archiviate', 'Archiviate']];
+  const CAMPI_SCHEDA = [
+    { id: 'titolo', nome: 'TITOLO', obbligatorio: true, tipo: 'input', largo: true, aiuto: 'nome breve: diventa il titolo della sessione' },
+    { id: 'obiettivo', nome: 'OBIETTIVO', obbligatorio: true, tipo: 'textarea', largo: true, aiuto: 'cosa vuoi ottenere' },
+    { id: 'problema', nome: 'PROBLEMA', obbligatorio: false, tipo: 'textarea', largo: true, aiuto: 'se è un bug: cosa succede, cosa ti aspettavi, come riprodurlo, dove (piattaforma, dispositivo)' },
+    { id: 'dove', nome: 'DOVE', obbligatorio: true, tipo: 'input', aiuto: 'pagina, flusso o file' },
+    { id: 'mappa', nome: 'MAPPA', obbligatorio: true, tipo: 'select', valori: ['dati', 'struttura', 'entrambi'] },
+    { id: 'note', nome: 'NOTE', obbligatorio: false, tipo: 'textarea', largo: true, aiuto: 'tutto il resto: vincoli, dubbi, esempi' },
+  ];
+
+  const ICONE = {
+    chiudi: '<path d="M12 3v8"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/>',
+    archivia: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M10 13h4"/>',
+    ripristina: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M12 18v-5"/><path d="m9.5 15.5 2.5-2.5 2.5 2.5"/>',
+    elimina: '<path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/>',
+    'da-fare': '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    'in-corso': '<path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/>',
+    fatto: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+    copia: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
+    passa: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="m10 17 5-5-5-5"/><path d="M15 12H4"/>',
+    torna: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+    commit: '<circle cx="12" cy="12" r="3.5"/><path d="M3 12h5.5M15.5 12H21"/>',
+  };
+  const icona = (nome) => `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONE[nome]}</svg>`;
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  const memoria = {
+    leggi(chiave, base) {
+      try { return localStorage.getItem(chiave) ?? base; } catch { return base; }
+    },
+    scrivi(chiave, valore) {
+      try { localStorage.setItem(chiave, valore); } catch {}
+    },
+  };
+
+  const stato = {
+    progetti: [],
+    progetto: memoria.leggi('sala.progetto', ''),
+    sezione: memoria.leggi('sala.sezione', 'sessioni'),
+    filtro: 'tutte',
+    filtroAttivita: 'tutte',
+    trascinata: null,
+    piani: [],
+    fasiPiano: [],
+    tipiPiano: [],
+    pianoAperto: null,
+    fasePiano: '',
+    branchAperti: new Set(),
+    commit: {},
+    commitAperto: false,
+    nuova: false,
+    aperte: new Set(),
+    sessioni: [],
+    branch: null,
+    attivita: [],
+    modifica: null,
+  };
+
+  // CHIAMATE AL SERVER
+  async function api(percorso, dati = {}) {
+    const res = await fetch(percorso, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Gettone': GETTONE },
+      body: JSON.stringify({ progetto: stato.progetto, ...dati }),
+    });
+    const corpo = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(corpo.errore || `errore ${res.status}`);
+    return corpo;
+  }
+
+  let timerAvviso;
+  function avvisa(testo, errore = false) {
+    const el = $('avviso');
+    el.textContent = testo;
+    el.className = `visibile${errore ? ' errore' : ''}`;
+    clearTimeout(timerAvviso);
+    timerAvviso = setTimeout(() => { el.className = ''; }, errore ? 6000 : 2500);
+  }
+
+  function quando(ms) {
+    if (!ms) return '';
+    const d = new Date(ms);
+    const ora = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    const giorni = Math.floor((new Date().setHours(0, 0, 0, 0) - new Date(ms).setHours(0, 0, 0, 0)) / 86400000);
+    if (giorni === 0) return `oggi ${ora}`;
+    if (giorni === 1) return `ieri ${ora}`;
+    return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: giorni > 300 ? '2-digit' : undefined });
+  }
+
+  // CARICAMENTO DATI
+  async function carica() {
+    if (!stato.progetto) return;
+    const [sessioni, branch, attivita, piani] = await Promise.allSettled([
+      api('/api/sessioni'), api('/api/branch'), api('/api/attivita'), api('/api/piani'),
+    ]);
+    if (piani.status === 'fulfilled') Object.assign(stato, { piani: piani.value.piani, fasiPiano: piani.value.fasi, tipiPiano: piani.value.tipi });
+    stato.sessioni = sessioni.status === 'fulfilled' ? sessioni.value : [];
+    stato.branch = branch.status === 'fulfilled' ? branch.value : { errore: branch.reason.message };
+    stato.attivita = attivita.status === 'fulfilled' ? attivita.value : [];
+    stato.commit = {};
+    await Promise.all([...stato.branchAperti].map(caricaCommit));
+    if (sessioni.status === 'rejected') avvisa(sessioni.reason.message, true);
+    $('aggiornato').textContent = `aggiornato ${new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+    disegna();
+  }
+
+  async function caricaCommit(nome) {
+    try {
+      stato.commit[nome] = await api('/api/branch/commit', { nome });
+    } catch (err) {
+      stato.commit[nome] = { errore: err.message };
+    }
+  }
+
+  async function avvio() {
+    if (location.protocol === 'file:') {
+      $('contenuto').innerHTML = '<p class="vuoto">Questo file non funziona aperto con doppio clic: lancia /sala-controllo in Claude e usa la pagina che si apre su http://127.0.0.1:4518</p>';
+      return;
+    }
+    try {
+      stato.progetti = await api('/api/progetti');
+    } catch (e) {
+      $('contenuto').innerHTML = `<p class="vuoto">${esc(e instanceof TypeError ? 'Il server è spento: avvialo con node ~/.claude/sala-controllo/server.js --apri' : e.message)}</p>`;
+      return;
+    }
+    const richiesto = new URLSearchParams(location.search).get('progetto');
+    if (stato.progetti.some((p) => p.nome === richiesto)) stato.progetto = richiesto;
+    if (!stato.progetti.some((p) => p.nome === stato.progetto)) stato.progetto = stato.progetti[0]?.nome || '';
+    memoria.scrivi('sala.progetto', stato.progetto);
+    if (richiesto) history.replaceState(null, '', '/');
+    if (!stato.progetto) {
+      $('contenuto').innerHTML = '<p class="vuoto">Nessun progetto configurato: aggiungili in ~/.claude/sala-controllo/dati/progetti.json</p>';
+      return;
+    }
+    await carica();
+  }
+
+  // DISEGNO
+  function disegna() {
+    $('progetti').innerHTML = stato.progetti.map((p) =>
+      `<button class="pillola${p.nome === stato.progetto ? ' attiva' : ''}" data-progetto="${esc(p.nome)}" title="${esc(p.cartella)}">${esc(p.nome)}</button>`).join('');
+    document.querySelectorAll('#sezioni button').forEach((b) => b.classList.toggle('attiva', b.dataset.sezione === stato.sezione));
+    $('conta-sessioni').textContent = stato.sessioni.length;
+    $('conta-branch').textContent = stato.branch?.branch?.length ?? '';
+    $('conta-attivita').textContent = stato.attivita.filter((a) => a.stato !== 'fatto').length;
+    $('conta-piani').textContent = stato.piani.length;
+    const sezioni = { sessioni: htmlSessioni, branch: htmlBranch, attivita: htmlAttivita, piani: htmlPiani };
+    $('contenuto').innerHTML = sezioni[stato.sezione]();
+  }
+
+  function sessioniFiltrate() {
+    if (stato.filtro === 'archiviate') return stato.sessioni.filter((s) => s.stato === 'archiviata');
+    if (stato.filtro === 'correnti') return stato.sessioni.filter((s) => s.stato !== 'archiviata');
+    return stato.sessioni;
+  }
+
+  // RIEMPIMENTO CONTESTO
+  // Pieno = 40% della finestra del modello: oltre, le risposte peggiorano e Claude compatta la chat perdendo dettagli.
+  // Ogni compattazione ha già riassunto la chat, quindi conta come chat quasi piena anche se i token sono ripartiti da poco.
+  function riempimento(s) {
+    const quota = s.token / (s.finestra * SOGLIA_CONTESTO);
+    const minimo = s.compattazioni >= 2 ? 1 : s.compattazioni === 1 ? 0.8 : 0;
+    return Math.min(1, Math.max(quota, minimo));
+  }
+
+  function htmlContesto(s) {
+    if (!s.token) return '<div class="contesto"></div>';
+    const quota = riempimento(s);
+    const [colore, consiglio] = COLORI_CONTESTO.find(([, , limite]) => quota < limite) || COLORI_CONTESTO.at(-1);
+    const compattata = s.compattazioni ? ` · compattata ×${s.compattazioni}` : '';
+    return `<div class="contesto" title="${esc(`${s.token.toLocaleString('it-IT')} token nel contesto su ${(s.finestra / 1000).toLocaleString('it-IT')}K${compattata}: ${consiglio}`)}">
+      <div class="tubo"><span style="width:${Math.max(3, quota * 100).toFixed(0)}%;background:${colore}"></span></div>
+      <div class="meta">${Math.round(s.token / 1000)}K token${compattata}</div>
+    </div>`;
+  }
+
+  function htmlArchivia(s) {
+    if (s.archiviataDa === 'vscode') return `<button class="btn icona" disabled title="Archiviata dall'estensione: si ripristina dalla barra di Claude in VS Code">${icona('ripristina')}</button>`;
+    if (s.archiviataDa === 'sala') return `<button class="btn icona" data-azione="archivia" data-id="${s.id}" data-archivia="no" title="Togli dall'archivio">${icona('ripristina')}</button>`;
+    return `<button class="btn icona" data-azione="archivia" data-id="${s.id}" data-archivia="si" ${s.stato === 'aperta' ? 'disabled title="Chiudi la chat prima di archiviarla"' : 'title="Archivia"'}>${icona('archivia')}</button>`;
+  }
+
+  function motivoNonChiudibile(s) {
+    if (s.stato !== 'aperta') return 'La chat non è aperta';
+    if (!s.pid) return 'Aperta da poco ma senza un processo noto: chiudi la scheda in VS Code';
+    if (s.lavoro === 'busy') return 'Sta lavorando: aspetta che finisca';
+    return '';
+  }
+
+  function htmlSessioni() {
+    // Le chat aperte vanno in cima, evidenziate; tra loro resta l'ordine per data
+    const righe = [...sessioniFiltrate()].sort((a, b) => (b.stato === 'aperta') - (a.stato === 'aperta')).map((s) => {
+      const aperta = s.stato === 'aperta';
+      const motivo = motivoNonChiudibile(s);
+      const etichetta = !aperta ? `<span class="stato">${s.stato}</span>`
+        : s.lavoro === 'busy' ? '<span class="stato lavoro">al lavoro</span>' : '<span class="stato aperta">aperta</span>';
+      return `<div class="riga${aperta ? ' aperta' : ''}">
+        ${etichetta}
+        <div class="corpo">
+          <div class="titolo" title="${esc(s.titolo)}">${esc(s.titolo)}</div>
+          <div class="meta">${quando(s.modificata)} · ${s.mb} MB · <code>${s.id.slice(0, 8)}</code></div>
+        </div>
+        ${htmlContesto(s)}
+        <div class="azioni">
+          <button class="btn icona" data-azione="chiudi" data-id="${s.id}" ${motivo ? `disabled title="${motivo}"` : 'title="Chiudi: termina il processo, la chat resta salvata"'}>${icona('chiudi')}</button>
+          ${htmlArchivia(s)}
+          <button class="btn icona" data-azione="elimina-sessione" data-id="${s.id}" ${aperta ? 'disabled title="Chiudi la chat prima di eliminarla"' : 'title="Elimina la chat"'}>${icona('elimina')}</button>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="barra">
+        ${FILTRI.map(([id, nome]) => `<button class="pillola${stato.filtro === id ? ' attiva' : ''}" data-filtro="${id}">${nome}</button>`).join('')}
+      </div>
+      <div class="lista">${righe || '<p class="vuoto">Nessuna chat</p>'}</div>`;
+  }
+
+  // STORIA DEI COMMIT
+  // Tornare indietro si può solo sul branch attuale: il commit in cima è quello su cui sei
+  function htmlCommit(nome) {
+    const dati = stato.commit[nome];
+    if (!dati) return '<p class="vuoto">Caricamento dei commit…</p>';
+    if (dati.errore) return `<p class="vuoto">${esc(dati.errore)}</p>`;
+    const corrente = nome === stato.branch.corrente;
+    const bottoneTorna = (c, tolti) => `<button class="btn icona" data-azione="torna" data-hash="${c.hash}" data-tolti="${tolti}" ${stato.branch.modifiche
+      ? 'disabled title="Ci sono modifiche non salvate: committale prima di tornare indietro"'
+      : `title="Torna a questo commit: i ${tolti} commit più recenti escono dal branch"`}>${icona('torna')}</button>`;
+    const riga = (c, azione, classe = '') => `<li class="${classe}">
+        <code>${c.breve}</code>
+        <span class="messaggio" title="${esc(c.messaggio)}">${esc(c.messaggio)}</span>
+        <span class="chi">${esc(c.autore)} · ${quando(c.data)}</span>
+        ${azione}
+      </li>`;
+    const righe = dati.commit.map((c, i) => riga(c, !corrente ? '' : i === 0 ? '<span class="qui">sei qui</span>' : bottoneTorna(c, i))).join('');
+    if (!dati.commit.length) return '<p class="nessuno">Nessun commit</p>';
+    // Il punto di partenza è l'ultimo commit in comune con il principale: tornarci toglie tutti i commit del branch
+    const base = !dati.base ? '' : `<li class="partenza-titolo">Partito da <code>${esc(dati.da)}</code> qui</li>${riga(dati.base,
+      !corrente ? '' : bottoneTorna(dati.base, dati.commit.length), 'partenza')}`;
+    const limite = dati.commit.length >= MAX_COMMIT ? `<p class="nota">Sono mostrati gli ultimi ${MAX_COMMIT} commit.</p>` : '';
+    return `<ol class="commit">${righe}${base}</ol>${limite}`;
+  }
+
+  // MODULO COMMIT
+  function htmlModuloCommit(b) {
+    const altri = b.modifiche > b.file.length ? `<li>… e altri ${b.modifiche - b.file.length}</li>` : '';
+    return `<div class="modulo">
+        <label class="largo"><span>FILE CHE ENTRANO NEL COMMIT · ${b.modifiche}</span>
+          <ul class="file">${b.file.map((f) => `<li><code>${esc(f.stato)}</code> ${esc(f.percorso)}</li>`).join('')}${altri}</ul>
+        </label>
+        <label class="largo"><span>MESSAGGIO <b>*</b></span><input id="messaggio-commit" maxlength="2000" placeholder="cosa hai cambiato e perché" autocomplete="off"></label>
+        <div class="piede">
+          <button class="btn" data-azione="annulla-commit">Annulla</button>
+          <button class="btn primario" data-azione="committa">Committa tutto su ${esc(b.corrente)}</button>
+        </div>
+      </div>`;
+  }
+
+  function htmlBranch() {
+    const b = stato.branch;
+    if (!b) return '<p class="vuoto">Caricamento…</p>';
+    if (b.errore) return `<p class="vuoto">${esc(b.errore)}</p>`;
+    // Il branch attuale va sempre in cima
+    const ordinati = [...b.branch].sort((x, y) => (y.nome === b.corrente) - (x.nome === b.corrente));
+    const righe = ordinati.map((r) => {
+      const corrente = r.nome === b.corrente;
+      const confronto = r.nome === b.principale || r.avanti === undefined ? ''
+        : ` · <span class="avanti">↑${r.avanti}</span> <span class="indietro">↓${r.indietro}</span> rispetto a ${esc(b.principale)}`;
+      const noPassa = corrente ? 'Sei già su questo branch' : b.modifiche ? 'Ci sono modifiche non salvate: committale prima' : '';
+      const noElimina = corrente ? 'Sei su questo branch: passa a un altro prima di eliminarlo'
+        : r.nome === b.principale ? 'Il branch principale non si elimina da qui' : '';
+      const titoloElimina = r.avanti ? `Elimina: ha ${r.avanti} commit che non sono in ${esc(b.principale)}` : 'Elimina il branch locale';
+      return `<div class="scheda branch${corrente ? ' corrente' : ''}${stato.branchAperti.has(r.nome) ? ' aperta' : ''}">
+        <div class="testa" data-azione="espandi-branch" data-nome="${esc(r.nome)}" title="Clicca per vedere i commit">
+          <span class="freccia">▶</span>
+          <span class="stato${corrente ? ' corrente' : ''}">${corrente ? 'attuale' : 'locale'}</span>
+          <div class="corpo">
+            <div class="titolo"><code>${esc(r.nome)}</code></div>
+            <div class="meta">${quando(r.data)} · ${esc(r.messaggio)}${confronto}${r.remoto ? ` · remoto ${esc(r.remoto)}` : ''}</div>
+          </div>
+          <div class="azioni">
+            <button class="btn icona" data-azione="passa" data-nome="${esc(r.nome)}" ${noPassa ? `disabled title="${noPassa}"` : 'title="Passa a questo branch"'}>${icona('passa')}</button>
+            <button class="btn icona" data-azione="elimina-branch" data-nome="${esc(r.nome)}" data-avanti="${r.avanti ?? ''}" ${noElimina ? `disabled title="${noElimina}"` : `title="${titoloElimina}"`}>${icona('elimina')}</button>
+          </div>
+        </div>
+        <div class="dettagli"><div><div class="interno" data-commit="${esc(r.nome)}">${htmlCommit(r.nome)}</div></div></div>
+      </div>`;
+    }).join('');
+    return `<div class="barra">
+        <span class="riepilogo">Sei su <b>${esc(b.corrente || '(nessun branch)')}</b> · ${b.modifiche ? `<span class="indietro">${b.modifiche} file modificati</span>` : 'nessuna modifica'}</span>
+        ${b.modifiche && !stato.commitAperto ? `<button class="btn primario" data-azione="apri-commit">${icona('commit')} Commit</button>` : ''}
+        <span class="spazio"></span>
+        <input id="nuovo-branch" placeholder="nome-nuovo-branch" autocomplete="off">
+        <button class="btn" data-azione="crea-branch">Crea branch</button>
+      </div>
+      ${stato.commitAperto && b.modifiche ? htmlModuloCommit(b) : ''}
+      <div class="lista">${righe}</div>`;
+  }
+
+  function opzioniBranch(scelto = '') {
+    const nomi = stato.branch?.branch?.map((b) => b.nome) || [];
+    if (scelto && !nomi.includes(scelto)) nomi.unshift(scelto);
+    return `<option value="">nessun branch</option>${nomi.map((n) => `<option${n === scelto ? ' selected' : ''}>${esc(n)}</option>`).join('')}`;
+  }
+
+  // PIANI
+  // Il ragionamento lo scrivi tu: la pagina dà solo la struttura delle fasi, adattata al tipo di lavoro, e tiene il conto di cosa manca
+  const delTipo = (elementi, tipo) => elementi.filter((e) => !e.tipi || e.tipi.includes(tipo));
+  const fasiDelPiano = (piano) => delTipo(stato.fasiPiano, piano.tipo);
+  const nomeTipo = (tipo) => stato.tipiPiano.find((t) => t.id === tipo)?.nome || tipo;
+
+  const MAPPE_PIANO = [['dati', 'Dati'], ['struttura', 'Struttura'], ['entrambi', 'Entrambi'], ['nessuna', 'Nessuna']];
+  const faseCompleta = (piano, fase) => {
+    const dati = piano.fasi[fase.id];
+    if (fase.id === 'richiesta' && !piano.mappa) return false;
+    return delTipo(fase.campi, piano.tipo).every((c) => c.facoltativo || String(dati.campi[c.id] || '').trim())
+      && delTipo(fase.spunte, piano.tipo).every((s) => dati.spunte[s.id] === true);
+  };
+  const faseIniziata = (piano, fase) => {
+    const dati = piano.fasi[fase.id];
+    return delTipo(fase.campi, piano.tipo).some((c) => String(dati.campi[c.id] || '').trim())
+      || delTipo(fase.spunte, piano.tipo).some((s) => dati.spunte[s.id] === true);
+  };
+  const statoFase = (piano, fase) => (faseCompleta(piano, fase) ? 'completa' : faseIniziata(piano, fase) ? 'iniziata' : '');
+  const pianoAperto = () => stato.piani.find((p) => p.id === stato.pianoAperto);
+
+  function htmlTacche(piano) {
+    const fasi = fasiDelPiano(piano);
+    const fatte = fasi.filter((f) => faseCompleta(piano, f)).length;
+    return `<div class="tacche" title="${fatte} fasi complete su ${fasi.length}">
+        ${fasi.map((f) => `<span class="${statoFase(piano, f)}"></span>`).join('')}
+        <b>${fatte}/${fasi.length}</b>
+      </div>`;
+  }
+
+  function htmlElencoPiani() {
+    const righe = [...stato.piani].sort((a, b) => b.aggiornato - a.aggiornato).map((p) => {
+      const attivita = stato.attivita.find((a) => a.id === p.attivita);
+      return `<div class="riga piano" data-azione="apri-piano" data-id="${p.id}" title="Apri il piano">
+        <span class="stato tipo">${esc(nomeTipo(p.tipo))}</span>
+        <div class="corpo">
+          <div class="titolo">${p.titolo ? esc(p.titolo) : '<span class="senza-titolo">Senza titolo</span>'}</div>
+          <div class="meta">${attivita ? `da attività "${esc(attivita.titolo)}" · ` : ''}${p.mappe.length ? `mappa ${p.mappe.map((m) => m.tipo).join(' e ')} · ` : ''}aggiornato ${quando(p.aggiornato)}</div>
+        </div>
+        ${htmlTacche(p)}
+        <div class="azioni">
+          <button class="btn icona" data-azione="copia-piano" data-id="${p.id}" title="Copia il piano da incollare in Claude Code con /piano">${icona('copia')}</button>
+          <button class="btn icona" data-azione="elimina-piano" data-id="${p.id}" title="Elimina il piano">${icona('elimina')}</button>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="barra">
+        <span class="riepilogo">Prima di scrivere codice, ragionaci qui. Poi copia il piano e fattelo rivedere.</span>
+        <span class="spazio"></span>
+        <button class="btn primario" data-azione="crea-piano">+ Nuovo piano</button>
+      </div>
+      <div class="lista">${righe || '<p class="vuoto">Nessun piano. Creane uno qui sopra o da un\'attività con "Pianifica".</p>'}</div>`;
+  }
+
+  function htmlFase(piano, fase, numero) {
+    const dati = piano.fasi[fase.id];
+    const campi = delTipo(fase.campi, piano.tipo).map((c) => `<label class="largo"><span>${esc(c.nome.toUpperCase())}${c.facoltativo ? ' <i>facoltativo</i>' : ''}</span>
+        <textarea data-fase="${fase.id}" data-campo="${c.id}" maxlength="5000" placeholder="${esc(c.aiuto || '')}">${esc(dati.campi[c.id] || '')}</textarea>
+      </label>`).join('');
+    const listaSpunte = delTipo(fase.spunte, piano.tipo);
+    const spunte = listaSpunte.length ? `<div class="largo spunte">${listaSpunte.map((s) => `<label class="spunta">
+        <input type="checkbox" data-fase="${fase.id}" data-spunta="${s.id}"${dati.spunte[s.id] ? ' checked' : ''}> ${esc(s.nome)}
+      </label>`).join('')}</div>` : '';
+    const daGenerare = ['dati', 'struttura', 'entrambi'].includes(piano.mappa);
+    const mappa = fase.id !== 'richiesta' ? '' : `<div class="largo tipo-piano"><span>MAPPA DA GENERARE</span>
+        <div class="filtri-tipo">${MAPPE_PIANO.map(([id, nome]) => `<button class="pillola${piano.mappa === id ? ' attiva' : ''}" data-azione="mappa-piano" data-mappa="${id}">${nome}</button>`).join('')}</div>
+      </div>
+      ${daGenerare ? `<div class="largo piede"><span class="nota">La mappa mostra com'è il codice oggi: tienila aperta mentre compili le fasi dopo.</span>
+        <button class="btn primario" data-azione="copia-piano" data-id="${piano.id}">${icona('copia')} Genera mappa con /piano</button></div>` : ''}`;
+    return `<div class="modulo fase-piano">
+        <h2 class="largo">${numero}. ${esc(fase.nome)}</h2>
+        ${campi}
+        ${mappa}
+        ${spunte}
+      </div>`;
+  }
+
+  // La mappa la serve la sala: il browser non apre i file del disco da una pagina web
+  const htmlMappePiano = (piano) => piano.mappe.map((m) => (m.esiste
+    ? `<a class="btn" href="/mappa?piano=${piano.id}&tipo=${m.tipo}" target="_blank" rel="noopener" title="${esc(m.file)}">Apri mappa ${m.tipo}</a>`
+    : `<span class="nota" title="${esc(m.file)}">mappa ${m.tipo} eliminata</span>`)).join('');
+
+  function htmlEditorPiano(piano) {
+    const fasi = fasiDelPiano(piano);
+    const indice = Math.max(0, fasi.findIndex((f) => f.id === stato.fasePiano));
+    const attivita = stato.attivita.find((a) => a.id === piano.attivita);
+    const tipi = stato.tipiPiano.map((t) => `<button class="pillola${t.id === piano.tipo ? ' attiva' : ''}" data-azione="tipo-piano" data-tipo="${t.id}">${esc(t.nome)}</button>`).join('');
+    const passi = fasi.map((f, i) => `<button class="passo ${statoFase(piano, f)}${i === indice ? ' attiva' : ''}" data-azione="vai-fase" data-fase="${f.id}">
+        <span class="numero">${faseCompleta(piano, f) ? icona('fatto') : i + 1}</span>${esc(f.nome)}
+      </button>`).join('');
+    return `<div class="barra">
+        <button class="btn" data-azione="chiudi-piano">← Tutti i piani</button>
+        <span class="spazio"></span>
+        <span class="salvataggio" id="salvataggio">Salvato</span>
+        ${htmlMappePiano(piano)}
+        <button class="btn" data-azione="copia-piano" data-id="${piano.id}" title="Copia il piano da incollare in Claude Code: genera la mappa o rivede il piano">${icona('copia')} Copia per /piano</button>
+      </div>
+      <div class="modulo testa-piano">
+        <label><span>TITOLO DEL PIANO</span><input data-piano="titolo" value="${esc(piano.titolo)}" maxlength="200" placeholder="cosa vuoi risolvere, in poche parole" autocomplete="off"></label>
+        <label><span>ATTIVITÀ COLLEGATA</span><div class="collegata">${attivita ? esc(attivita.titolo) : 'nessuna'}</div></label>
+        <div class="largo tipo-piano"><span>TIPO DI LAVORO</span><div class="filtri-tipo">${tipi}</div></div>
+      </div>
+      <div class="passi" id="passi-piano">${passi}</div>
+      ${htmlFase(piano, fasi[indice], indice + 1)}
+      <div class="naviga-fasi">
+        <button class="btn" data-azione="vai-fase" data-fase="${fasi[indice - 1]?.id || ''}" ${indice ? '' : 'disabled'}>← Fase precedente</button>
+        <span class="spazio"></span>
+        <button class="btn primario" data-azione="vai-fase" data-fase="${fasi[indice + 1]?.id || ''}" ${indice < fasi.length - 1 ? '' : 'disabled'}>Fase successiva →</button>
+      </div>`;
+  }
+
+  function htmlPiani() {
+    const piano = pianoAperto();
+    return piano ? htmlEditorPiano(piano) : htmlElencoPiani();
+  }
+
+  // Aggiorna numeri e colori delle fasi senza ridisegnare la pagina, così chi scrive non perde il cursore
+  function aggiornaIndicatoriPiano() {
+    const piano = pianoAperto();
+    if (!piano) return;
+    const fasi = fasiDelPiano(piano);
+    document.querySelectorAll('#passi-piano .passo').forEach((b, i) => {
+      const fase = fasi[i];
+      b.classList.remove('completa', 'iniziata');
+      if (statoFase(piano, fase)) b.classList.add(statoFase(piano, fase));
+      b.querySelector('.numero').innerHTML = faseCompleta(piano, fase) ? icona('fatto') : i + 1;
+    });
+  }
+
+  function testoPiano(piano) {
+    const attivita = stato.attivita.find((a) => a.id === piano.attivita);
+    const fasi = fasiDelPiano(piano).map((f, i) => {
+      const dati = piano.fasi[f.id];
+      const campi = delTipo(f.campi, piano.tipo).map((c) => `${c.nome}: ${String(dati.campi[c.id] || '').trim() || (c.facoltativo ? '(non scritto)' : '(vuoto)')}`);
+      const spunte = delTipo(f.spunte, piano.tipo).map((s) => `[${dati.spunte[s.id] ? 'x' : ' '}] ${s.nome}`);
+      return [`## ${i + 1}. ${f.nome.toUpperCase()}`, ...campi, ...spunte].join('\n');
+    });
+    const progetto = stato.progetti.find((p) => p.nome === piano.progetto);
+    const mappe = piano.mappe.filter((m) => m.esiste).map((m) => `${m.tipo} ${m.file}`);
+    return [
+      '/piano',
+      `PIANO: ${piano.titolo || 'Senza titolo'}`,
+      `ID PIANO: ${piano.id}`,
+      `TIPO: ${nomeTipo(piano.tipo)}`,
+      `PROGETTO: ${piano.progetto}${progetto ? ` (${progetto.cartella})` : ''}`,
+      ...(attivita ? [`ATTIVITÀ: ${attivita.titolo}`] : []),
+      `MAPPA: ${piano.mappa || 'non scelta'}`,
+      `MAPPE GIÀ FATTE: ${mappe.length ? mappe.join(' · ') : 'nessuna'}`,
+      '',
+      fasi.join('\n\n'),
+    ].join('\n');
+  }
+
+  // MODULO ATTIVITÀ
+  // Stessi campi della Richiesta di un piano: "Pianifica" li porta lì
+  function htmlModulo(a, azione) {
+    const controllo = (c) => {
+      const valore = a[c.id] || '';
+      if (c.tipo === 'textarea') return `<textarea name="${c.id}" maxlength="5000" placeholder="${esc(c.aiuto)}">${esc(valore)}</textarea>`;
+      if (c.tipo === 'select') return `<select name="${c.id}">${['', ...c.valori].map((v) => `<option value="${v}"${v === valore ? ' selected' : ''}>${v || '—'}</option>`).join('')}</select>`;
+      return `<input name="${c.id}" value="${esc(valore)}" maxlength="${c.id === 'titolo' ? 200 : 1000}" placeholder="${esc(c.aiuto)}" autocomplete="off">`;
+    };
+    const campi = CAMPI_SCHEDA.map((c) =>
+      `<label class="${c.largo ? 'largo' : ''}"><span>${c.nome}${c.obbligatorio ? ' <b>*</b>' : ''}</span>${controllo(c)}</label>`).join('');
+    return `<div class="modulo" data-scheda="${a.id || 'nuova'}">
+        ${campi}
+        <label><span>BRANCH</span><select name="branch">${opzioniBranch(a.branch)}</select></label>
+        <div class="piede">
+          <button class="btn" data-azione="annulla">Annulla</button>
+          <button class="btn primario" data-azione="${azione}" data-id="${a.id || ''}">${azione === 'salva' ? 'Salva' : 'Aggiungi'}</button>
+        </div>
+      </div>`;
+  }
+
+  function htmlScheda(a) {
+    const voci = CAMPI_SCHEDA.filter((c) => c.id !== 'titolo' && a[c.id])
+      .map((c) => `<dt>${c.nome}</dt><dd>${esc(a[c.id])}</dd>`).join('');
+    return `<div class="scheda${a.stato === 'in-corso' ? ' attiva' : ''}${stato.aperte.has(a.id) ? ' aperta' : ''}" data-id="${a.id}" draggable="true">
+      <div class="testa" data-azione="espandi" data-id="${a.id}">
+        <span class="freccia">▶</span>
+        <div class="corpo">
+          <div class="titolo">${esc(a.titolo)}</div>
+          <div class="meta">${esc(a.obiettivo || 'nessun obiettivo scritto')}</div>
+        </div>
+        ${a.branch ? `<span class="etichetta">${esc(a.branch)}</span>` : ''}
+        <span class="aggiunta" title="Data di aggiunta">${quando(a.creata)}</span>
+        <div class="stati">
+          ${STATI.map(([id, nome]) => `<button class="btn icona ${id}${id === a.stato ? ' attuale' : ''}" data-azione="sposta" data-id="${a.id}" data-stato="${id}"
+            title="${id === a.stato ? `È in ${nome}` : `Sposta in ${nome}`}">${icona(id)}</button>`).join('')}
+        </div>
+        <button class="btn icona" data-azione="elimina-attivita" data-id="${a.id}" title="Elimina l'attività">${icona('elimina')}</button>
+      </div>
+      <div class="dettagli"><div><div class="interno">
+        ${voci ? `<dl>${voci}</dl>` : ''}
+        <div class="piede">
+          <span class="spazio"></span>
+          <button class="btn" data-azione="pianifica" data-id="${a.id}" title="Ragiona sull'attività fase per fase prima di scrivere codice">${stato.piani.some((p) => p.attivita === a.id) ? 'Apri piano' : 'Pianifica'}</button>
+          <button class="btn" data-azione="modifica" data-id="${a.id}">Modifica</button>
+        </div>
+      </div></div></div>
+    </div>`;
+  }
+
+  function htmlAttivita() {
+    const lista = stato.attivita.filter((a) => stato.filtroAttivita === 'tutte' || a.stato === stato.filtroAttivita)
+      .sort(perOrdine);
+    const conta = (id) => stato.attivita.filter((a) => a.stato === id).length;
+    return `<div class="barra">
+        ${[['tutte', 'Tutte'], ...STATI].map(([id, nome]) => `<button class="pillola${stato.filtroAttivita === id ? ' attiva' : ''}" data-filtro-attivita="${id}">${nome} · ${id === 'tutte' ? stato.attivita.length : conta(id)}</button>`).join('')}
+        <span class="spazio"></span>
+        ${stato.nuova ? '' : '<button class="btn primario" data-azione="nuova">+ Nuova attività</button>'}
+      </div>
+      ${stato.nuova ? htmlModulo({}, 'aggiungi') : ''}
+      <div class="lista">${lista.map((a) => (stato.modifica === a.id ? htmlModulo(a, 'salva') : htmlScheda(a))).join('') || '<p class="vuoto">Nessuna attività in questa lista</p>'}</div>`;
+  }
+
+
+  // CONFERMA
+  // Le azioni irreversibili chiedono un secondo clic entro 4 secondi
+  let daConfermare = null;
+  function confermato(bottone, domanda = 'Sicuro? Clicca di nuovo') {
+    if (daConfermare === bottone) {
+      daConfermare = null;
+      return true;
+    }
+    daConfermare = bottone;
+    const contenuto = bottone.innerHTML;
+    bottone.textContent = domanda;
+    bottone.classList.add('pericolo');
+    setTimeout(() => {
+      if (daConfermare !== bottone) return;
+      daConfermare = null;
+      bottone.innerHTML = contenuto;
+      bottone.classList.remove('pericolo');
+    }, 4000);
+    return false;
+  }
+
+  const campi = (contenitore) => Object.fromEntries([...contenitore.querySelectorAll('[name]')].map((c) => [c.name, c.value]));
+
+  // AZIONI
+  const AZIONI = {
+    async chiudi(b) {
+      if (!confermato(b)) return;
+      await api('/api/sessioni/chiudi', { id: b.dataset.id });
+      avvisa('Chat chiusa: la scheda in VS Code ora è scollegata');
+      await carica();
+    },
+    async archivia(b) {
+      const archivia = b.dataset.archivia === 'si';
+      await api('/api/sessioni/archivia', { id: b.dataset.id, archivia });
+      avvisa(archivia ? 'Chat archiviata' : 'Chat tolta dall\'archivio');
+      await carica();
+    },
+    async 'elimina-sessione'(b) {
+      if (!confermato(b)) return;
+      await api('/api/sessioni/elimina', { id: b.dataset.id });
+      avvisa('Chat eliminata');
+      await carica();
+    },
+    async 'espandi-branch'(b) {
+      const nome = b.dataset.nome;
+      const scheda = b.closest('.scheda');
+      if (stato.branchAperti.has(nome)) {
+        stato.branchAperti.delete(nome);
+        scheda.classList.remove('aperta');
+        return;
+      }
+      stato.branchAperti.add(nome);
+      scheda.classList.add('aperta');
+      if (stato.commit[nome]) return;
+      await caricaCommit(nome);
+      scheda.querySelector('[data-commit]').innerHTML = htmlCommit(nome);
+    },
+    'apri-commit'() {
+      stato.commitAperto = true;
+      disegna();
+      $('messaggio-commit').focus();
+    },
+    'annulla-commit'() {
+      stato.commitAperto = false;
+      disegna();
+    },
+    async committa() {
+      const messaggio = $('messaggio-commit').value.trim();
+      if (!messaggio) return avvisa('Scrivi il messaggio del commit', true);
+      const esito = await api('/api/branch/committa', { messaggio });
+      stato.commitAperto = false;
+      avvisa(`Commit fatto su ${esito.branch}: ${esito.committati} file`);
+      await carica();
+    },
+    async torna(b) {
+      if (!confermato(b, `Togli ${b.dataset.tolti} commit: clicca di nuovo`)) return;
+      const esito = await api('/api/branch/torna', { hash: b.dataset.hash });
+      avvisa(`Tolti ${esito.tolti} commit. Per annullare: git reset --hard ${esito.prima.slice(0, 8)}`);
+      await carica();
+    },
+    // Il piano nasce vuoto e si apre con il cursore sul titolo
+    async 'crea-piano'() {
+      apriPiano(await api('/api/piani/crea', {}));
+      document.querySelector('[data-piano="titolo"]').focus();
+    },
+    async pianifica(b) {
+      const esistente = stato.piani.find((p) => p.attivita === b.dataset.id);
+      apriPiano(esistente || await api('/api/piani/crea', { attivita: b.dataset.id }));
+    },
+    'apri-piano'(b) {
+      apriPiano(stato.piani.find((p) => p.id === b.dataset.id));
+    },
+    async 'chiudi-piano'() {
+      await salvaPiano();
+      stato.pianoAperto = null;
+      disegna();
+    },
+    async 'vai-fase'(b) {
+      if (!b.dataset.fase) return;
+      await salvaPiano();
+      stato.fasePiano = b.dataset.fase;
+      disegna();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    // Cambiando tipo si resta sulla stessa fase se esiste anche nel tipo nuovo, altrimenti si torna alla prima
+    async 'tipo-piano'(b) {
+      const piano = pianoAperto();
+      if (piano.tipo === b.dataset.tipo) return;
+      await salvaPiano();
+      piano.tipo = b.dataset.tipo;
+      if (!fasiDelPiano(piano).some((f) => f.id === stato.fasePiano)) stato.fasePiano = fasiDelPiano(piano)[0].id;
+      await api('/api/piani/aggiorna', { id: piano.id, tipo: piano.tipo });
+      disegna();
+    },
+    async 'mappa-piano'(b) {
+      const piano = pianoAperto();
+      if (piano.mappa === b.dataset.mappa) return;
+      await salvaPiano();
+      piano.mappa = b.dataset.mappa;
+      await api('/api/piani/aggiorna', { id: piano.id, mappa: piano.mappa });
+      disegna();
+    },
+    async 'copia-piano'(b) {
+      await salvaPiano();
+      await navigator.clipboard.writeText(testoPiano(stato.piani.find((p) => p.id === b.dataset.id)));
+      avvisa('Copiato: incollalo in una chat di Claude Code e invia');
+    },
+    async 'elimina-piano'(b) {
+      if (!confermato(b)) return;
+      await api('/api/piani/elimina', { id: b.dataset.id });
+      await carica();
+    },
+    async passa(b) {
+      await api('/api/branch/cambia', { nome: b.dataset.nome });
+      avvisa(`Ora sei su ${b.dataset.nome}`);
+      await carica();
+    },
+    // Senza un numero di commit avanti (nessun branch principale) si tratta come non unito
+    async 'elimina-branch'(b) {
+      const avanti = b.dataset.avanti === '' ? null : Number(b.dataset.avanti);
+      const forza = avanti !== 0;
+      if (!confermato(b, forza ? `Perdi ${avanti ?? 'i'} commit non uniti: clicca di nuovo` : 'Sicuro? Clicca di nuovo')) return;
+      await api('/api/branch/elimina', { nome: b.dataset.nome, forza });
+      avvisa(`Branch ${b.dataset.nome} eliminato`);
+      await carica();
+    },
+    async 'crea-branch'() {
+      const nome = $('nuovo-branch').value.trim();
+      if (!nome) return avvisa('Scrivi il nome del branch', true);
+      await api('/api/branch/crea', { nome });
+      avvisa(`Branch ${nome} creato: per lavorarci clicca Passa`);
+      await carica();
+    },
+    nuova() {
+      stato.nuova = true;
+      disegna();
+      document.querySelector('[data-scheda="nuova"] [name="titolo"]')?.focus();
+    },
+    async aggiungi(b) {
+      const dati = campi(b.closest('[data-scheda]'));
+      if (!dati.titolo.trim()) return avvisa('Il TITOLO è obbligatorio', true);
+      await api('/api/attivita/crea', dati);
+      stato.nuova = false;
+      stato.filtroAttivita = 'tutte';
+      avvisa('Attività aggiunta in Da fare');
+      await carica();
+    },
+    // Il cambio di classe fa partire la transizione: niente ridisegno, altrimenti l'animazione non si vedrebbe
+    espandi(b) {
+      const scheda = b.closest('.scheda');
+      scheda.classList.toggle('aperta');
+      if (scheda.classList.contains('aperta')) stato.aperte.add(b.dataset.id);
+      else stato.aperte.delete(b.dataset.id);
+    },
+    async sposta(b) {
+      if (b.classList.contains('attuale')) return;
+      await api('/api/attivita/aggiorna', { id: b.dataset.id, stato: b.dataset.stato });
+      avvisa(`Spostata in ${STATI.find(([id]) => id === b.dataset.stato)[1]}`);
+      await carica();
+    },
+    modifica(b) {
+      stato.modifica = b.dataset.id;
+      disegna();
+    },
+    annulla() {
+      stato.modifica = null;
+      stato.nuova = false;
+      disegna();
+    },
+    async salva(b) {
+      await api('/api/attivita/aggiorna', { id: b.dataset.id, ...campi(b.closest('[data-scheda]')) });
+      stato.modifica = null;
+      await carica();
+    },
+    async 'elimina-attivita'(b) {
+      if (!confermato(b)) return;
+      await api('/api/attivita/elimina', { id: b.dataset.id });
+      await carica();
+    },
+  };
+
+  document.addEventListener('click', async (e) => {
+    const el = e.target.closest('[data-progetto], [data-sezione], [data-filtro], [data-filtro-attivita], [data-azione], #ricarica');
+    if (!el) return;
+    try {
+      if (el.id === 'ricarica') return await carica();
+      if (el.dataset.filtroAttivita) {
+        stato.filtroAttivita = el.dataset.filtroAttivita;
+        return disegna();
+      }
+      if (el.dataset.progetto) {
+        stato.progetto = el.dataset.progetto;
+        stato.modifica = null;
+        stato.nuova = false;
+        stato.branchAperti.clear();
+        stato.commitAperto = false;
+        memoria.scrivi('sala.progetto', stato.progetto);
+        return await carica();
+      }
+      if (el.dataset.sezione) {
+        // Entrando in Attività si parte sempre da Tutte
+        if (el.dataset.sezione === 'attivita' && stato.sezione !== 'attivita') stato.filtroAttivita = 'tutte';
+        stato.sezione = el.dataset.sezione;
+        memoria.scrivi('sala.sezione', stato.sezione);
+        return disegna();
+      }
+      if (el.dataset.filtro) {
+        stato.filtro = el.dataset.filtro;
+        return disegna();
+      }
+      if (el.disabled) return;
+      await AZIONI[el.dataset.azione](el);
+    } catch (err) {
+      avvisa(err instanceof TypeError ? 'Il server è spento' : err.message, true);
+    }
+  });
+
+  // SALVATAGGIO DEI PIANI
+  // Si salva da solo mentre scrivi: le modifiche si accumulano e partono dopo una breve pausa
+  let modifichePiano = null;
+  let timerPiano;
+
+  function apriPiano(piano) {
+    if (!stato.piani.some((p) => p.id === piano.id)) stato.piani.push(piano);
+    stato.sezione = 'piani';
+    stato.pianoAperto = piano.id;
+    stato.fasePiano = stato.fasiPiano[0]?.id || '';
+    memoria.scrivi('sala.sezione', stato.sezione);
+    disegna();
+    window.scrollTo({ top: 0 });
+  }
+
+  async function salvaPiano() {
+    clearTimeout(timerPiano);
+    if (!modifichePiano) return;
+    const dati = modifichePiano;
+    modifichePiano = null;
+    const etichetta = $('salvataggio');
+    if (etichetta) etichetta.textContent = 'Salvataggio…';
+    try {
+      const piano = await api('/api/piani/aggiorna', dati);
+      Object.assign(stato.piani.find((p) => p.id === piano.id), { aggiornato: piano.aggiornato });
+      if ($('salvataggio')) $('salvataggio').textContent = 'Salvato';
+    } catch (err) {
+      if ($('salvataggio')) $('salvataggio').textContent = 'Non salvato';
+      avvisa(err.message, true);
+    }
+  }
+
+  function modificaPiano(e) {
+    const piano = pianoAperto();
+    const el = e.target;
+    if (!piano || !el.closest('#contenuto')) return;
+    const { fase, campo, spunta } = el.dataset;
+    if (!el.dataset.piano && !campo && !spunta) return;
+    modifichePiano ??= { id: piano.id };
+    if (el.dataset.piano) {
+      piano[el.dataset.piano] = el.value;
+      modifichePiano[el.dataset.piano] = el.value;
+    } else {
+      const chiave = campo ? 'campi' : 'spunte';
+      const valore = campo ? el.value : el.checked;
+      piano.fasi[fase][chiave][campo || spunta] = valore;
+      modifichePiano.fasi ??= {};
+      modifichePiano.fasi[fase] ??= {};
+      modifichePiano.fasi[fase][chiave] ??= {};
+      modifichePiano.fasi[fase][chiave][campo || spunta] = valore;
+    }
+    if ($('salvataggio')) $('salvataggio').textContent = 'Modifiche da salvare…';
+    aggiornaIndicatoriPiano();
+    clearTimeout(timerPiano);
+    timerPiano = setTimeout(salvaPiano, spunta ? 0 : 700);
+  }
+
+  document.addEventListener('input', modificaPiano);
+  document.addEventListener('change', (e) => {
+    if (e.target.type === 'checkbox') modificaPiano(e);
+  });
+  window.addEventListener('beforeunload', () => salvaPiano());
+
+  // TRASCINAMENTO ATTIVITÀ
+  // Durante il trascinamento la scheda si sposta davvero nella pagina; al rilascio si salva il nuovo ordine
+  document.addEventListener('dragstart', (e) => {
+    const scheda = e.target.closest?.('.scheda[data-id]');
+    if (!scheda) return;
+    stato.trascinata = scheda;
+    scheda.classList.add('trascinata');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', scheda.dataset.id);
+  });
+
+  document.addEventListener('dragover', (e) => {
+    const lista = e.target.closest?.('.lista');
+    if (!stato.trascinata || lista !== stato.trascinata.parentElement) return;
+    e.preventDefault();
+    const dopo = [...lista.querySelectorAll('.scheda[data-id]:not(.trascinata)')]
+      .find((s) => e.clientY < s.getBoundingClientRect().top + s.offsetHeight / 2);
+    if (dopo) lista.insertBefore(stato.trascinata, dopo);
+    else lista.appendChild(stato.trascinata);
+  });
+
+  document.addEventListener('drop', (e) => {
+    if (stato.trascinata) e.preventDefault();
+  });
+
+  // Le attività nascoste dal filtro restano nei loro posti: si riempiono solo i posti di quelle visibili
+  document.addEventListener('dragend', async () => {
+    const scheda = stato.trascinata;
+    if (!scheda) return;
+    scheda.classList.remove('trascinata');
+    stato.trascinata = null;
+    const visibili = [...scheda.parentElement.querySelectorAll('.scheda[data-id]')].map((s) => s.dataset.id);
+    const prima = stato.attivita.slice().sort(perOrdine).map((a) => a.id);
+    const posti = new Set(visibili);
+    let k = 0;
+    const ids = prima.map((id) => (posti.has(id) ? visibili[k++] : id));
+    if (ids.every((id, i) => id === prima[i])) return;
+    try {
+      await api('/api/attivita/riordina', { ids });
+      await carica();
+    } catch (err) {
+      avvisa(err.message, true);
+      await carica();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || e.shiftKey || e.target.tagName !== 'INPUT') return;
+    const bottone = e.target.id === 'nuovo-branch' ? document.querySelector('[data-azione="crea-branch"]')
+      : e.target.id === 'messaggio-commit' ? document.querySelector('[data-azione="committa"]')
+      : e.target.closest('[data-scheda]')?.querySelector('[data-azione="aggiungi"], [data-azione="salva"]');
+    bottone?.click();
+  });
+
+  // AGGIORNAMENTO AUTOMATICO
+  // Si ferma mentre scrivi o modifichi, altrimenti il ridisegno cancellerebbe il testo
+  setInterval(() => {
+    const scrivendo = document.activeElement?.matches('input, textarea, select') || stato.modifica || stato.nuova || stato.trascinata || stato.commitAperto || stato.pianoAperto || daConfermare;
+    if (!document.hidden && !scrivendo) carica().catch(() => {});
+  }, AGGIORNA_MS);
+
+  // CHATTINO
+  // Le domande vanno al server della chat delle mappe (~/.claude/shared/chat-mappa-server.js), che le passa a claude -p in sola lettura
+  (() => {
+    const GETTONE_CHAT = '__GETTONE_CHAT__';
+    const SERVER = 'http://127.0.0.1:4517';
+    const AVVIO = 'node "$HOME/.claude/shared/chat-mappa-server.js" --sfondo';
+    const MAX_STORIA = 10;
+    const NOMI_SEZIONI = { sessioni: 'Sessioni Claude', branch: 'Branch', attivita: 'Attività', piani: 'Piani' };
+    const storia = [];
+    const $ = (id) => document.getElementById(id);
+    let inAttesa = false;
+
+    const inline = (s) => s
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+      .replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?![*\w])/g, '$1<i>$2</i>');
+
+    // FORMATTAZIONE RISPOSTA
+    // Markdown essenziale: blocchi di codice, `codice`, **grassetto**, elenchi puntati, paragrafi.
+    function paragrafo(testo) {
+      let html = '';
+      let lista = [];
+      const chiudiLista = () => {
+        if (lista.length) html += `<ul>${lista.join('')}</ul>`;
+        lista = [];
+      };
+      testo.split('\n').forEach((riga) => {
+        const punto = riga.match(/^\s*[-*] (.*)/);
+        if (punto) return lista.push(`<li>${inline(punto[1])}</li>`);
+        chiudiLista();
+        html += `${html && !html.endsWith('</ul>') ? '<br>' : ''}${inline(riga)}`;
+      });
+      chiudiLista();
+      return `<div class="par">${html}</div>`;
+    }
+
+    const markdown = (testo) => esc(testo)
+      .split(/```[\w-]*\n?([\s\S]*?)```/)
+      .map((parte, i) => (i % 2
+        ? `<pre><code>${parte.replace(/\n$/, '')}</code></pre>`
+        : parte.split(/\n{2,}/).filter((p) => p.trim()).map(paragrafo).join('')))
+      .join('');
+
+    function aggiungi(classe, html, contesto) {
+      const msg = document.createElement('div');
+      msg.className = `msg ${classe}`;
+      msg.innerHTML = (contesto ? `<span class="ctx">su ${esc(contesto)}</span>` : '') + html;
+      $('chat-log').appendChild(msg);
+      $('chat-log').scrollTop = $('chat-log').scrollHeight;
+      return msg;
+    }
+
+    function serverSpento() {
+      const msg = aggiungi('errore', `La chat non risponde: il server locale è spento. Avvialo da un terminale con<br><code>${esc(AVVIO)}</code><br><button type="button">Copia comando</button>`);
+      msg.querySelector('button').addEventListener('click', async () => {
+        await navigator.clipboard.writeText(AVVIO);
+        avvisa('Comando copiato: incollalo in un terminale e riprova');
+      });
+    }
+
+    // STATO SERVER
+    async function controllaServer() {
+      const dot = document.querySelector('#chat-open .dot');
+      try {
+        const res = await fetch(`${SERVER}/stato`);
+        dot.classList.toggle('off', !res.ok);
+      } catch {
+        dot.classList.add('off');
+      }
+    }
+
+    // CONTESTO
+    // Al Claude della chat arriva quello che vedi: progetto, sezione aperta e i dati della sala, senza percorsi dei file delle chat
+    function selezione() {
+      const aperte = stato.attivita.filter((a) => stato.aperte.has(a.id)).map((a) => `"${a.titolo}"`);
+      const piano = stato.sezione === 'piani' && stato.piani.find((p) => p.id === stato.pianoAperto);
+      const fase = piano && stato.fasiPiano.find((f) => f.id === stato.fasePiano);
+      return `${NOMI_SEZIONI[stato.sezione]} di ${stato.progetto}${stato.sezione === 'attivita' && aperte.length ? `, attività aperte: ${aperte.join(', ')}` : ''}${piano ? `, piano "${piano.titolo}"${fase ? `, fase ${fase.nome}` : ''}` : ''}`;
+    }
+
+    const datiSala = () => ({
+      progetto: stato.progetto,
+      sezione: NOMI_SEZIONI[stato.sezione],
+      sessioni: stato.sessioni.map(({ titolo, stato: s, token, finestra, compattazioni, modificata }) => ({ titolo, stato: s, token, finestra, compattazioni, modificata: new Date(modificata).toISOString() })),
+      branch: stato.branch,
+      attivita: stato.attivita.map(({ id, progetto, ...a }) => a),
+      piani: stato.piani.map(({ id, progetto, ...piano }) => piano),
+    });
+
+    function aggiornaContesto() {
+      $('chat-ctx').innerHTML = stato.progetto ? `Domanda su <b>${esc(selezione())}</b>` : '';
+    }
+
+    // INVIO DOMANDA
+    async function invia(e) {
+      e.preventDefault();
+      const domanda = $('chat-input').value.trim();
+      if (!domanda || inAttesa) return;
+      const cartella = stato.progetti.find((p) => p.nome === stato.progetto)?.cartella;
+      if (!GETTONE_CHAT || !cartella) {
+        aggiungi('errore', 'Chat non configurata: manca il gettone della chat (<code>~/.claude/chat-mappa-token</code>) o il progetto. Avvia il server della chat con il comando qui sotto e ricarica la pagina.');
+        serverSpento();
+        return;
+      }
+
+      const contesto = selezione();
+      aggiungi('utente', paragrafo(esc(domanda)), contesto);
+      $('chat-input').value = '';
+      inAttesa = true;
+      $('chat-send').disabled = true;
+      $('chat-open').classList.add('pensa');
+      const inizio = Date.now();
+      const attesa = aggiungi('info', 'Sto pensando…');
+      const timer = setInterval(() => {
+        attesa.textContent = `Sto pensando… ${Math.round((Date.now() - inizio) / 1000)} s`;
+      }, 1000);
+
+      try {
+        const res = await fetch(`${SERVER}/chiedi`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: GETTONE_CHAT,
+            project: cartella,
+            tipo: 'sala',
+            titolo: `Sala di controllo · ${stato.progetto}`,
+            mappa: JSON.stringify(datiSala()),
+            selezione: contesto,
+            storia: storia.slice(-MAX_STORIA),
+            domanda,
+            modalita: $('chat-modo').value,
+          }),
+        });
+        const corpo = await res.json();
+        if (!res.ok) throw new Error(corpo.errore || `errore ${res.status}`);
+        storia.push({ ruolo: 'utente', testo: `[su ${contesto}] ${domanda}` }, { ruolo: 'claude', testo: corpo.risposta });
+        aggiungi('claude', markdown(corpo.risposta));
+        if ($('chat').hidden) document.querySelector('#chat-open .dot').classList.add('pronta');
+      } catch (err) {
+        if (err instanceof TypeError) serverSpento();
+        else aggiungi('errore', esc(err.message));
+      } finally {
+        clearInterval(timer);
+        attesa.remove();
+        inAttesa = false;
+        $('chat-send').disabled = false;
+        $('chat-open').classList.remove('pensa');
+        controllaServer();
+      }
+    }
+
+    // MASCOTTE
+    // Ogni carattere è un pixel: D contorno, P arancione, L riflesso, W bianco occhio, K pupilla e bocca, R guance
+    const SPRITE = [
+      '..DDDDDDDD..',
+      '.DPPPPPPPPD.',
+      'DPLLPPPPPPPD',
+      'DPLPWWPPWWPD',
+      'DPPPWKPPWKPD',
+      'DPPPWKPPWKPD',
+      'DPRPPPPPPRPD',
+      'DPPPPKKKPPPD',
+      '.DPPPPPPPPD.',
+      '..DPDDDDDD..',
+      '..DD........',
+      '.DD.........',
+    ];
+    const PIXEL = { D: '#5c2414', P: '#d97757', L: '#f5c4ad', W: '#ffffff', K: '#2b130b', R: '#f9a8a0' };
+    const pixel = (x, y, c) => `<rect x="${x}" y="${y}" width="1" height="1" fill="${PIXEL[c]}"/>`;
+    // Sotto occhi e bocca va il colore del corpo: si vede quando cambia espressione
+    const mobile = (x, y, c) => (y >= 3 && y <= 5 && 'WK'.includes(c)) || (y === 7 && c === 'K');
+    const corpo = SPRITE.flatMap((riga, y) => [...riga].map((c, x) => (PIXEL[c] ? pixel(x, y, mobile(x, y, c) ? 'P' : c) : ''))).join('');
+    const bocca = `<g class="bocca">${[5, 6, 7].map((x) => pixel(x, 7, 'K')).join('')}</g>`;
+    // Occhi sgranati 3×3 con la pupilla al centro e bocca spalancata con la lingua
+    const PAURA = [
+      ...[3, 7].flatMap((x0) => [2, 3, 4].flatMap((y) => [0, 1, 2].map((dx) => [x0 + dx, y, y === 3 && dx === 1 ? 'K' : 'W']))),
+      [5, 6, 'K'], [6, 6, 'K'], [7, 6, 'K'], [5, 7, 'K'], [6, 7, 'R'], [7, 7, 'K'], [5, 8, 'K'], [6, 8, 'K'], [7, 8, 'K'],
+    ];
+    const paura = `<g class="paura">${PAURA.map(([x, y, c]) => pixel(x, y, c)).join('')}</g>`;
+    const occhio = (x0) => `<g class="eye">${[3, 4, 5].flatMap((y) => [x0, x0 + 1].map((x) => pixel(x, y, SPRITE[y][x]))).join('')}</g>`;
+    const spirale = (cx, cy) => {
+      const punti = Array.from({ length: 61 }, (_, i) => {
+        const angolo = (i / 60) * 4 * Math.PI;
+        const raggio = 0.08 + (1.05 * i) / 60;
+        return `${(cx + raggio * Math.cos(angolo)).toFixed(2)},${(cy + raggio * Math.sin(angolo)).toFixed(2)}`;
+      });
+      return `<g class="ipno"><circle cx="${cx}" cy="${cy}" r="1.3" fill="${PIXEL.W}"/><polyline class="spirale" style="transform-origin: ${cx}px ${cy}px" points="${punti.join(' ')}" fill="none" stroke="${PIXEL.K}" stroke-width=".3" stroke-linecap="round"/></g>`;
+    };
+    // DECORAZIONI DELLE MODALITÀ
+    // Pixel fuori dal corpo (la tela va da -2 a 15 in orizzontale e da -4 a 11 in verticale): ognuna si vede solo nella sua modalità
+    const COLORI_ACCESSORI = { o: '#141312', g: '#9b968a', A: '#a7afb8', a: '#5f6670', L: '#3d6fb6', P: '#f4f2ec', N: '#22252b', n: '#454b55', Y: '#f2c14e', K: '#2b130b', C: '#4b5563', T: '#2bb3a3', t: '#8fe3d8', S: '#111111', s: '#6b7280', M: '#f4f2ec', m: '#c9c4b8', B: '#6b3e26', V: '#e6e6e6' };
+    const punti = (colore, coppie) => coppie.map(([x, y]) => `<rect x="${x}" y="${y}" width="1" height="1" fill="${COLORI_ACCESSORI[colore]}"/>`).join('');
+    const intervallo = (da, a, y) => Array.from({ length: a - da + 1 }, (_, i) => [da + i, y]);
+    // Gli occhi sono larghi 2 pixel e distano 2 pixel: una montatura a pixel interi li coprirebbe, quindi è a linee sottili
+    const OCCHIALI = `<g class="occhiali" fill="none" stroke="#2b130b" stroke-width=".35"><rect x="3.55" y="2.6" width="2.9" height="3.8" rx=".5"/><rect x="7.55" y="2.6" width="2.9" height="3.8" rx=".5"/><path d="M6.45 3.6h1.1M3.55 3.4h-1.3M10.45 3.4h1.3"/></g>`;
+    const ACCESSORI = [
+      // Insegnante: occhiali dorati e un libro aperto in mano, con la piega al centro
+      `<g class="acc acc-insegnante"><g class="viso">${OCCHIALI}</g>${punti('P', [[11, 7], [12, 7], [14, 7], [15, 7], [11, 8], [12, 8], [14, 8], [15, 8], [11, 9], [12, 9], [14, 9], [15, 9]])}${punti('g', [[13, 7], [13, 8], [13, 9]])}${punti('m', [[12, 8], [15, 8]])}${punti('L', intervallo(11, 15, 10))}</g>`,
+      // Traduttore: cuffie da interprete e microfono a lato, con il bordo scuro per staccarlo dal corpo
+      `<g class="acc acc-traduttore">${punti('C', [...intervallo(3, 8, -2), [1, -1], [2, -1], [9, -1], [10, -1], [0, 0], [11, 0], [-1, 1], [12, 1], [-1, 2], [12, 2]])}${punti('T', [[-2, 3], [-2, 4], [-2, 5], [-1, 4], [-1, 5], [-1, 6], [-2, 6], [13, 3], [13, 4], [13, 5], [13, 6], [12, 4], [12, 5], [12, 6]])}${punti('t', [[-1, 3], [12, 3]])}${punti('o', [[-2, 7], [-1, 7], [-3, 8], [-3, 9], [0, 8], [0, 9]])}${punti('s', [[-2, 8], [-1, 8], [-2, 9], [-1, 9]])}${punti('V', [[-2, 8]])}${punti('N', [[-2, 10], [-1, 10], [-2, 11]])}</g>`,
+      // Senior developer: occhiali da sole e un portatile davanti, visto dal dorso argentato con il logo
+      `<g class="acc acc-senior"><g class="viso">${punti('S', [...intervallo(2, 10, 3), [3, 4], [4, 4], [5, 4], [7, 4], [8, 4], [9, 4], [4, 5], [8, 5]])}${punti('s', [[3, 3], [7, 3]])}</g>${punti('A', [...intervallo(11, 15, 5), [11, 6], [15, 6], [11, 7], [15, 7], ...intervallo(11, 15, 8)])}${punti('A', [...intervallo(12, 14, 6), ...intervallo(12, 14, 7)])}${punti('V', [[13, 6]])}${punti('a', intervallo(10, 15, 9))}${punti('n', intervallo(10, 15, 10))}</g>`,
+    ].join('');
+    // Stelline che compaiono intorno quando cambi modalità
+    const stellina = (x, y) => punti('Y', [[x, y], [x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]);
+    const SCINTILLE = `<g class="scintille">${stellina(-1, -2)}${stellina(14, -1)}${stellina(-1, 9)}${stellina(15, 6)}</g>`;
+    $('chat-open').insertAdjacentHTML('afterbegin', `<svg class="sprite" viewBox="-2 -4 18 16" aria-hidden="true">${corpo}${occhio(4)}${occhio(8)}${bocca}${spirale(5, 4.5)}${spirale(9, 4.5)}${paura}${ACCESSORI}${SCINTILLE}</svg>`);
+
+    // TRASCINAMENTO
+    // Chat e mascotte sono incollate: la chat sta sempre sopra la mascotte e chi viene spostato si porta dietro l'altro
+    const MARGINE = 8;
+    const STACCO = 6;
+    const SOGLIA = 4;
+
+    const sposta = (el, left, top) => Object.assign(el.style, { left: `${left}px`, top: `${top}px`, bottom: 'auto' });
+
+    function tieniDentro(el) {
+      if (!el.style.top || el.hidden) return;
+      const box = el.getBoundingClientRect();
+      sposta(
+        el,
+        Math.min(Math.max(box.left, MARGINE), window.innerWidth - box.width - MARGINE),
+        Math.min(Math.max(box.top, MARGINE), window.innerHeight - box.height - MARGINE),
+      );
+    }
+
+    // La chat si mette sopra la mascotte; se sopra non c'è spazio scendono insieme
+    function chatSopraMascotte() {
+      const chat = $('chat');
+      if (chat.hidden) return;
+      const omino = $('chat-open').getBoundingClientRect();
+      const left = Math.min(Math.max(omino.left, MARGINE), window.innerWidth - chat.offsetWidth - MARGINE);
+      const top = Math.max(MARGINE, omino.top - chat.offsetHeight - STACCO);
+      sposta(chat, left, top);
+      sposta($('chat-open'), left, top + chat.offsetHeight + STACCO);
+    }
+
+    // La mascotte si mette sotto la chat; se sotto non c'è spazio salgono insieme
+    function mascotteSottoChat() {
+      const chat = $('chat');
+      if (chat.hidden || !chat.style.top) return;
+      const box = chat.getBoundingClientRect();
+      const omino = $('chat-open');
+      const sfora = box.bottom + STACCO + omino.offsetHeight - (window.innerHeight - MARGINE);
+      const top = Math.max(MARGINE, box.top - Math.max(0, sfora));
+      sposta(chat, box.left, top);
+      sposta(omino, box.left, top + chat.offsetHeight + STACCO);
+    }
+
+    function rendiTrascinabile(el, maniglia, { mentreSposti, quandoLasci }) {
+      maniglia.addEventListener('pointerdown', (e) => {
+        const bottone = e.target.closest('button');
+        if (e.button !== 0 || (bottone && bottone !== maniglia) || e.target.closest('select')) return;
+        const box = el.getBoundingClientRect();
+        const dx = e.clientX - box.left;
+        const dy = e.clientY - box.top;
+        let mosso = false;
+        maniglia.setPointerCapture(e.pointerId);
+
+        // Sotto la soglia è un clic, non un trascinamento
+        const muovi = (ev) => {
+          if (!mosso && Math.hypot(ev.clientX - e.clientX, ev.clientY - e.clientY) < SOGLIA) return;
+          if (!mosso) {
+            mosso = true;
+            el.classList.add('dragging');
+          }
+          sposta(el, ev.clientX - dx, ev.clientY - dy);
+          tieniDentro(el);
+          mentreSposti();
+        };
+        const lascia = () => {
+          maniglia.removeEventListener('pointermove', muovi);
+          el.classList.remove('dragging');
+          if (mosso) quandoLasci?.();
+        };
+        maniglia.addEventListener('pointermove', muovi);
+        maniglia.addEventListener('pointerup', lascia, { once: true });
+        maniglia.addEventListener('pointercancel', lascia, { once: true });
+      });
+    }
+
+    // Dopo un trascinamento il browser manda comunque un clic: va ignorato
+    let ignoraClic = false;
+    $('chat-open').addEventListener('pointerdown', () => {
+      ignoraClic = false;
+    });
+    rendiTrascinabile($('chat-open'), $('chat-open'), {
+      mentreSposti: chatSopraMascotte,
+      quandoLasci: () => {
+        ignoraClic = true;
+      },
+    });
+    rendiTrascinabile($('chat'), $('chat').querySelector('.chat-head'), { mentreSposti: mascotteSottoChat });
+    $('chat').querySelector('.chat-head').addEventListener('dblclick', (e) => {
+      if (e.target.closest('button')) return;
+      $('chat').classList.remove('big');
+      $('chat-big').setAttribute('aria-pressed', false);
+      Object.assign($('chat').style, { width: '', height: '' });
+      chatSopraMascotte();
+    });
+    new ResizeObserver(mascotteSottoChat).observe($('chat'));
+    window.addEventListener('resize', () => {
+      tieniDentro($('chat-open'));
+      chatSopraMascotte();
+    });
+
+    // APERTURA E COMANDI
+    $('chat-open').addEventListener('click', () => {
+      if (ignoraClic) {
+        ignoraClic = false;
+        return;
+      }
+      $('chat').hidden = !$('chat').hidden;
+      if ($('chat').hidden) return;
+      document.querySelector('#chat-open .dot').classList.remove('pronta');
+      chatSopraMascotte();
+      aggiornaContesto();
+      controllaServer();
+      $('chat-input').focus();
+    });
+    $('chat-close').addEventListener('click', () => {
+      $('chat').hidden = true;
+    });
+    $('chat-big').addEventListener('click', (e) => {
+      Object.assign($('chat').style, { width: '', height: '' });
+      e.currentTarget.setAttribute('aria-pressed', $('chat').classList.toggle('big'));
+      mascotteSottoChat();
+    });
+    $('chat-clear').addEventListener('click', () => {
+      storia.length = 0;
+      $('chat-log').innerHTML = '';
+    });
+    $('chat-form').addEventListener('submit', invia);
+    // La modalità scelta resta anche nelle prossime pagine
+    try {
+      $('chat-modo').value = localStorage.getItem('chattino.modo') || 'normale';
+    } catch {}
+    if (!$('chat-modo').value) $('chat-modo').value = 'normale';
+    // CAMBIO DECORAZIONI
+    // Chattino salta e brilla; a metà salto si cambia d'abito, così il cambio non si vede
+    let timerCambio;
+    function cambiaDecorazioni(modo) {
+      const omino = $('chat-open');
+      clearTimeout(timerCambio);
+      omino.classList.remove('cambia');
+      void omino.offsetWidth;
+      omino.classList.add('cambia');
+      timerCambio = setTimeout(() => {
+        omino.dataset.modo = modo;
+        timerCambio = setTimeout(() => omino.classList.remove('cambia'), 400);
+      }, 300);
+    }
+    $('chat-open').dataset.modo = $('chat-modo').value;
+    $('chat-modo').addEventListener('change', () => {
+      try {
+        localStorage.setItem('chattino.modo', $('chat-modo').value);
+      } catch {}
+      cambiaDecorazioni($('chat-modo').value);
+    });
+    // I tasti scritti nella chat non devono arrivare alle scorciatoie della pagina
+    $('chat').addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'Escape') $('chat').hidden = true;
+      if (e.key === 'Enter' && !e.shiftKey && e.target.id === 'chat-input') invia(e);
+    });
+    document.addEventListener('click', aggiornaContesto);
+
+    controllaServer();
+  })();
+
+  avvio();
+</script>
+</body>
+</html>

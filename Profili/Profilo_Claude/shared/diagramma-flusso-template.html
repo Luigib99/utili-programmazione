@@ -641,8 +641,8 @@
     bottom: 14px;
     left: 18px;
     z-index: 21;
-    width: 60px;
-    height: 66px;
+    width: 72px;
+    height: 82px;
     padding: 0;
     background: none;
     border: 0;
@@ -660,8 +660,8 @@
 
   #chat-open .sprite {
     display: block;
-    width: 48px;
-    height: 48px;
+    width: 72px;
+    height: 64px;
     margin: 0 auto;
     image-rendering: pixelated;
     shape-rendering: crispEdges;
@@ -718,6 +718,58 @@
   @keyframes chat-blink {
     0%, 92%, 100% { transform: scaleY(1); }
     95% { transform: scaleY(.1); }
+  }
+
+  /* DECORAZIONI DELLE MODALITÀ: si vede solo quella della modalità scelta */
+  #chat-open .acc,
+  #chat-open .scintille {
+    display: none;
+  }
+
+  #chat-open[data-modo="insegnante"] .acc-insegnante,
+  #chat-open[data-modo="traduttore"] .acc-traduttore,
+  #chat-open[data-modo="senior"] .acc-senior,
+  #chat-open.cambia .scintille {
+    display: inline;
+  }
+
+  /* Occhiali e occhiali da sole spariscono quando urla o quando gli occhi girano a spirale */
+  #chat-open.dragging .viso,
+  #chat-open.pensa .acc-senior .viso {
+    display: none;
+  }
+
+  #chat-open .occhiali {
+    shape-rendering: geometricPrecision;
+  }
+
+  /* Cambio di modalità: salto a scatti, come un vecchio videogioco, con le stelline che lampeggiano */
+  #chat-open.cambia .sprite {
+    animation: chat-cambia .7s steps(7) 1;
+  }
+
+  @keyframes chat-cambia {
+    0% { transform: translateY(0) scale(1); }
+    30% { transform: translateY(-14px) scale(1.15, .85); }
+    45% { transform: translateY(-16px) scaleX(-1); }
+    60% { transform: translateY(-14px) scale(1.15); }
+    100% { transform: translateY(0) scale(1); }
+  }
+
+  #chat-open.cambia .scintille {
+    animation: chat-scintille .35s steps(2) infinite;
+  }
+
+  @keyframes chat-scintille {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #chat-open.cambia .sprite,
+    #chat-open.cambia .scintille {
+      animation: none;
+    }
   }
 
   /* Presa in mano: si ingrandisce e trema dalla paura */
@@ -971,6 +1023,22 @@
     }
   }
 
+  #chat .chat-head select {
+    padding: 3px 6px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+
+  #chat .chat-head select:focus {
+    border-color: var(--chat);
+    outline: none;
+  }
+
   #chat-log .msg .ctx {
     display: block;
     margin-bottom: 2px;
@@ -1092,6 +1160,12 @@
 <section id="chat" hidden>
   <div class="chat-head">
     <b title="Trascina per spostare · angolo in basso a destra per ridimensionare · doppio clic per rimetterla vicino alla mascotte">Chiedi sulla mappa</b>
+    <select id="chat-modo" title="Come ti risponde Chattino">
+      <option value="normale">Normale</option>
+      <option value="insegnante">Insegnante</option>
+      <option value="traduttore">Traduttore</option>
+      <option value="senior">Senior developer</option>
+    </select>
     <button id="chat-hint" title="Indizio: ti mostro dove guardare, mai la soluzione" hidden>&#x1F4A1; Indizio</button>
     <button id="chat-clear" title="Ricomincia la conversazione">Nuova</button>
     <button id="chat-big" title="Alza / abbassa la chat">&#x2922;</button>
@@ -2007,6 +2081,7 @@
             selezione,
             storia: storia.slice(-MAX_STORIA),
             domanda,
+            modalita: $('chat-modo').value,
           }),
         });
         const corpo = await res.json();
@@ -2192,7 +2267,25 @@
       });
       return `<g class="ipno"><circle cx="${cx}" cy="${cy}" r="1.3" fill="${PIXEL.W}"/><polyline class="spirale" style="transform-origin: ${cx}px ${cy}px" points="${punti.join(' ')}" fill="none" stroke="${PIXEL.K}" stroke-width=".3" stroke-linecap="round"/></g>`;
     };
-    $('chat-open').insertAdjacentHTML('afterbegin', `<svg class="sprite" viewBox="0 0 12 12" aria-hidden="true">${corpo}${occhio(4)}${occhio(8)}${bocca}${spirale(5, 4.5)}${spirale(9, 4.5)}${paura}</svg>`);
+    // DECORAZIONI DELLE MODALITÀ
+    // Pixel fuori dal corpo (la tela va da -2 a 15 in orizzontale e da -4 a 11 in verticale): ognuna si vede solo nella sua modalità
+    const COLORI_ACCESSORI = { o: '#141312', g: '#9b968a', A: '#a7afb8', a: '#5f6670', L: '#3d6fb6', P: '#f4f2ec', N: '#22252b', n: '#454b55', Y: '#f2c14e', K: '#2b130b', C: '#4b5563', T: '#2bb3a3', t: '#8fe3d8', S: '#111111', s: '#6b7280', M: '#f4f2ec', m: '#c9c4b8', B: '#6b3e26', V: '#e6e6e6' };
+    const punti = (colore, coppie) => coppie.map(([x, y]) => `<rect x="${x}" y="${y}" width="1" height="1" fill="${COLORI_ACCESSORI[colore]}"/>`).join('');
+    const intervallo = (da, a, y) => Array.from({ length: a - da + 1 }, (_, i) => [da + i, y]);
+    // Gli occhi sono larghi 2 pixel e distano 2 pixel: una montatura a pixel interi li coprirebbe, quindi è a linee sottili
+    const OCCHIALI = `<g class="occhiali" fill="none" stroke="#2b130b" stroke-width=".35"><rect x="3.55" y="2.6" width="2.9" height="3.8" rx=".5"/><rect x="7.55" y="2.6" width="2.9" height="3.8" rx=".5"/><path d="M6.45 3.6h1.1M3.55 3.4h-1.3M10.45 3.4h1.3"/></g>`;
+    const ACCESSORI = [
+      // Insegnante: occhiali dorati e un libro aperto in mano, con la piega al centro
+      `<g class="acc acc-insegnante"><g class="viso">${OCCHIALI}</g>${punti('P', [[11, 7], [12, 7], [14, 7], [15, 7], [11, 8], [12, 8], [14, 8], [15, 8], [11, 9], [12, 9], [14, 9], [15, 9]])}${punti('g', [[13, 7], [13, 8], [13, 9]])}${punti('m', [[12, 8], [15, 8]])}${punti('L', intervallo(11, 15, 10))}</g>`,
+      // Traduttore: cuffie da interprete e microfono a lato, con il bordo scuro per staccarlo dal corpo
+      `<g class="acc acc-traduttore">${punti('C', [...intervallo(3, 8, -2), [1, -1], [2, -1], [9, -1], [10, -1], [0, 0], [11, 0], [-1, 1], [12, 1], [-1, 2], [12, 2]])}${punti('T', [[-2, 3], [-2, 4], [-2, 5], [-1, 4], [-1, 5], [-1, 6], [-2, 6], [13, 3], [13, 4], [13, 5], [13, 6], [12, 4], [12, 5], [12, 6]])}${punti('t', [[-1, 3], [12, 3]])}${punti('o', [[-2, 7], [-1, 7], [-3, 8], [-3, 9], [0, 8], [0, 9]])}${punti('s', [[-2, 8], [-1, 8], [-2, 9], [-1, 9]])}${punti('V', [[-2, 8]])}${punti('N', [[-2, 10], [-1, 10], [-2, 11]])}</g>`,
+      // Senior developer: occhiali da sole e un portatile davanti, visto dal dorso argentato con il logo
+      `<g class="acc acc-senior"><g class="viso">${punti('S', [...intervallo(2, 10, 3), [3, 4], [4, 4], [5, 4], [7, 4], [8, 4], [9, 4], [4, 5], [8, 5]])}${punti('s', [[3, 3], [7, 3]])}</g>${punti('A', [...intervallo(11, 15, 5), [11, 6], [15, 6], [11, 7], [15, 7], ...intervallo(11, 15, 8)])}${punti('A', [...intervallo(12, 14, 6), ...intervallo(12, 14, 7)])}${punti('V', [[13, 6]])}${punti('a', intervallo(10, 15, 9))}${punti('n', intervallo(10, 15, 10))}</g>`,
+    ].join('');
+    // Stelline che compaiono intorno quando cambi modalità
+    const stellina = (x, y) => punti('Y', [[x, y], [x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]);
+    const SCINTILLE = `<g class="scintille">${stellina(-1, -2)}${stellina(14, -1)}${stellina(-1, 9)}${stellina(15, 6)}</g>`;
+    $('chat-open').insertAdjacentHTML('afterbegin', `<svg class="sprite" viewBox="-2 -4 18 16" aria-hidden="true">${corpo}${occhio(4)}${occhio(8)}${bocca}${spirale(5, 4.5)}${spirale(9, 4.5)}${paura}${ACCESSORI}${SCINTILLE}</svg>`);
 
     // TRASCINAMENTO
     // Chat e mascotte sono incollate: la chat sta sempre sopra la mascotte e chi viene spostato si porta dietro l'altro
@@ -2238,7 +2331,7 @@
     function rendiTrascinabile(el, maniglia, { mentreSposti, quandoLasci }) {
       maniglia.addEventListener('pointerdown', (e) => {
         const bottone = e.target.closest('button');
-        if (e.button !== 0 || (bottone && bottone !== maniglia)) return;
+        if (e.button !== 0 || (bottone && bottone !== maniglia) || e.target.closest('select')) return;
         const box = el.getBoundingClientRect();
         const dx = e.clientX - box.left;
         const dy = e.clientY - box.top;
@@ -2319,6 +2412,32 @@
       $('chat-log').innerHTML = '';
     });
     $('chat-form').addEventListener('submit', invia);
+    // La modalità scelta resta anche nelle prossime pagine
+    try {
+      $('chat-modo').value = localStorage.getItem('chattino.modo') || 'normale';
+    } catch {}
+    if (!$('chat-modo').value) $('chat-modo').value = 'normale';
+    // CAMBIO DECORAZIONI
+    // Chattino salta e brilla; a metà salto si cambia d'abito, così il cambio non si vede
+    let timerCambio;
+    function cambiaDecorazioni(modo) {
+      const omino = $('chat-open');
+      clearTimeout(timerCambio);
+      omino.classList.remove('cambia');
+      void omino.offsetWidth;
+      omino.classList.add('cambia');
+      timerCambio = setTimeout(() => {
+        omino.dataset.modo = modo;
+        timerCambio = setTimeout(() => omino.classList.remove('cambia'), 400);
+      }, 300);
+    }
+    $('chat-open').dataset.modo = $('chat-modo').value;
+    $('chat-modo').addEventListener('change', () => {
+      try {
+        localStorage.setItem('chattino.modo', $('chat-modo').value);
+      } catch {}
+      cambiaDecorazioni($('chat-modo').value);
+    });
     // I tasti scritti nella chat non devono muovere la selezione della mappa
     $('chat').addEventListener('keydown', (e) => {
       e.stopPropagation();

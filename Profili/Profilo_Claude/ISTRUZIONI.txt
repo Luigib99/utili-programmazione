@@ -5,7 +5,12 @@ COSA CONTIENE
 La struttura della cartella rispecchia quella di ~/.claude:
 - CLAUDE.md       istruzioni globali di Claude Code
 - settings.json   impostazioni globali di Claude Code
-- skills/         skill personali (lezione, modifica-maggiore, modifica-minore, revisione)
+- skills/         skill personali:
+                  - piano: mappa e revisione dei piani scritti nella sala di controllo
+                  - revisione: revisione del codice (anche "prova io")
+                  - lezione: spiegazione di un argomento
+                  Dopo l'aggiornamento cancellare da ~/.claude/skills le vecchie
+                  modifica-maggiore, modifica-minore e sala-controllo, se ci sono.
 - shared/         file usati dalle skill:
                   - diagramma-flusso.md + template HTML (MAPPA dati)
                   - diagramma-pagina.md + template HTML (MAPPA struttura)
@@ -14,9 +19,34 @@ La struttura della cartella rispecchia quella di ~/.claude:
                     ~/.claude/chat-mappa-token e NON va copiato nella repo)
                   - scheda-richiesta.md (tutte le skill)
                   NECESSARIO: senza questa cartella le skill non funzionano
+- sala-controllo/ pagina locale per gestire sessioni di Claude, branch, attività e piani
+                  dei progetti (serve Node.js 22.5+ per leggere le chat archiviate).
+                  - avvio e apertura nel browser: node ~/.claude/sala-controllo/server.js --apri
+                    lanciato da dentro un progetto git lo aggiunge da solo alla sala e
+                    apre la sala su quel progetto
+                  - arresto:                      node ~/.claude/sala-controllo/server.js --ferma
+                  - progetti: si aggiungono da soli (vedi sopra e sotto); l'elenco è in
+                    ~/.claude/sala-controllo/dati/progetti.json
+                  dati/ (gettone, progetti, attività, piani, archivio delle chat) si crea da solo e NON va copiato nella repo
 - plugins/        mod di Claude Code (NON si copia: si installa, vedi sotto)
                   - scheda-form: lanciando una skill senza testo riempie la casella
                     con lo schema dei campi e controlla gli obbligatori
+
+SALA DI CONTROLLO SU UN PC NUOVO
+Serve: Node.js 22.5 o più recente, git, VS Code con l'estensione Claude Code (per Chattino).
+1. copiare questa cartella in ~/.claude come spiegato in "DOVE COPIARLO" (dati/ non c'è: si crea da solo).
+2. per ogni progetto, da un terminale aperto nella cartella del progetto:
+     node ~/.claude/sala-controllo/server.js --aggiungi
+   aggiunge il progetto alla sala, crea <progetto>/.vscode/tasks.json e lo esclude da git
+   solo su quel PC (.git/info/exclude), senza toccare il .gitignore del progetto.
+   Se il progetto ha già un .vscode/tasks.json non lo tocca: il task da aggiungere è in
+   sala-controllo/tasks.json.
+3. ricaricare VS Code: in basso, tra i terminali, compare "Sala di controllo"; Invio avvia la
+   sala e la apre sul progetto della finestra. La prima volta VS Code può chiedere di
+   permettere le attività automatiche: "Allow" (oppure nelle impostazioni
+   "task.allowAutomaticTasks": "on").
+Senza VS Code: node ~/.claude/sala-controllo/server.js --apri dalla cartella del progetto.
+Attività, piani e archivio restano sul PC dove li crei: non passano da un PC all'altro.
 
 DOVE COPIARLO
 Copiare il contenuto di questa cartella (tranne ISTRUZIONI.txt e plugins/) dentro:
