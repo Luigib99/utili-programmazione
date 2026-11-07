@@ -732,7 +732,19 @@
     background: transparent;
   }
 
-  .scheda[draggable="true"] .testa { cursor: grab; }
+  .scheda .maniglia {
+    display: inline-flex;
+    margin: -6px -4px -6px -8px;
+    padding: 6px 4px;
+    border-radius: 4px;
+    color: var(--muted);
+    cursor: grab;
+  }
+
+  .scheda .maniglia:hover { color: var(--text); background: var(--surface-2); }
+  .scheda .maniglia:active { cursor: grabbing; }
+  .scheda .maniglia circle { fill: currentColor; stroke: none; }
+  .scheda .testa .titolo, .scheda .testa .meta, .scheda .dettagli { user-select: text; }
   .scheda.trascinata { opacity: .45; border-style: dashed; border-color: var(--accent); }
 
   .scheda .aggiunta {
@@ -1327,6 +1339,7 @@
     'da-fare': '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
     'in-corso': '<path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/>',
     fatto: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+    maniglia: '<circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/>',
     copia: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
     passa: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="m10 17 5-5-5-5"/><path d="M15 12H4"/>',
     torna: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
@@ -1791,8 +1804,9 @@
   function htmlScheda(a) {
     const voci = CAMPI_SCHEDA.filter((c) => c.id !== 'titolo' && a[c.id])
       .map((c) => `<dt>${c.nome}</dt><dd>${esc(a[c.id])}</dd>`).join('');
-    return `<div class="scheda${a.stato === 'in-corso' ? ' attiva' : ''}${stato.aperte.has(a.id) ? ' aperta' : ''}" data-id="${a.id}" draggable="true">
+    return `<div class="scheda${a.stato === 'in-corso' ? ' attiva' : ''}${stato.aperte.has(a.id) ? ' aperta' : ''}" data-id="${a.id}">
       <div class="testa" data-azione="espandi" data-id="${a.id}">
+        <span class="maniglia" title="Trascina per spostare l'attività">${icona('maniglia')}</span>
         <span class="freccia">▶</span>
         <div class="corpo">
           <div class="titolo">${esc(a.titolo)}</div>
@@ -2000,6 +2014,7 @@
     },
     // Il cambio di classe fa partire la transizione: niente ridisegno, altrimenti l'animazione non si vedrebbe
     espandi(b) {
+      if (String(window.getSelection())) return;
       const scheda = b.closest('.scheda');
       scheda.classList.toggle('aperta');
       if (scheda.classList.contains('aperta')) stato.aperte.add(b.dataset.id);
@@ -2033,6 +2048,8 @@
   };
 
   document.addEventListener('click', async (e) => {
+    // La maniglia serve solo a trascinare: il clic lì non apre l'attività
+    if (e.target.closest('.maniglia')) return;
     const el = e.target.closest('[data-progetto], [data-sezione], [data-filtro], [data-filtro-attivita], [data-azione], #ricarica');
     if (!el) return;
     try {
@@ -2133,6 +2150,14 @@
 
   // TRASCINAMENTO ATTIVITÀ
   // Durante il trascinamento la scheda si sposta davvero nella pagina; al rilascio si salva il nuovo ordine
+  document.addEventListener('pointerdown', (e) => {
+    const maniglia = e.target.closest?.('.scheda .maniglia');
+    if (maniglia) maniglia.closest('.scheda').draggable = true;
+  });
+  document.addEventListener('pointerup', () => {
+    document.querySelectorAll('.scheda[draggable="true"]').forEach((s) => { s.draggable = false; });
+  });
+
   document.addEventListener('dragstart', (e) => {
     const scheda = e.target.closest?.('.scheda[data-id]');
     if (!scheda) return;
@@ -2161,6 +2186,7 @@
     const scheda = stato.trascinata;
     if (!scheda) return;
     scheda.classList.remove('trascinata');
+    scheda.draggable = false;
     stato.trascinata = null;
     const visibili = [...scheda.parentElement.querySelectorAll('.scheda[data-id]')].map((s) => s.dataset.id);
     const prima = stato.attivita.slice().sort(perOrdine).map((a) => a.id);
