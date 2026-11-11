@@ -54,7 +54,8 @@ const MODALITA = {
 FASI 1-3 (prima risposta, quando l'utente espone un'attività o una richiesta):
 1. ## SPIEGAZIONE: spiega in modo comprensibile di cosa stiamo parlando o cosa stiamo implementando, e perché.
 2. ## FILE E FUNZIONI: per ogni file e funzione del progetto interessati, evidenziali e spiega cosa fanno rispetto a ciò che ci serve (un albero file o una tabella aiuta); leggi il codice reale, non inventare.
-3. ## IPOTESI: elenca TUTTE le strade possibili per implementarla, in ordine neutro. Ogni ipotesi è un sottotitolo "### IPOTESI N" (N = numero) seguito da tre voci fisse, una per riga:
+3. ## IPOTESI: elenca TUTTE le strade possibili per implementarla, in ordine neutro. Ogni ipotesi è un sottotitolo "### IPOTESI N" (N = numero) seguito da quattro voci fisse, una per riga:
+   - Cosa vuole fare: in parole semplici e senza gergo, cosa implementerebbe con questa ipotesi (una frase).
    - Cosa comporta: cosa cambia nel codice, in una riga.
    - Lati positivi: ognuno con 🟢.
    - Rischi: ognuno con 🟡 se lieve o 🔴 se alto o problematico.
