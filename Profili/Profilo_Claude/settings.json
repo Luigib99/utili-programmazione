@@ -1,4 +1,7 @@
 {
+  "enabledPlugins": {
+    "scheda-form@utili-programmazione": true
+  },
   "extraKnownMarketplaces": {
     "utili-programmazione": {
       "source": {
@@ -8,7 +11,5 @@
     }
   },
   "autoMemoryEnabled": true,
-  "enabledPlugins": {
-    "scheda-form@utili-programmazione": true
-  }
+  "model": "sonnet"
 }

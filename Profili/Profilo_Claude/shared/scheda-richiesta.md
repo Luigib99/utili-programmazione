@@ -6,14 +6,15 @@ L'obiettivo è che l'utente abbia il controllo totale su cosa viene fatto anche 
 
 ## Formato dei messaggi
 
-Vale per ogni messaggio delle skill che richiamano questo file, in tutte le fasi.
+Vale per ogni messaggio delle skill che richiamano questo file, in tutte le fasi. Si aggiunge al "FORMATO RISPOSTE" del CLAUDE.md globale (titoli `##` senza numeri e senza emoji, `---` tra un titolo e il successivo, schemi, codice in riquadri, solo le emoji ammesse), che ha la precedenza su tutto ciò che non è scritto qui.
 
-- il messaggio è fatto **solo** di blocchi con titolo numerato in maiuscolo e grassetto (es. `**1. DIAGRAMMA**`): niente testo prima, tra o dopo i blocchi.
-- i blocchi di ogni fase sono indicati nello SKILL.md; un blocco senza contenuto si omette e la numerazione resta progressiva.
-- ogni blocco ha al massimo 3 righe o 3 punti, una riga ciascuno; fanno eccezione solo SCHEDA, MODIFICHE e GLOSSARIO, che hanno una riga per elemento.
+- il messaggio è fatto **solo** di sezioni con titolo (es. `## DIAGRAMMA`): niente testo fuori dalle sezioni. I titoli sono quelli indicati nello SKILL.md di ogni fase, senza numeri.
+- una sezione senza contenuto si omette.
+- ogni sezione ha poche voci, una riga ciascuna (di norma al massimo 3); fanno eccezione SCHEDA, MODIFICHE ESEGUITE, GLOSSARIO e i passi in ordine, che hanno una voce per elemento.
 - frasi brevi e dirette: niente premesse, riepiloghi di quanto già detto o spiegazioni non richieste.
-- per le parti del flusso usa i numeri dei passi del diagramma; per il codice nomeFile:riga cliccabile.
-- l'ultimo blocco, quando serve una risposta, è sempre **RICHIESTA**: una sola riga con l'azione attesa dall'utente (es. "Come intendi procedere?", "Procedo?", "Confermi la scheda?").
+- per le parti del flusso usa i numeri dei passi del diagramma; per il codice mostra l'estratto reale in un riquadro sotto il punto che spiega, con il nome del file in grassetto una volta in testa alla sezione (niente righe cliccabili al posto del codice). Il percorso cliccabile resta solo per i file dei diagrammi.
+- ogni modifica a un file va mostrata nella sezione `## MODIFICHE ESEGUITE` con PRIMA / DOPO del codice (vedi CLAUDE.md globale).
+- l'ultima sezione, solo se serve una risposta all'utente, è `## DOMANDA` (una domanda, es. "Come intendi procedere?", "Procedo?", "Confermi la scheda?") oppure `## RICHIESTA` (qualcosa che l'utente deve fare, es. "Ricarica il piano nella sala"): una sola riga, preceduta da `---`. Se non serve nulla, non c'è.
 - **mai domande di verifica o da interrogazione** (es. "perché secondo te…?", "cosa succede se…?"), in nessuna fase: confondono l'utente. Se l'utente chiede aiuto o un indizio, dai suggerimenti diretti, non domande.
 
 ## Campi comuni
@@ -47,10 +48,10 @@ Presenti in tutte le skill; lo SKILL.md dice se sono obbligatori.
 
 ## Conferma
 
-- mostra la scheda con i blocchi (vedi "Formato dei messaggi"):
-  - **1. SCHEDA**: un campo per riga, con il segno di provenienza: `✍️` scritto dall'utente, `🔍` dedotto dal codice, `☑️` scelto dall'utente tra le opzioni.
-  - **2. RISCHI**: solo se esistono, i rischi concreti emersi leggendo il codice (es. "`DOVE` è usato anche da `X`: la modifica cambia anche quella schermata").
-  - **3. RICHIESTA**: "Confermi la scheda?"
+- mostra la scheda con le sezioni (vedi "Formato dei messaggi"):
+  - `## SCHEDA`: un campo per riga, nel formato `**CAMPO**: valore`, con l'origine in corsivo alla fine: *scritto da te*, *dedotto dal codice*, *scelto da te* (niente emoji: sono riservate ai significati fissi del CLAUDE.md).
+  - `## RISCHI`: solo se esistono, i rischi concreti emersi leggendo il codice (es. "`DOVE` è usato anche da `X`: la modifica cambia anche quella schermata").
+  - `## DOMANDA`: "Confermi la scheda?"
 - poi fermati e attendi:
   - "ok" o "procedi": la scheda è confermata e diventa il **contratto** della richiesta.
   - una correzione: aggiorna la scheda e mostrala di nuovo.
@@ -65,6 +66,6 @@ Presenti in tutte le skill; lo SKILL.md dice se sono obbligatori.
 ## Controllo finale
 
 - alla fine del lavoro (nel RIEPILOGO o nella VERIFICA della skill) ripercorri la scheda campo per campo:
-  - `✅` rispettato, con una riga su dove/come.
-  - `❌` non rispettato o parziale, con il motivo.
+  - ✅ rispettato, con una riga su dove/come.
+  - 🔴 non rispettato o parziale, con il motivo.
 - se la scheda ha un campo `VERIFICA` o `COME RIPRODURLO`, indica i passi concreti che l'utente deve fare per controllare il risultato.

@@ -17,6 +17,8 @@
     --be: #facc15;
     --be-bg: #3a3008;
     --lost: #f85149;
+    --errore: #ff6b5e;
+    --ok: #3fb950;
     --accent: #ffffff;
     --syn-var: #79c0ff;
     --syn-string: #a5d6ff;
@@ -114,8 +116,28 @@
 
   main {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 440px;
+    --col-sx: var(--larghezza-sinistra, 330px);
+    --div-sx: 16px;
+    --col-dx: var(--larghezza-pannello, 440px);
+    --div-dx: 16px;
+    grid-template-columns: var(--col-sx) var(--div-sx) minmax(0, 1fr) var(--div-dx) var(--col-dx);
     height: calc(100vh - 74px);
+  }
+
+  /* La mappa occupa quello che l'header lascia libero: l'header va a capo e cambia altezza, un valore fisso farebbe scorrere la pagina */
+  @media (min-width: 901px) {
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    main {
+      flex: 1;
+      min-height: 0;
+      height: auto;
+      grid-template-rows: minmax(0, 1fr);
+    }
   }
 
   #diagram {
@@ -140,16 +162,82 @@
     flex: none;
   }
 
-  #tracked {
-    position: sticky;
-    top: 0;
+  /* Le due colonne laterali hanno posto fisso nella griglia: nascoste, la loro colonna va a 0 */
+  #tracked, #riduci-sx { grid-column: 1; grid-row: 1; }
+  #divisore-sx { grid-column: 2; grid-row: 1; }
+  #diagram { grid-column: 3; grid-row: 1; }
+  #divisore { grid-column: 4; grid-row: 1; }
+  #panel, #riduci-dx { grid-column: 5; grid-row: 1; }
+
+  /* TRATTINO PER RIDURRE: in alto a destra della colonna; ridotta, la colonna diventa una striscia con il tasto per riaprirla */
+  .riduci {
+    z-index: 2;
+    align-self: start;
+    justify-self: end;
     display: flex;
-    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    margin: 10px 10px 0 0;
+    padding: 0;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .riduci:hover { color: var(--text); border-color: var(--muted); }
+
+  .riduci .segno::before { content: ""; display: block; width: 10px; height: 2px; background: currentColor; }
+  .riduci .nome { display: none; }
+
+  main.senza-pannello #riduci-dx,
+  main.senza-sinistra #riduci-sx {
+    align-self: stretch;
+    justify-self: stretch;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 14px;
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding-top: 12px;
+    border-radius: 0;
+    border-width: 0 1px;
+    background: var(--surface);
+  }
+
+  main.senza-pannello #riduci-dx .segno::before,
+  main.senza-sinistra #riduci-sx .segno::before {
+    width: 9px;
+    height: 9px;
+    background: none;
+    border: 2px solid currentColor;
+    border-radius: 2px;
+  }
+
+  main.senza-pannello #riduci-dx .nome,
+  main.senza-sinistra #riduci-sx .nome {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+  }
+
+  #tracked { padding-top: 44px !important; }
+
+  #tracked {
+    display: flex;
     flex-direction: column;
     gap: 12px;
-    width: 330px;
-    max-height: calc(100vh - 106px);
     overflow: auto;
+    padding: 16px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
   }
 
   #tracked[hidden] {
@@ -224,9 +312,57 @@
     white-space: pre-wrap;
   }
 
+/* PANNELLO DI DESTRA: largo quanto lo trascini; con "Dettagli" spento resta solo il diagramma */
+  .divisore {
+    position: relative;
+    cursor: col-resize;
+    touch-action: none;
+  }
+
+  .divisore::after {
+    content: "";
+    position: absolute;
+    inset: 0 7px;
+    border-radius: 2px;
+    transition: background .15s;
+  }
+
+  .divisore:hover::after,
+  .divisore.attivo::after {
+    background: var(--muted);
+  }
+
+  main.senza-pannello {
+    --col-dx: 34px;
+    --div-dx: 0px;
+  }
+
+  main.senza-sinistra {
+    --col-sx: 34px;
+    --div-sx: 0px;
+  }
+
+  main.senza-oggetti {
+    --col-sx: 0px;
+    --div-sx: 0px;
+  }
+
+  main.senza-pannello #divisore,
+  main.senza-pannello #panel,
+  main.senza-sinistra #divisore-sx,
+  main.senza-sinistra #tracked,
+  main.senza-oggetti #divisore-sx,
+  main.senza-oggetti #tracked {
+    display: none;
+  }
+
+  main.senza-oggetti #riduci-sx {
+    display: none;
+  }
+
   #panel {
     overflow: auto;
-    padding: 20px;
+    padding: 44px 20px 20px;
     background: var(--surface);
     border-left: 1px solid var(--border);
   }
@@ -235,6 +371,19 @@
     main {
       grid-template-columns: 1fr;
       height: auto;
+    }
+
+    .divisore {
+      display: none;
+    }
+
+    #tracked, #diagram, #panel {
+      grid-column: auto;
+      grid-row: auto;
+    }
+
+    .riduci {
+      display: none !important;
     }
 
     #panel {
@@ -295,6 +444,16 @@
 
   .node.BACKEND .tag {
     color: var(--be);
+  }
+
+  /* Passo raggiunto da una freccia di errore: si riconosce a colpo d'occhio */
+  .node.in-errore {
+    background: rgba(255, 107, 94, .12);
+    border-color: var(--errore);
+  }
+
+  .node.in-errore .tag {
+    color: var(--errore);
   }
 
   /* Funzione e file sulla stessa riga, stesso stile: se non ci stanno la riga finisce con "…" invece di andare a capo */
@@ -388,8 +547,79 @@
     font-weight: 600;
   }
 
+  .call-kind.uscita-ok { border-color: var(--ok); color: var(--ok); }
+  .call-kind.uscita-errore { border-color: var(--errore); color: var(--errore); }
+  .call-kind.uscita-alternativa { border-style: dashed; color: var(--muted); }
+
+  /* BIVIO: rombo con la domanda al centro; le risposte sono sulle frecce che escono */
+  .item.sel .terminale {
+    stroke: var(--accent);
+    stroke-width: 3;
+  }
+
+  .esito.in-errore { color: var(--errore); }
+
+  .esito {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--ok);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .item.sel .rombo {
+    stroke: var(--accent);
+    stroke-width: 3;
+  }
+
+  .domanda {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text);
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.3;
+    text-align: center;
+  }
+
+  .domanda .tipo-bivio {
+    margin-bottom: 2px;
+    color: var(--muted);
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: .12em;
+  }
+
+  .edge.errore .edge-label { stroke: var(--errore); }
+
+  .swatch-rombo {
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--muted);
+    transform: rotate(45deg) scale(.8);
+  }
+
+  /* Il bordo vuoto per trascinare oltre i lati sta nel margine del foglio, non nel padding dell'area:
+     un padding da 50vw renderebbe l'area più larga della sua colonna e farebbe scorrere tutta la pagina.
+     Il margine è diviso per lo zoom perché lo zoom lo ingrandirebbe insieme al foglio */
   #diagram > svg {
     zoom: var(--zoom, 1);
+    flex: none;
+    margin: calc(50vh / var(--zoom, 1)) calc(50vw / var(--zoom, 1));
+  }
+
+  #diagram {
+    padding: 0 !important;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
   }
 
   .node .action {
@@ -582,6 +812,18 @@
   }
 
   /* Azioni sul file della mappa, in fondo al riepilogo */
+  /* AVVISI: incongruenze tra mappa e codice trovate dalla sala dopo la generazione */
+  .avvisi-mappa {
+    margin: 14px 0;
+    padding: 10px 14px;
+    border: 1px solid #d29922;
+    border-radius: 8px;
+    background: rgba(210, 153, 34, .1);
+  }
+
+  .avvisi-mappa h3 { margin-top: 0; color: #e3b341; }
+  .avvisi-mappa ul { margin: 6px 0 0; padding-left: 18px; }
+
   .azioni-mappa {
     display: flex;
     justify-content: flex-end;
@@ -733,7 +975,7 @@
     display: inline;
   }
 
-  /* Occhiali e occhiali da sole spariscono quando urla o quando gli occhi girano a spirale */
+  /* Occhiali e occhiali da sole spariscono quando urla o quando gli occhi girano mentre pensa */
   #chat-open.dragging .viso,
   #chat-open.pensa .acc-senior .viso {
     display: none;
@@ -790,10 +1032,9 @@
     opacity: .3;
   }
 
-  /* Mentre aspetta la risposta gli occhi diventano spirali che girano */
+  /* Mentre aspetta la risposta gli occhi diventano spirali a pixel che girano a scatti */
   #chat-open .ipno {
     display: none;
-    shape-rendering: geometricPrecision;
   }
 
   #chat-open.pensa .ipno {
@@ -804,16 +1045,25 @@
     display: none;
   }
 
-  #chat-open .spirale {
-    transform-box: view-box;
-    animation: chat-spin .9s linear infinite;
+  /* 4 fotogrammi sfasati: ognuno resta acceso per un quarto del giro */
+  #chat-open .giro {
+    opacity: 0;
+    animation: chat-giro .6s steps(1, end) infinite;
   }
 
-  @keyframes chat-spin {
-    to { rotate: 360deg; }
+  @keyframes chat-giro {
+    0% { opacity: 1; }
+    25%, 100% { opacity: 0; }
   }
 
-  /* Faccia che urla mentre la trascini: ha la precedenza anche sugli occhi a spirale */
+  /* Senza animazioni resta ferma la prima spirale */
+  @media (prefers-reduced-motion: reduce) {
+    #chat-open .giro:first-child {
+      opacity: 1;
+    }
+  }
+
+  /* Faccia che urla mentre la trascini: ha la precedenza anche sugli occhi che girano */
   #chat-open .paura {
     display: none;
   }
@@ -837,7 +1087,7 @@
     #chat-open .sprite,
     #chat-open::after,
     #chat-open .eye,
-    #chat-open .spirale,
+    #chat-open .giro,
     #chat-open .dot {
       animation: none;
     }
@@ -890,11 +1140,6 @@
 
   #chat[hidden] {
     display: none;
-  }
-
-  #chat.big {
-    width: min(620px, calc(100vw - 40px));
-    height: calc(100vh - 110px);
   }
 
   #chat .chat-head {
@@ -966,6 +1211,38 @@
     font-size: 12.5px;
   }
 
+  #chat-log .msg.consumo {
+    align-self: stretch;
+    max-width: none;
+    padding: 0 4px;
+    background: none;
+    border: 0;
+    color: var(--muted);
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    white-space: normal;
+  }
+
+  #chat-log .msg.consumo .tok-num { color: #e3b341; font-weight: 700; font-size: 1.15em; }
+  #chat-log .msg.consumo .tok-cache { color: #6cc07e; font-weight: 700; font-size: 1.15em; }
+  #chat-log .msg.consumo summary {
+    display: inline-block;
+    padding: 1px 9px;
+    border: 1px solid var(--border, #555);
+    border-radius: 6px;
+    color: #e3b341;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    list-style: none;
+    cursor: pointer;
+  }
+  #chat-log .msg.consumo summary::-webkit-details-marker { display: none; }
+  #chat-log .msg.consumo .dati { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; }
+  #chat-log .msg.consumo .tok-chi { color: var(--text); font-weight: 600; }
+
   #chat-log .msg.errore {
     align-self: stretch;
     max-width: none;
@@ -991,6 +1268,28 @@
   }
 
   /* LUCE DELL'INDIZIO: la zona si illumina, il punto si illumina e pulsa ingrandito */
+  /* Lampadina per riaccendere l'ultimo indizio dopo averlo spento cliccando fuori */
+  #riaccendi {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 20;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid #facc15;
+    border-radius: 50%;
+    background: var(--surface);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 0 12px rgba(250, 204, 21, .35);
+  }
+
+  #riaccendi[hidden] {
+    display: none;
+  }
+
   .luce {
     filter: drop-shadow(0 0 6px #fde047) drop-shadow(0 0 16px rgba(253, 224, 71, .75));
   }
@@ -1086,21 +1385,35 @@
     font-size: 12px;
   }
 
+  #chat .chat-ctx.vuoto {
+    visibility: hidden;
+  }
+
   #chat .chat-ctx b {
     color: var(--chat);
   }
 
+  #chat .chat-ctx button {
+    margin-left: 4px;
+    padding: 0 5px;
+    font-size: 11px;
+    line-height: 16px;
+  }
+
   #chat form {
+    position: relative;
     display: flex;
-    gap: 8px;
     padding: 8px 12px 12px;
   }
 
+  /* Cresce con il testo fino a 9 righe, poi scorre */
   #chat textarea {
     flex: 1;
     min-height: 40px;
-    max-height: 140px;
-    padding: 8px 10px;
+    max-height: calc(9 * 1.4em + 18px);
+    line-height: 1.4;
+    overflow-y: auto;
+    padding: 8px 40px 8px 10px;
     background: var(--bg);
     color: var(--text);
     border: 1px solid var(--border);
@@ -1108,6 +1421,15 @@
     font: inherit;
     font-size: 13.5px;
     resize: none;
+  }
+
+  #chat textarea {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  #chat textarea:hover {
+    scrollbar-color: var(--muted) transparent;
   }
 
   #chat textarea:focus {
@@ -1120,6 +1442,20 @@
     background: var(--chat);
     border-color: var(--chat);
     color: #fff;
+  }
+
+  /* Il tasto sta dentro l'input, in basso a destra: il testo ha tutta la larghezza */
+  #chat #chat-send {
+    position: absolute;
+    right: 22px;
+    bottom: 19px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border-radius: 6px;
   }
 
   #chat form button:disabled {
@@ -1138,28 +1474,96 @@
     <span><i class="swatch" style="border-color: var(--fe); background: var(--fe-bg)"></i>FRONTEND</span>
     <span><i class="swatch" style="border-color: var(--be); background: var(--be-bg)"></i>BACKEND</span>
     <span><i class="swatch-line"></i>passa al passo successivo</span>
+    <span><i class="swatch-line" style="border-color: var(--ok)"></i>strada giusta</span>
+    <span><i class="swatch-line" style="border-color: var(--errore)"></i>errore</span>
+    <span><i class="swatch-line" style="border-top-style: dashed"></i>alternativa</span>
     <span><i class="swatch-line" style="border-color: var(--lost); border-top-style: dashed"></i>non arriva</span>
+    <span><i class="swatch-rombo"></i>bivio</span>
   </div>
   <div class="controls">
-    <button id="zoom-out" title="Riduci (Ctrl + rotella)">&minus;</button>
-    <button id="zoom-reset" title="Torna al 100%">100%</button>
-    <button id="zoom-in" title="Ingrandisci (Ctrl + rotella)">+</button>
-    <button id="prev" title="Passo precedente (freccia su)">&uarr;</button>
-    <button id="next" title="Passo successivo (freccia giù)">&darr;</button>
     <button id="mode" aria-pressed="false" title="Oscura i passi successivi a quello selezionato">Passo-passo</button>
   </div>
 </header>
 <main>
-  <div id="diagram">
-    <section id="tracked" hidden></section>
-  </div>
+  <section id="tracked" hidden></section>
+  <button type="button" id="riduci-sx" class="riduci" title="Riduci"><span class="segno"></span><span class="nome">Oggetti</span></button>
+  <div id="divisore-sx" class="divisore" title="Trascina per allargare o stringere la colonna · doppio clic per la larghezza iniziale"></div>
+  <div id="diagram"></div>
+  <div id="divisore" class="divisore" title="Trascina per allargare o stringere il pannello · doppio clic per la larghezza iniziale"></div>
+  <button type="button" id="riduci-dx" class="riduci" title="Riduci"><span class="segno"></span><span class="nome">Dettagli</span></button>
   <aside id="panel"></aside>
   <div id="toast" role="status" hidden></div>
 </main>
+<script>
+  // COLONNE LATERALI
+  // Sinistra (oggetti seguiti) e destra (dettagli) si comportano allo stesso modo: si allargano trascinando il bordo
+  // (doppio clic: larghezza iniziale) e si chiudono del tutto con il loro tasto in alto; le scelte restano nel browser
+  (() => {
+    const main = document.querySelector('main');
+    const leggi = (chiave) => {
+      try {
+        return localStorage.getItem(chiave);
+      } catch {
+        return null;
+      }
+    };
+    const scrivi = (chiave, valore) => {
+      try {
+        localStorage.setItem(chiave, valore);
+      } catch {}
+    };
+    const COLONNE = [
+      { tasto: 'riduci-dx', divisore: 'divisore', classe: 'senza-pannello', variabile: '--larghezza-pannello', chiave: 'mappa.pannello', misura: (x) => window.innerWidth - x },
+      { tasto: 'riduci-sx', divisore: 'divisore-sx', classe: 'senza-sinistra', variabile: '--larghezza-sinistra', chiave: 'mappa.sinistra', misura: (x) => x - main.getBoundingClientRect().left },
+    ];
+
+    COLONNE.forEach((c) => {
+      const tasto = document.getElementById(c.tasto);
+      const divisore = document.getElementById(c.divisore);
+      if (!tasto || !divisore) return;
+      const allarga = (px) => {
+        const larghezza = Math.round(Math.min(Math.max(px, 220), window.innerWidth * 0.6));
+        main.style.setProperty(c.variabile, `${larghezza}px`);
+        return larghezza;
+      };
+      const mostra = (visibile) => {
+        main.classList.toggle(c.classe, !visibile);
+        tasto.title = visibile ? 'Riduci' : 'Allarga';
+        scrivi(c.chiave, visibile ? 'si' : 'no');
+        window.dispatchEvent(new Event('resize'));
+      };
+
+      if (Number(leggi(`${c.chiave}.larghezza`))) allarga(Number(leggi(`${c.chiave}.larghezza`)));
+      mostra(leggi(c.chiave) !== 'no');
+      tasto.addEventListener('click', () => mostra(main.classList.contains(c.classe)));
+
+      divisore.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        divisore.setPointerCapture(e.pointerId);
+        divisore.classList.add('attivo');
+        const sposta = (ev) => allarga(c.misura(ev.clientX));
+        const lascia = (ev) => {
+          divisore.removeEventListener('pointermove', sposta);
+          divisore.removeEventListener('pointerup', lascia);
+          divisore.classList.remove('attivo');
+          scrivi(`${c.chiave}.larghezza`, String(allarga(c.misura(ev.clientX))));
+          window.dispatchEvent(new Event('resize'));
+        };
+        divisore.addEventListener('pointermove', sposta);
+        divisore.addEventListener('pointerup', lascia);
+      });
+      divisore.addEventListener('dblclick', () => {
+        main.style.removeProperty(c.variabile);
+        scrivi(`${c.chiave}.larghezza`, '');
+        window.dispatchEvent(new Event('resize'));
+      });
+    });
+  })();
+</script>
 <button id="chat-open" title="Chiedi sulla mappa (trascinami per spostarmi)"><i class="dot"></i></button>
 <section id="chat" hidden>
   <div class="chat-head">
-    <b title="Trascina per spostare · angolo in basso a destra per ridimensionare · doppio clic per rimetterla vicino alla mascotte">Chiedi sulla mappa</b>
+    <b title="Trascina per spostare · angolo in basso a destra per ridimensionare · doppio clic per rimetterla vicino alla mascotte">Chattino</b>
     <select id="chat-modo" title="Come ti risponde Chattino">
       <option value="normale">Normale</option>
       <option value="insegnante">Insegnante</option>
@@ -1168,48 +1572,18 @@
     </select>
     <button id="chat-hint" title="Indizio: ti mostro dove guardare, mai la soluzione" hidden>&#x1F4A1; Indizio</button>
     <button id="chat-clear" title="Ricomincia la conversazione">Nuova</button>
-    <button id="chat-big" title="Alza / abbassa la chat">&#x2922;</button>
     <button id="chat-close" title="Chiudi (la conversazione resta finché la pagina è aperta)">&#x2715;</button>
   </div>
   <div id="chat-log"></div>
   <div class="chat-ctx" id="chat-ctx"></div>
   <form id="chat-form">
     <textarea id="chat-input" rows="2" placeholder="Fai una domanda…"></textarea>
-    <button type="submit" id="chat-send">Invia</button>
+    <button type="submit" id="chat-send" title="Invia (Invio)" aria-label="Invia"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></button>
   </form>
 </section>
 
 <!--
-  DATI DEL FLUSSO (unica parte da modificare). Il diagramma va dall'alto verso il basso:
-  ogni elemento di "nodes" è un riquadro e una freccia lo collega al successivo.
-  - side: "FRONTEND" (corsia blu a sinistra) | "BACKEND" (corsia gialla a destra)
-  - file, element: dove si trova il codice; action: cosa fa, in una frase breve
-  - path, line: percorso assoluto del file e riga dell'element; rendono cliccabili i nomi (aprono VS Code)
-  - physical: sezione "Cosa succede fisicamente", la prima del pannello: solo ciò che l'utente vede e fa
-  - simple: sezione "Spiegazione semplice", la seconda del pannello
-  - short: frase brevissima e semplice (max ~60 caratteri, niente termini tecnici) scritta in grigio nel riquadro chiuso;
-    cliccando il riquadro si apre e mostra la versione tecnica a punti
-  - steps: (opzionale) 2-5 punti tecnici brevi del riquadro aperto, uno per azione; senza, il template divide does in frasi
-  - does / purpose / receives / returns: sezioni "Cosa fa", "A cosa serve", "Riceve", "Restituisce" del pannello
-  - terms: { "termine": "significato semplice" } mostrati come glossario del passo
-  - nei testi, il codice va tra backtick (`esempio`) e viene mostrato come codice
-  - tracked: (opzionale, a livello di FLOW) [{ "id", "name" }] oggetti seguiti passo per passo nella colonna
-    a sinistra, un riquadro ciascuno; nei nodi in cui un oggetto cambia, "state": { "<id>": valore completo dopo
-    quel passo } (gli oggetti non presenti in "state" restano invariati)
-  - section: (opzionale) inizia un nuovo flusso con un titolo, senza freccia dal nodo precedente
-  - incoming: (opzionale) "lost" se la freccia dal nodo precedente non arriva (rossa tratteggiata)
-  - payloadName / payload / fields: cosa passa al nodo successivo (payload null se nulla)
-  - call: (opzionale) cosa succede sulla freccia in uscita, mostrato cliccandola:
-    { "kind": "http" | "socket" | "navigation" | "function" | "event" | "storage" | "process", "label": "POST /auth/login", "note": "frase semplice" }
-  - fields: { "percorso.del.campo": "spiegazione" }, gli array usano "lista[]", "" è il valore intero
-  - per mostrare un valore undefined scrivi "__undefined__"
-  - overview: (opzionale) riepilogo nel pannello all'apertura e cliccando fuori:
-    { "goal": obiettivo, "problem": problema, "todo": cosa deve fare ora l'utente, "files": [{ "file", "path", "role" }], "notes": [..] }
-    senza "files" il pannello elenca da solo i file della mappa
-  - indizi: (opzionale) [{ "testo": cosa osservare, "punti": ["D4", "D5"] }, { "testo", "punti": ["D5"] }]
-    tasto Indizio della chat: il primo illumina la zona, il secondo il punto; mai la soluzione
-  - chat: { "token": contenuto di ~/.claude/chat-mappa-token, "project": percorso assoluto del progetto con "/" }
-    attiva la chat in basso a sinistra (server: ~/.claude/shared/chat-mappa-server.js)
+  DATI DEL FLUSSO (unica parte da modificare): le regole del JSON sono in ~/.claude/shared/diagramma-flusso-json.md.
   Non inserire la sequenza </script> nel JSON.
 -->
 <script id="flow-data" type="application/json">
@@ -1239,12 +1613,19 @@
 
 <script>
   const FLOW = JSON.parse(document.getElementById('flow-data').textContent);
+  // "(non in locale)" accanto al backend non serve: che il backend sia dedotto lo dice già la spiegazione del passo
+  FLOW.nodes.forEach((n) => {
+    if (typeof n.file === 'string') n.file = n.file.replace(/\s*\((non\s+)?in\s+locale\)/gi, '').trim();
+  });
 
   const PAD = 16;
-  const LANE_W = 330;
-  const LANE_GAP = 40;
-  const NODE_W = 290;
+  const LANE_INNER = 20;
+  const LANE_GAP = 48;
+  const COL_GAP = 56;
+  const NODE_W = 380;
   const NODE_MIN_H = 84;
+  const BIVIO_W = 300;
+  const BIVIO_H = 116;
   const ANIM_MS = 260;
   const GAP = 76;
   const SECTION_H = 44;
@@ -1255,13 +1636,22 @@
   // Gli attributi SVG non risolvono var(): leggo i token CSS una volta sola
   const cv = (name) => getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim();
 
+  // x e w si calcolano in layout(): una corsia si allarga quando ha passi affiancati
   const LANES = {
-    FRONTEND: { x: PAD, stroke: cv('fe'), fill: cv('fe-bg') },
-    BACKEND: { x: PAD + LANE_W + LANE_GAP, stroke: cv('be'), fill: cv('be-bg') },
+    FRONTEND: { x: PAD, w: NODE_W + LANE_INNER * 2, stroke: cv('fe'), fill: cv('fe-bg') },
+    BACKEND: { x: 0, w: NODE_W + LANE_INNER * 2, stroke: cv('be'), fill: cv('be-bg') },
   };
 
-  const state = { selected: null, stepMode: false };
-  const centerX = (node) => LANES[node.side].x + LANE_W / 2;
+  // edge: indice in FLOW.edges della freccia selezionata (null se è selezionato un riquadro)
+  const state = { selected: null, edge: null, stepMode: false };
+  const isBivio = (node) => node.tipo === 'bivio';
+  const isFine = (node) => node.tipo === 'fine';
+  // Bivio e fine hanno misure fisse e non si aprono
+  const fisso = (node) => isBivio(node) || isFine(node);
+  const FINE_W = 240;
+  const FINE_H = 52;
+  const larghezza = (node) => (isBivio(node) ? BIVIO_W : isFine(node) ? FINE_W : NODE_W);
+  const centerX = (node) => node.x + larghezza(node) / 2;
 
   const el = (tag, attrs = {}, parent) => {
     const node = document.createElementNS(SVG_NS, tag);
@@ -1289,18 +1679,39 @@
     return html + esc(code.slice(last));
   };
 
-  const fmt = (s) => (s || '')
-    .split(/(`[^`]+`)/)
-    .map((part) => (/^`[^`]+`$/.test(part) ? `<code>${highlight(part.slice(1, -1))}</code>` : esc(part)))
-    .join('');
+  // RIFERIMENTI AL CODICE
+  // FLOW.codice dice dove sta ogni nome: `handleAdd`, `registerPasskey()` o `auth.login(dati)` diventano link alla loro riga
+  const CODICE = FLOW.codice || {};
+  const riferimento = (testo) => {
+    const nome = String(testo).match(/^[A-Za-z_$][\w$]*(?:\.[\w$]+)*/)?.[0];
+    if (!nome) return null;
+    return CODICE[nome] || CODICE[nome.split('.').pop()] || null;
+  };
 
   // Link che apre il file in VS Code alla riga indicata (vscode://file/<percorso>:<riga>:<colonna>)
-  const codeLink = (node, line, inner) => {
-    if (!node.path) return inner;
-    const target = `${node.path.replace(/\\/g, '/')}:${line || 1}`;
+  const linkPercorso = (percorso, line, inner) => {
+    if (!percorso) return inner;
+    const target = `${percorso.replace(/\\/g, '/')}:${line || 1}`;
     const href = encodeURI(`vscode://file/${target}:1`);
-    return `<a class="code-link" href="${esc(href)}" data-copy="${esc(target)}" title="Apri in VS Code (nel browser integrato: copia il percorso per Ctrl+P)">${inner}</a>`;
+    return `<a class="code-link" href="${esc(href)}" data-copy="${esc(target)}" title="Apri in VS Code alla riga ${esc(String(line || 1))}">${inner}</a>`;
   };
+
+  const codeLink = (node, line, inner) => {
+    if (node.path) return linkPercorso(node.path, line, inner);
+    const ref = line !== 1 && riferimento(node.element || '');
+    return ref ? linkPercorso(ref.path, ref.line, inner) : inner;
+  };
+
+  const fmt = (s) => (s || '')
+    .split(/(`[^`]+`)/)
+    .map((part) => {
+      if (!/^`[^`]+`$/.test(part)) return esc(part);
+      const codice = part.slice(1, -1);
+      const ref = riferimento(codice);
+      const html = `<code>${highlight(codice)}</code>`;
+      return ref ? linkPercorso(ref.path, ref.line, html) : html;
+    })
+    .join('');
 
   // COPIA PERCORSO
   // Il browser integrato di VS Code blocca i link vscode:// senza avvisare: il percorso copiato si apre con Ctrl+P
@@ -1332,10 +1743,8 @@
   document.addEventListener('click', async (e) => {
     const link = e.target.closest('a.code-link');
     if (!link) return;
-    const copied = await copyText(link.dataset.copy);
-    showToast(copied
-      ? `Copiato <code>${esc(link.dataset.copy)}</code><br>In VS Code premi <kbd>Ctrl</kbd>+<kbd>P</kbd>, incolla e premi <kbd>Invio</kbd>`
-      : 'Copia non riuscita: apri il file in un browser esterno per usare il link diretto');
+    // Il percorso si copia in silenzio: l'avviso compare solo se la copia non riesce
+    if (!(await copyText(link.dataset.copy))) showToast('Copia non riuscita: apri il file in un browser esterno per usare il link diretto');
   });
 
   // CONTENUTO RIQUADRO
@@ -1351,7 +1760,7 @@
       ? `<div class="tecnico" style="opacity: ${p.toFixed(2)}"><ul class="passi">${punti.map((punto) => `<li>${fmt(punto)}</li>`).join('')}</ul>${node.payloadName ? `<div class="passa">passa: <code>${esc(node.payloadName)}</code></div>` : ''}</div>`
       : `<div class="breve">${fmt(breve)}</div>`;
     return `
-      <div class="node ${node.side}${p > 0 ? ' open' : ''}">
+      <div class="node ${node.side}${p > 0 ? ' open' : ''}${node.inErrore ? ' in-errore' : ''}">
         <div class="tag">${node.side}<span class="toggle">${p > 0 ? '&#9652;' : '&#9662;'}</span></div>
         <div class="title">${p > 0
           ? `${codeLink(node, node.line, `<span class="element">${esc(node.element || node.file)}</span>`)}${node.element ? `<span class="sep">·</span>${codeLink(node, 1, `<span class="file">${esc(node.file)}</span>`)}` : ''}`
@@ -1367,22 +1776,27 @@
     prova.style.cssText = `position: absolute; left: -9999px; top: 0; width: ${NODE_W}px; visibility: hidden`;
     document.body.appendChild(prova);
     FLOW.nodes.forEach((node) => {
-      [['hClosed', 0], ['hOpen', 1]].forEach(([chiave, p]) => {
-        prova.innerHTML = contenutoNodo(node, p);
-        const div = prova.firstElementChild;
-        div.style.height = 'auto';
-        node[chiave] = Math.max(NODE_MIN_H, Math.ceil(div.getBoundingClientRect().height));
-      });
-      node.p = node.open ? 1 : 0;
-      node.h = node.open ? node.hOpen : node.hClosed;
+      if (fisso(node)) {
+        node.hOpen = node.hClosed = isBivio(node) ? BIVIO_H : FINE_H;
+      } else {
+        [['hClosed', 0], ['hOpen', 1]].forEach(([chiave, p]) => {
+          prova.innerHTML = contenutoNodo(node, p);
+          const div = prova.firstElementChild;
+          div.style.height = 'auto';
+          node[chiave] = Math.max(NODE_MIN_H, Math.ceil(div.getBoundingClientRect().height));
+        });
+      }
+      node.p = node.open && !fisso(node) ? 1 : 0;
+      node.h = node.open && !fisso(node) ? node.hOpen : node.hClosed;
     });
     prova.remove();
   }
 
   // APERTURA RIQUADRO
-  // L'altezza cresce un fotogramma alla volta e i riquadri sotto scorrono giù: è l'effetto di scorrimento
+  // L'altezza cresce un fotogramma alla volta e i riquadri sotto scorrono giù: è l'effetto di scorrimento. Un bivio non si apre
   function apriChiudi(i) {
     const node = FLOW.nodes[i];
+    if (fisso(node)) return;
     node.open = !node.open;
     const da = node.h;
     const a = node.open ? node.hOpen : node.hClosed;
@@ -1398,18 +1812,109 @@
     requestAnimationFrame(passo);
   }
 
+  // FRECCE
+  // Senza "uscite" un passo va al successivo (tranne quando inizia una sezione); con "uscite" decide lui dove andare,
+  // anche più frecce (un bivio, un errore, un ritorno). "verso" è "D5" oppure l'id di un passo
+  const indiceDi = (verso) => {
+    const perId = FLOW.nodes.findIndex((n) => n.id && n.id === verso);
+    if (perId >= 0) return perId;
+    const numero = Number(String(verso).replace(/^D/i, ''));
+    return Number.isInteger(numero) && numero >= 1 && numero <= FLOW.nodes.length ? numero - 1 : -1;
+  };
+
+  function costruisciFrecce() {
+    FLOW.edges = [];
+    FLOW.nodes.forEach((node, i) => {
+      if (Array.isArray(node.uscite)) {
+        node.uscite.forEach((u) => {
+          const to = indiceDi(u.verso);
+          if (to >= 0 && to !== i) FLOW.edges.push({ from: i, to, tipo: u.tipo || 'normale', etichetta: u.etichetta || '', call: u.call || null, payloadName: u.payloadName, payload: u.payload, fields: u.fields, riga: Number(u.riga) || null, esplicita: true });
+        });
+        return;
+      }
+      const next = FLOW.nodes[i + 1];
+      // Un passo di fine chiude la sua parte di flusso: niente freccia automatica verso il passo dopo
+      if (!next || next.section || isFine(node)) return;
+      FLOW.edges.push({ from: i, to: i + 1, tipo: next.incoming === 'lost' ? 'persa' : 'normale', etichetta: '', call: node.call || null, payloadName: node.payloadName, payload: node.payload, fields: node.fields, esplicita: false });
+    });
+  }
+
+  function affiancaRami() {
+    FLOW.nodes.forEach((node, i) => {
+      if (!isBivio(node)) return;
+      const mete = [...new Set(FLOW.edges.filter((e) => e.from === i && e.to > i).map((e) => e.to))].sort((a, b) => a - b);
+      const contigue = mete.length > 1 && mete.every((m, k) => m === i + 1 + k);
+      if (!contigue) return;
+      mete.slice(1).forEach((m) => {
+        if (!FLOW.nodes[m].section) FLOW.nodes[m].accantoAuto = true;
+      });
+      // Due strade alternative non si passano il testimone: tolta la freccia automatica tra una meta e la successiva
+      FLOW.edges = FLOW.edges.filter((e) => e.esplicita || !(mete.includes(e.from) && mete.includes(e.to)));
+    });
+    segnaErrori();
+  }
+
+  // RAMO DI ERRORE
+  // Rosso tutto quello che viene dopo una freccia di errore, fino alla fine del ramo (anche la pillola di fine):
+  // si segue in avanti, ma non lungo le frecce "alternativa" (un "riprova" torna al flusso normale).
+  // Il backend resta giallo: il server che risponde non è "in errore", lo è il ramo dell'app che gestisce la risposta
+  function segnaErrori() {
+    const coda = [
+      ...FLOW.edges.filter((e) => e.tipo === 'errore').map((e) => e.to),
+      ...FLOW.nodes.map((n, i) => (n.errore === true ? i : -1)).filter((i) => i >= 0),
+    ];
+    const visti = new Set();
+    while (coda.length) {
+      const i = coda.shift();
+      if (visti.has(i)) continue;
+      visti.add(i);
+      if (FLOW.nodes[i].side !== 'BACKEND') FLOW.nodes[i].inErrore = true;
+      FLOW.edges.filter((e) => e.from === i && e.to > i && e.tipo !== 'alternativa').forEach((e) => coda.push(e.to));
+    }
+  }
+
   // POSIZIONI NODI
+  // Righe: un passo con "accanto": true sta sulla stessa riga del precedente. Nella stessa corsia i passi di una riga
+  // si mettono uno di fianco all'altro e la corsia si allarga quanto serve
   function layout() {
-    let y = HEADER_H + 24;
+    if (!FLOW.edges) {
+      costruisciFrecce();
+      affiancaRami();
+    }
+    const righe = [];
     FLOW.nodes.forEach((node, i) => {
       node.number = i + 1;
-      if (node.section) {
-        const extra = i === 0 ? 0 : 8;
-        node.sectionY = y + extra;
+      if (i === 0 || !(node.accanto || node.accantoAuto) || node.section) righe.push([]);
+      node.riga = righe.length - 1;
+      righe[righe.length - 1].push(node);
+    });
+
+    const colonne = { FRONTEND: 1, BACKEND: 1 };
+    righe.forEach((riga) => Object.keys(colonne).forEach((side) => {
+      colonne[side] = Math.max(colonne[side], riga.filter((n) => n.side === side).length);
+    }));
+    Object.entries(colonne).forEach(([side, n]) => { LANES[side].w = n * NODE_W + (n - 1) * COL_GAP + LANE_INNER * 2; });
+    LANES.FRONTEND.x = PAD;
+    LANES.BACKEND.x = PAD + LANES.FRONTEND.w + LANE_GAP;
+
+    let y = HEADER_H + 24;
+    righe.forEach((riga, r) => {
+      const primo = riga[0];
+      if (primo.section) {
+        const extra = r === 0 ? 0 : 8;
+        primo.sectionY = y + extra;
         y += SECTION_H + extra;
       }
-      node.y = y;
-      y += node.h + GAP;
+      Object.keys(LANES).forEach((side) => {
+        const qui = riga.filter((n) => n.side === side);
+        const occupata = qui.length * NODE_W + (qui.length - 1) * COL_GAP;
+        const inizio = LANES[side].x + (LANES[side].w - occupata) / 2;
+        qui.forEach((node, c) => {
+          node.x = inizio + c * (NODE_W + COL_GAP) + (NODE_W - larghezza(node)) / 2;
+          node.y = y;
+        });
+      });
+      y += Math.max(...riga.map((n) => n.h)) + GAP;
     });
     return y - GAP + 24;
   }
@@ -1419,84 +1924,296 @@
   function renderDiagram() {
     document.querySelector('#diagram > svg')?.remove();
     const height = layout();
-    const width = PAD * 2 + LANE_W * 2 + LANE_GAP;
+    const width = LANES.BACKEND.x + LANES.BACKEND.w + PAD;
     const svg = el('svg', { width, height, viewBox: `0 0 ${width} ${height}` });
     document.getElementById('diagram').appendChild(svg);
 
     const defs = el('defs', {}, svg);
-    [['FRONTEND', cv('fe')], ['BACKEND', cv('be')], ['lost', cv('lost')], ['sel', cv('accent')]].forEach(([id, color]) => {
+    [['FRONTEND', cv('fe')], ['BACKEND', cv('be')], ['lost', cv('lost')], ['errore', cv('errore')], ['ok', cv('ok')], ['alternativa', cv('muted')], ['sel', cv('accent')]].forEach(([id, color]) => {
       const marker = el('marker', { id: `head-${id}`, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto' }, defs);
       el('path', { d: 'M0,0 L10,5 L0,10 z', fill: color }, marker);
     });
 
     Object.entries(LANES).forEach(([side, lane]) => {
-      el('rect', { x: lane.x, y: 0, width: LANE_W, height, rx: 12, fill: lane.fill, 'fill-opacity': 0.25, stroke: lane.stroke, 'stroke-opacity': 0.35 }, svg);
-      el('text', { x: lane.x + LANE_W / 2, y: 30, 'text-anchor': 'middle', fill: lane.stroke, 'font-size': 15, 'font-weight': 800, 'letter-spacing': '.2em' }, svg).textContent = side;
+      el('rect', { x: lane.x, y: 0, width: lane.w, height, rx: 12, fill: lane.fill, 'fill-opacity': 0.25, stroke: lane.stroke, 'stroke-opacity': 0.35 }, svg);
+      el('text', { x: lane.x + lane.w / 2, y: 30, 'text-anchor': 'middle', fill: lane.stroke, 'font-size': 15, 'font-weight': 800, 'letter-spacing': '.2em' }, svg).textContent = side;
     });
 
-    FLOW.nodes.forEach((node, i) => {
-      if (node.section) {
-        el('line', { x1: PAD, y1: node.sectionY + 18, x2: width - PAD, y2: node.sectionY + 18, stroke: cv('border'), 'stroke-dasharray': '6 4' }, svg);
-        const label = el('text', { x: width / 2, y: node.sectionY + 23, 'text-anchor': 'middle', fill: cv('text'), 'font-size': 13, 'font-weight': 700 }, svg);
-        label.textContent = node.section.toUpperCase();
-        const box = label.getBBox();
-        el('rect', { x: box.x - 12, y: box.y - 4, width: box.width + 24, height: box.height + 8, rx: 6, fill: cv('bg'), stroke: cv('border') }, svg);
-        svg.appendChild(label);
-      }
-      if (i > 0 && !node.section) renderEdge(svg, FLOW.nodes[i - 1], node, i - 1);
+    FLOW.nodes.forEach((node) => {
+      if (!node.section) return;
+      el('line', { x1: PAD, y1: node.sectionY + 18, x2: width - PAD, y2: node.sectionY + 18, stroke: cv('border'), 'stroke-dasharray': '6 4' }, svg);
+      const label = el('text', { x: width / 2, y: node.sectionY + 23, 'text-anchor': 'middle', fill: cv('text'), 'font-size': 13, 'font-weight': 700 }, svg);
+      label.textContent = node.section.toUpperCase();
+      const box = label.getBBox();
+      el('rect', { x: box.x - 12, y: box.y - 4, width: box.width + 24, height: box.height + 8, rx: 6, fill: cv('bg'), stroke: cv('border') }, svg);
+      svg.appendChild(label);
     });
 
+    latiBivi();
+    const linee = el('g', {}, svg);
     FLOW.nodes.forEach((node, i) => renderNode(svg, node, i));
+    const etichette = el('g', {}, svg);
+    etichettePosate = [];
+    FLOW.edges.forEach((edge, k) => renderEdge(linee, edge, k, etichette));
     applicaSelezione();
     document.dispatchEvent(new Event('mappa-ridisegnata'));
   }
 
-  // RENDER FRECCIA
-  function renderEdge(svg, from, to, fromIndex) {
-    const lost = to.incoming === 'lost';
-    const color = lost ? cv('lost') : LANES[from.side].stroke;
-    const marker = lost ? 'lost' : from.side;
-    const x1 = centerX(from);
-    const y1 = from.y + from.h;
-    const x2 = centerX(to);
-    const y2 = to.y - 2;
-    const mid = (y1 + y2) / 2;
-    const straight = x1 === x2;
-    const d = straight ? `M${x1},${y1} V${y2}` : `M${x1},${y1} V${mid} H${x2} V${y2}`;
+  // LATI DEI BIVI
+  // Ogni uscita di un bivio parte da un vertice laterale: verso sinistra se la meta è a sinistra, a destra se è a destra;
+  // le mete in colonna si dividono tra i due lati, così le due strade non partono mai dallo stesso punto
+  function latiBivi() {
+    FLOW.nodes.forEach((node, i) => {
+      if (!isBivio(node)) return;
+      const uscite = FLOW.edges.filter((e) => e.from === i);
+      const cx = centerX(node);
+      const usati = { sx: 0, dx: 0 };
+      uscite.forEach((e) => {
+        const tx = centerX(FLOW.nodes[e.to]);
+        e.lato = tx < cx - 1 ? 'sx' : tx > cx + 1 ? 'dx' : null;
+        if (e.lato) usati[e.lato] += 1;
+      });
+      uscite.filter((e) => !e.lato).forEach((e) => {
+        e.lato = usati.dx <= usati.sx ? 'dx' : 'sx';
+        usati[e.lato] += 1;
+      });
+      // Con due strade ognuna ha il suo vertice: mai "sì" e "no" dallo stesso lato, uno sopra l'altro
+      if (uscite.length === 2 && uscite[0].lato === uscite[1].lato) {
+        const [prima, seconda] = [...uscite].sort((a, b) => centerX(FLOW.nodes[a.to]) - centerX(FLOW.nodes[b.to]) || a.to - b.to);
+        prima.lato = 'sx';
+        seconda.lato = 'dx';
+      }
+      // Sul vertice c'è posto per una sola etichetta per lato: la prende la meta più vicina, le altre la mettono sul loro tratto
+      ['sx', 'dx'].forEach((lato) => {
+        const qui = uscite.filter((e) => e.lato === lato).sort((a, b) => Math.abs(centerX(FLOW.nodes[a.to]) - cx) - Math.abs(centerX(FLOW.nodes[b.to]) - cx));
+        qui.forEach((e, n) => { e.primaDelLato = n === 0; });
+      });
+    });
+  }
 
-    const g = el('g', { class: 'item edge', 'data-i': fromIndex }, svg);
-    g.addEventListener('click', () => select(fromIndex, 'freccia'));
-    el('path', { d, fill: 'none', stroke: 'transparent', 'stroke-width': 16 }, g);
-    el('path', { class: 'edge-path', d, fill: 'none', stroke: color, 'stroke-width': 2, 'stroke-dasharray': lost ? '6 4' : '', 'marker-end': `url(#head-${marker})`, 'data-marker': marker }, g);
+  // PERCORSO FRECCIA
+  // Ogni freccia prova più strade ad angolo retto (diretta, con un gomito, lungo un corridoio libero) e prende la prima
+  // che non attraversa un riquadro. Il corridoio è uno spazio vuoto verticale: il bordo di una corsia, lo spazio tra due colonne o tra le corsie
+  const MARGINE_RIQ = 8;
+  const rettangoli = () => FLOW.nodes.map((n, i) => ({ i, x1: n.x - MARGINE_RIQ, x2: n.x + larghezza(n) + MARGINE_RIQ, y1: n.y - MARGINE_RIQ, y2: n.y + n.h + MARGINE_RIQ }));
 
-    const labelX = straight ? x1 : (x1 + x2) / 2;
-    const labelY = straight ? mid : mid - 16;
+  function attraversa(punti, esclusi, rett) {
+    for (let k = 0; k < punti.length - 1; k += 1) {
+      const [ax, ay] = punti[k];
+      const [bx, by] = punti[k + 1];
+      const x1 = Math.min(ax, bx);
+      const x2 = Math.max(ax, bx);
+      const y1 = Math.min(ay, by);
+      const y2 = Math.max(ay, by);
+      if (rett.some((r) => !esclusi.includes(r.i) && x1 < r.x2 && x2 > r.x1 && y1 < r.y2 && y2 > r.y1)) return true;
+    }
+    return false;
+  }
 
-    let labelRight = labelX;
-    if (from.payloadName) {
-      const text = el('text', { x: labelX, y: labelY + 4, 'text-anchor': 'middle', fill: cv('text'), 'font-size': 12 }, g);
-      text.textContent = from.payloadName;
-      const box = text.getBBox();
-      el('rect', { class: 'edge-label', x: box.x - 8, y: box.y - 3, width: box.width + 16, height: box.height + 6, rx: 10 }, g);
-      g.appendChild(text);
-      labelRight = box.x + box.width + 8;
+  function corridoi() {
+    const xs = [LANES.FRONTEND.x + LANES.FRONTEND.w + LANE_GAP / 2];
+    Object.values(LANES).forEach((l) => xs.push(l.x + LANE_INNER / 2, l.x + l.w - LANE_INNER / 2));
+    FLOW.nodes.forEach((n) => xs.push(n.x - COL_GAP / 2, n.x + larghezza(n) + COL_GAP / 2));
+    return [...new Set(xs.map(Math.round))];
+  }
+
+  // In un bivio la freccia dall'alto si ferma sul cerchio del numero, che sta sulla punta
+  const arrivoDallAlto = (to) => (isBivio(to) ? to.y - 17 : to.y - 2);
+
+  function percorso(from, to, edge) {
+    const rett = rettangoli();
+    const esclusi = [edge.from, edge.to];
+    const vicini = (x) => corridoi().sort((a, b) => Math.abs(a - x) - Math.abs(b - x));
+    const fw = larghezza(from);
+    const tw = larghezza(to);
+    const fx = centerX(from);
+    const tx = centerX(to);
+    const sopraMeta = to.y - GAP / 2;
+    const candidati = [];
+
+    if (isBivio(from)) {
+      const s = edge.lato === 'sx' ? -1 : 1;
+      const sx = fx + s * (BIVIO_W / 2);
+      const sy = from.y + BIVIO_H / 2;
+      const sotto = [tx, arrivoDallAlto(to)];
+      // Stessa riga: dritta se è la vicina; se in mezzo c'è un altro riquadro, passa sopra la riga ed entra dall'alto
+      if (to.riga === from.riga) {
+        const su = Math.min(...FLOW.nodes.filter((n) => n.riga === from.riga).map((n) => n.y)) - GAP / 2;
+        candidati.push([[sx, sy], [s > 0 ? to.x - 2 : to.x + tw + 2, sy]]);
+        candidati.push([[sx, sy], [sx + s * 18, sy], [sx + s * 18, su], [tx, su], [tx, to.y - 2]]);
+      }
+      else if (to.riga > from.riga) {
+        if (s * (tx - sx) > 24) candidati.push([[sx, sy], [tx, sy], sotto]);
+        vicini(sx).filter((xc) => s * (xc - sx) > 0).forEach((xc) => candidati.push([[sx, sy], [xc, sy], [xc, sopraMeta], [tx, sopraMeta], sotto]));
+      } else {
+        const ey = to.y + Math.min(40, to.h / 2);
+        vicini(sx).filter((xc) => s * (xc - sx) > 0).forEach((xc) => candidati.push([[sx, sy], [xc, sy], [xc, ey], [xc > tx ? to.x + tw + 2 : to.x - 2, ey]]));
+      }
+      const punti = scegli(candidati, esclusi, rett);
+      return { punti, etichetta: edge.primaDelLato ? { x: sx + s * 10, y: sy - 14, ancora: s > 0 ? 'start' : 'end' } : null };
     }
 
-    if (lost) {
-      const crossX = labelRight + 18;
-      el('path', { d: `M${crossX - 7},${labelY - 7} l14,14 M${crossX - 7},${labelY + 7} l14,-14`, stroke: cv('lost'), 'stroke-width': 3 }, g);
+    if (to.riga === from.riga) {
+      const y0 = from.y + 40;
+      const destra = tx > fx;
+      candidati.push([[destra ? from.x + fw : from.x, y0], [destra ? to.x - 2 : to.x + tw + 2, y0]]);
+      const su = Math.min(from.y, to.y) - GAP / 2;
+      candidati.push([[fx, from.y], [fx, su], [tx, su], [tx, to.y - 2]]);
+    } else if (to.riga > from.riga) {
+      const inizio = [fx, from.y + from.h];
+      const fine = [tx, arrivoDallAlto(to)];
+      const sottoPartenza = from.y + from.h + GAP / 2;
+      candidati.push(Math.abs(fx - tx) < 1 ? [inizio, fine] : [inizio, [fx, sopraMeta], [tx, sopraMeta], fine]);
+      if (Math.abs(fx - tx) >= 1) candidati.push([inizio, [fx, sottoPartenza], [tx, sottoPartenza], fine]);
+      vicini(fx).forEach((xc) => candidati.push([inizio, [fx, sottoPartenza], [xc, sottoPartenza], [xc, sopraMeta], [tx, sopraMeta], fine]));
+    } else {
+      // Un ritorno entra ed esce dalla parte bassa dei fianchi: in alto passano già le frecce orizzontali della riga
+      const sy = from.y + Math.max(from.h - 22, from.h / 2);
+      const ey = to.y + Math.max(to.h - 22, to.h / 2);
+      vicini(Math.max(from.x + fw, to.x + tw)).forEach((xc) => {
+        const daDestra = xc >= Math.max(from.x + fw, to.x + tw);
+        const daSinistra = xc <= Math.min(from.x, to.x);
+        if (daDestra) candidati.push([[from.x + fw, sy], [xc, sy], [xc, ey], [to.x + tw + 2, ey]]);
+        if (daSinistra) candidati.push([[from.x, sy], [xc, sy], [xc, ey], [to.x - 2, ey]]);
+      });
+    }
+    return { punti: scegli(candidati, esclusi, rett) };
+  }
+
+  const scegli = (candidati, esclusi, rett) => candidati.find((p) => !attraversa(p, esclusi, rett)) || candidati[0];
+
+  // POSTO DELL'ETICHETTA
+  // Sul tratto più lungo, provando prima gli orizzontali; se il posto copre un riquadro si prova il tratto dopo
+  // Le etichette già messe contano come ostacoli: due etichette non si coprono
+  let etichettePosate = [];
+
+  function postoEtichetta(punti, larghezzaTesto) {
+    const rett = [...rettangoli(), ...etichettePosate];
+    const tratti = punti.slice(1).map((b, k) => ({ a: punti[k], b, lungo: Math.abs(b[0] - punti[k][0]) + Math.abs(b[1] - punti[k][1]) }))
+      .sort((p, q) => (q.a[1] === q.b[1]) - (p.a[1] === p.b[1]) || q.lungo - p.lungo);
+    const posti = tratti.flatMap(({ a, b }) => (a[1] === b[1]
+      ? [0.5, 0.25, 0.75].map((t) => ({ x: a[0] + (b[0] - a[0]) * t, y: a[1] - 16 }))
+      : [0.5, 0.3, 0.7].map((t) => ({ x: a[0], y: a[1] + (b[1] - a[1]) * t }))));
+    const libero = posti.find((p) => !rett.some((r) => p.x + larghezzaTesto / 2 > r.x1 && p.x - larghezzaTesto / 2 < r.x2 && p.y + 10 > r.y1 && p.y - 10 < r.y2));
+    return { ...(libero || posti[0]), ancora: 'middle' };
+  }
+
+  // RENDER FRECCIA
+  // Colore e tratto dicono il tipo: normale (colore della corsia), ok (verde), errore (rosso), alternativa (grigio tratteggiato),
+  // persa (rossa tratteggiata con la croce). Tra app e server l'etichetta dice anche il tipo di chiamata (HTTP, SOCKET…)
+  const SIGLE_CHIAMATA = { http: 'HTTP', socket: 'SOCKET', navigation: 'NAVIGAZIONE', event: 'EVENTO', storage: 'MEMORIA', process: 'PROCESSO' };
+
+  // Le linee vanno sotto i riquadri (se un tratto non trova strada, il riquadro lo copre); le etichette sopra, per restare leggibili
+  const BREVE_BIVIO = 14;
+  const breve = (testo) => {
+    const t = String(testo || '').trim();
+    const parola = t.match(/^(sì|si|no)(?!\p{L})/iu)?.[0];
+    if (parola) return parola.toLowerCase();
+    return t.length > BREVE_BIVIO ? `${t.slice(0, BREVE_BIVIO - 1).trim()}…` : t;
+  };
+
+  // "POST /auth/biometric/register-verify" diventa "POST register-verify"; una risposta "200 OK" diventa "200"
+  const chiamataBreve = (call) => {
+    const testo = String(call.label || '').trim();
+    const metodo = testo.match(/^(GET|POST|PUT|PATCH|DELETE)\s+(\S+)/i);
+    if (metodo) return `${metodo[1].toUpperCase()} ${metodo[2].split('?')[0].split('/').filter(Boolean).pop() || metodo[2]}`;
+    return testo.match(/^\d{3}\b/)?.[0] || '';
+  };
+
+  function renderEdge(svg, edge, k, livelloEtichette) {
+    const from = FLOW.nodes[edge.from];
+    const to = FLOW.nodes[edge.to];
+    const stile = {
+      normale: { color: LANES[from.side].stroke, marker: from.side, dash: '' },
+      ok: { color: cv('ok'), marker: 'ok', dash: '' },
+      errore: { color: cv('errore'), marker: 'errore', dash: '' },
+      alternativa: { color: cv('muted'), marker: 'alternativa', dash: '3 5' },
+      persa: { color: cv('lost'), marker: 'lost', dash: '6 4' },
+    }[edge.tipo] || { color: LANES[from.side].stroke, marker: from.side, dash: '' };
+    const { punti, etichetta: postoBivio } = percorso(from, to, edge);
+    const d = punti.map(([x, y], n) => `${n ? 'L' : 'M'}${x},${y}`).join(' ');
+    const traLati = from.side !== to.side;
+
+    const g = el('g', { class: `item edge${edge.tipo === 'errore' ? ' errore' : ''}`, 'data-i': edge.from, 'data-k': k }, svg);
+    g.addEventListener('click', () => select(edge.from, k));
+    el('path', { d, fill: 'none', stroke: 'transparent', 'stroke-width': 16 }, g);
+    el('path', { class: 'edge-path', d, fill: 'none', stroke: stile.color, 'stroke-width': traLati || edge.tipo === 'errore' ? 2.5 : 2, 'stroke-dasharray': stile.dash, 'marker-end': `url(#head-${stile.marker})`, 'data-marker': stile.marker }, g);
+
+    const sigla = traLati && edge.call?.kind && SIGLE_CHIAMATA[edge.call.kind];
+    const status = String(edge.etichetta || '').match(/^\d{3}\b/)?.[0] || String(edge.call?.label || '').match(/^\d{3}\b/)?.[0];
+    // Sulla freccia solo l'essenziale: la scelta di un bivio, lo status di un errore, la chiamata (POST register-verify, 200);
+    // cosa passa (payload, body) e il testo intero si leggono cliccando la freccia
+    const testo = edge.tipo === 'errore' ? `✕ ${status || 'errore'}`
+      : isBivio(from) ? breve(edge.etichetta)
+        : edge.call ? chiamataBreve(edge.call)
+          : breve(edge.etichetta);
+    const stima = (testo.length + (sigla ? sigla.length + 2 : 0)) * 7 + 16;
+    const { x: lx, y: ly, ancora } = postoBivio || postoEtichetta(punti, stima);
+    const sopra = el('g', { class: `item edge etichetta-freccia${edge.tipo === 'errore' ? ' errore' : ''}`, 'data-i': edge.from, 'data-k': k }, livelloEtichette);
+    sopra.addEventListener('click', () => select(edge.from, k));
+    let destra = lx;
+    if (testo || sigla) {
+      const etichetta = el('text', { x: lx, y: ly + 4, 'text-anchor': ancora, fill: edge.tipo === 'errore' ? cv('errore') : cv('text'), 'font-size': 12, 'font-weight': edge.tipo === 'errore' ? 700 : 400 }, sopra);
+      if (sigla) {
+        const tspan = el('tspan', { fill: stile.color, 'font-weight': 800, 'font-size': 10.5, 'letter-spacing': '.06em' }, etichetta);
+        tspan.textContent = `${sigla}${testo ? '  ' : ''}`;
+      }
+      if (testo) etichetta.appendChild(document.createTextNode(testo));
+      const box = etichetta.getBBox();
+      etichettePosate.push({ i: -1, x1: box.x - 12, x2: box.x + box.width + 12, y1: box.y - 7, y2: box.y + box.height + 7 });
+      el('rect', { class: 'edge-label', x: box.x - 8, y: box.y - 3, width: box.width + 16, height: box.height + 6, rx: 10, stroke: edge.tipo === 'errore' ? cv('errore') : cv('border') }, sopra);
+      sopra.appendChild(etichetta);
+      destra = box.x + box.width + 8;
+    }
+
+    if (edge.tipo === 'persa') {
+      const crossX = destra + 18;
+      el('path', { d: `M${crossX - 7},${ly - 7} l14,14 M${crossX - 7},${ly + 7} l14,-14`, stroke: cv('lost'), 'stroke-width': 3 }, sopra);
     }
   }
 
   // RENDER NODO
   function renderNode(svg, node, i) {
-    const x = centerX(node) - NODE_W / 2;
-    const g = el('g', { class: 'item', 'data-i': i }, svg);
+    const x = node.x;
+    const g = el('g', { class: `item${isBivio(node) ? ' bivio' : ''}`, 'data-i': i }, svg);
+    // Un riquadro non selezionato si seleziona e si apre (se è chiuso); si chiude solo cliccandolo quando è già selezionato
     g.addEventListener('click', (e) => {
       if (e.target.closest('a.code-link')) return;
-      select(i);
-      apriChiudi(i);
+      const giaSelezionato = state.selected === i && state.edge === null;
+      if (!giaSelezionato) select(i);
+      if (giaSelezionato || !node.open) apriChiudi(i);
     });
+    const color = node.inErrore ? cv('errore') : LANES[node.side].stroke;
+
+    // FINE: una pillola con l'esito (es. "Accesso effettuato"); chiude quella parte di flusso.
+    // Verde se il flusso riesce, rossa se chiude un ramo di errore (anche quando l'errore viene mostrato bene)
+    if (isFine(node)) {
+      const esito = node.inErrore ? cv('errore') : cv('ok');
+      el('rect', { class: 'terminale', x, y: node.y, width: FINE_W, height: FINE_H, rx: FINE_H / 2, fill: node.inErrore ? 'rgba(255, 107, 94, .14)' : 'rgba(63, 185, 80, .16)', stroke: esito, 'stroke-width': 2 }, g);
+      const fo = el('foreignObject', { x: x + 22, y: node.y, width: FINE_W - 44, height: FINE_H }, g);
+      const wrap = document.createElementNS(XHTML_NS, 'div');
+      wrap.className = `esito${node.inErrore ? ' in-errore' : ''}`;
+      wrap.innerHTML = `<span>${node.inErrore ? '&#x2715;' : '&#x2713;'}</span>${fmt(node.action || node.element || 'Fine')}`;
+      fo.appendChild(wrap);
+      el('circle', { cx: x, cy: node.y, r: 15, fill: cv('bg'), stroke: esito, 'stroke-width': 2 }, g);
+      el('text', { x, y: node.y + 4, 'text-anchor': 'middle', fill: esito, 'font-size': 11, 'font-weight': 700 }, g).textContent = `D${node.number}`;
+      return;
+    }
+
+    // BIVIO: un rombo con la domanda; le frecce che escono dicono le risposte
+    if (isBivio(node)) {
+      const cx = x + BIVIO_W / 2;
+      const cy = node.y + BIVIO_H / 2;
+      el('polygon', { class: 'rombo', points: `${cx},${node.y} ${x + BIVIO_W},${cy} ${cx},${node.y + BIVIO_H} ${x},${cy}`, fill: cv('surface'), stroke: color, 'stroke-width': 2 }, g);
+      const fo = el('foreignObject', { x: x + BIVIO_W * 0.18, y: node.y + BIVIO_H * 0.2, width: BIVIO_W * 0.64, height: BIVIO_H * 0.6 }, g);
+      const wrap = document.createElementNS(XHTML_NS, 'div');
+      wrap.className = 'domanda';
+      wrap.innerHTML = `<span class="tipo-bivio">BIVIO</span>${fmt(node.domanda || node.action || node.element || '')}`;
+      fo.appendChild(wrap);
+      el('circle', { cx, cy: node.y, r: 15, fill: cv('bg'), stroke: color, 'stroke-width': 2 }, g);
+      el('text', { x: cx, y: node.y + 4, 'text-anchor': 'middle', fill: color, 'font-size': 11, 'font-weight': 700 }, g).textContent = `D${node.number}`;
+      return;
+    }
 
     const fo = el('foreignObject', { x, y: node.y, width: NODE_W, height: node.h }, g);
     const wrap = document.createElementNS(XHTML_NS, 'div');
@@ -1504,7 +2221,6 @@
     wrap.innerHTML = contenutoNodo(node, node.p);
     fo.appendChild(wrap);
 
-    const color = LANES[node.side].stroke;
     el('circle', { cx: x, cy: node.y, r: 15, fill: cv('bg'), stroke: color, 'stroke-width': 2 }, g);
     el('text', { x, y: node.y + 4, 'text-anchor': 'middle', fill: color, 'font-size': 11, 'font-weight': 700 }, g).textContent = `D${node.number}`;
   }
@@ -1651,7 +2367,8 @@
   function renderTracked() {
     const box = document.getElementById('tracked');
     const list = [].concat(FLOW.tracked || []);
-    if (!list.length) return;
+    document.querySelector('main').classList.toggle('senza-oggetti', !list.length);
+      if (!list.length) return;
     box.hidden = false;
 
     box.innerHTML = `
@@ -1678,6 +2395,7 @@
     return `
       <span class="panel-tag">RIEPILOGO</span>
       <h2>${esc(FLOW.title)}</h2>
+      ${(FLOW.avvisi || []).length ? `<div class="avvisi-mappa"><h3>&#x26A0; Avvisi · ${FLOW.avvisi.length}</h3><p class="route">La sala ha confrontato la mappa con il codice e qui qualcosa non torna: controlla questi punti prima di fidarti.</p><ul>${FLOW.avvisi.map((a) => `<li>${fmt(a)}</li>`).join('')}</ul></div>` : ''}
       ${sezione('Obiettivo', o.goal)}
       ${sezione('Problema', o.problem)}
       ${sezione('Cosa fare', o.todo)}
@@ -1710,26 +2428,32 @@
 
   // PANNELLO FRECCIA
   // Che tipo di passaggio è (chiamata HTTP, navigazione, funzione…) e cosa trasporta
+  const NOMI_USCITA = { ok: 'Strada giusta', errore: 'Strada di errore', alternativa: 'Strada alternativa', persa: 'Non arriva' };
+
   function renderEdgePanel(panel) {
-    const from = FLOW.nodes[state.selected];
-    const to = FLOW.nodes[state.selected + 1];
-    const call = from.call;
+    const edge = FLOW.edges[state.edge];
+    const from = FLOW.nodes[edge.from];
+    const to = FLOW.nodes[edge.to];
+    const call = edge.call;
     const dentro = from.side === 'FRONTEND' ? 'dentro l\'app' : 'dentro il server';
     const tipo = call
       ? (CALL_LABELS[call.kind] || call.kind)
       : (from.side !== to.side ? 'Passaggio tra app e server' : `Passaggio ${dentro}`);
+    const uscita = NOMI_USCITA[edge.tipo];
 
     panel.innerHTML = `
       <span class="panel-tag ${from.side}">${from.side}</span> &rarr; <span class="panel-tag ${to.side}">${to.side}</span>
       <h2>D${from.number} &rarr; D${to.number}</h2>
-      <p class="route">${esc(from.element || from.file)} &rarr; ${esc(to.element || to.file)}${to.incoming === 'lost' ? ' — <b style="color: var(--lost)">non arriva</b>' : ''}</p>
+      <p class="route">${esc(from.element || from.file)} &rarr; ${esc(to.element || to.file)}${edge.tipo === 'persa' ? ' — <b style="color: var(--lost)">non arriva</b>' : ''}</p>
+      ${uscita ? `<p><span class="call-kind uscita-${edge.tipo}">${uscita}</span>${edge.etichetta ? ` ${fmt(edge.etichetta)}` : ''}</p>` : ''}
+      ${edge.riga && from.path ? `<p class="route">Parte da ${linkPercorso(from.path, edge.riga, `<code>${esc(from.file || from.path.split('/').pop())}:${edge.riga}</code>`)}</p>` : ''}
       <h3>Cosa succede su questa freccia</h3>
       <p><span class="call-kind">${esc(tipo)}</span></p>
       ${call?.label ? `<p><code>${highlight(call.label)}</code></p>` : ''}
       ${call?.note ? `<p class="explanation">${fmt(call.note)}</p>` : ''}
       ${call ? '' : '<p class="hint">Per questa freccia la mappa non indica una chiamata: il dato passa e basta.</p>'}
-      <h3>Cosa passa · ${esc(from.payloadName || 'oggetto')}</h3>
-      ${oggettoHtml(from)}`;
+      <h3>Cosa passa · ${esc(edge.payloadName || 'oggetto')}</h3>
+      ${oggettoHtml(edge)}`;
   }
 
   function renderPanel() {
@@ -1740,17 +2464,20 @@
       return;
     }
 
-    if (state.edge) {
+    if (state.edge !== null) {
       renderEdgePanel(panel);
       return;
     }
 
     const node = FLOW.nodes[state.selected];
-    const next = FLOW.nodes[state.selected + 1];
-    const goesOn = next && !next.section;
+    const uscite = FLOW.edges.filter((e) => e.from === state.selected);
     const hasPayload = node.payload !== null && node.payload !== undefined;
-    const destination = goesOn
-      ? `<p class="route">passa a: <span class="panel-tag ${next.side}">${next.side}</span> ${esc(next.file)}${next.incoming === 'lost' ? ' — <b style="color: var(--lost)">non arriva</b>' : ''}</p>`
+    const destination = uscite.length
+      ? uscite.map((e) => {
+        const to = FLOW.nodes[e.to];
+        const etichetta = NOMI_USCITA[e.tipo] && e.tipo !== 'persa' ? `<span class="call-kind uscita-${e.tipo}">${e.etichetta ? esc(e.etichetta) : NOMI_USCITA[e.tipo]}</span> ` : '';
+        return `<p class="route">${etichetta}passa a: <span class="panel-tag ${to.side}">${to.side}</span> D${to.number} ${esc(to.element || to.file)}${e.tipo === 'persa' ? ' — <b style="color: var(--lost)">non arriva</b>' : ''}</p>`;
+      }).join('')
       : '<p class="route">ultimo passo di questo flusso</p>';
 
     const section = (title, text) => (text ? `<h3>${title}</h3><p class="explanation">${fmt(text)}</p>` : '');
@@ -1775,13 +2502,13 @@
   }
 
   // SELEZIONE E NAVIGAZIONE
-  // tipo "freccia": è selezionata la freccia che esce dal passo i, non il riquadro
+  // Con una freccia selezionata, state.edge è il suo indice in FLOW.edges e state.selected il passo da cui esce
   function applicaSelezione() {
     const i = state.selected;
     document.querySelectorAll('.item').forEach((g) => {
       const gi = Number(g.dataset.i);
       const isEdge = g.classList.contains('edge');
-      const isSelected = i !== null && gi === i && isEdge === state.edge;
+      const isSelected = i !== null && (isEdge ? state.edge !== null && Number(g.dataset.k) === state.edge : gi === i && state.edge === null);
       g.classList.toggle('sel', isSelected);
       g.classList.toggle('dim', state.stepMode && i !== null && gi > i);
       const edge = g.querySelector('.edge-path');
@@ -1789,9 +2516,9 @@
     });
   }
 
-  function select(i, tipo = 'nodo') {
+  function select(i, freccia = null) {
     state.selected = i;
-    state.edge = i !== null && tipo === 'freccia';
+    state.edge = i === null ? null : freccia;
     applicaSelezione();
     renderPanel();
     renderTracked();
@@ -1806,8 +2533,6 @@
 
   document.getElementById('title').textContent = FLOW.title;
   document.getElementById('subtitle').textContent = FLOW.subtitle || '';
-  document.getElementById('prev').addEventListener('click', () => move(-1));
-  document.getElementById('next').addEventListener('click', () => move(1));
   // Cliccando fuori da riquadri e frecce torna il riepilogo
   document.getElementById('diagram').addEventListener('click', (e) => {
     if (!e.target.closest('.item, #tracked')) select(null);
@@ -1815,7 +2540,7 @@
   document.getElementById('mode').addEventListener('click', (e) => {
     state.stepMode = !state.stepMode;
     e.currentTarget.setAttribute('aria-pressed', state.stepMode);
-    select(state.selected, state.edge ? 'freccia' : 'nodo');
+    select(state.selected, state.edge);
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowDown') {
@@ -1858,19 +2583,37 @@
       const box = area.getBoundingClientRect();
       const px = (cx ?? box.left + box.width / 2) - box.left;
       const py = (cy ?? box.top + box.height / 2) - box.top;
-      const fx = (area.scrollLeft + px) / zoom;
-      const fy = (area.scrollTop + py) / zoom;
+      // Il bordo vuoto del foglio non si ingrandisce: si toglie prima del calcolo e si rimette dopo
+      const { bordoX, bordoY } = bordoFoglio();
+      const fx = (area.scrollLeft + px - bordoX) / zoom;
+      const fy = (area.scrollTop + py - bordoY) / zoom;
       zoom = nuovo;
       area.style.setProperty('--zoom', zoom);
       // Il punto sotto il puntatore resta fermo mentre la mappa cambia dimensione
-      area.scrollLeft = fx * zoom - px;
-      area.scrollTop = fy * zoom - py;
-      document.getElementById('zoom-reset').textContent = `${Math.round(zoom * 100)}%`;
+      area.scrollLeft = fx * zoom + bordoX - px;
+      area.scrollTop = fy * zoom + bordoY - py;
     }
 
-    document.getElementById('zoom-in').addEventListener('click', () => impostaZoom(zoom * PASSO));
-    document.getElementById('zoom-out').addEventListener('click', () => impostaZoom(zoom / PASSO));
-    document.getElementById('zoom-reset').addEventListener('click', () => impostaZoom(1));
+    // All'apertura la mappa sta al centro in orizzontale e con l'inizio in alto
+    function centra() {
+      const svg = area.querySelector('svg');
+      if (!svg) return;
+      const { bordoX, bordoY } = bordoFoglio();
+      area.scrollLeft = bordoX + (svg.getBoundingClientRect().width - area.clientWidth) / 2;
+      area.scrollTop = bordoY - 16;
+    }
+
+    // BORDO DEL FOGLIO
+    // Distanza tra l'inizio dell'area scorrevole e il foglio, misurata a schermo (il margine CSS è alterato dallo zoom)
+    function bordoFoglio() {
+      const svg = area.querySelector('svg');
+      if (!svg) return { bordoX: 0, bordoY: 0 };
+      const a = area.getBoundingClientRect();
+      const s = svg.getBoundingClientRect();
+      return { bordoX: s.left - a.left + area.scrollLeft, bordoY: s.top - a.top + area.scrollTop };
+    }
+    requestAnimationFrame(centra);
+
     area.addEventListener('wheel', (e) => {
       if (!e.ctrlKey) return;
       e.preventDefault();
@@ -1955,7 +2698,7 @@
     tipo: 'dati',
     dati: FLOW,
     // Gli indizi non vanno al Claude della chat: potrebbe svelare il punto prima che l'utente lo chieda
-    mappa: () => ({ ...FLOW, chat: undefined, indizi: undefined, nodes: FLOW.nodes.map(({ y, sectionY, h, hOpen, hClosed, p, open, ...node }) => node) }),
+    mappa: () => ({ ...FLOW, chat: undefined, indizi: undefined, edges: undefined, nodes: FLOW.nodes.map(({ x, y, riga, sectionY, h, hOpen, hClosed, p, open, ...node }) => node) }),
     trova: (punto) => {
       const i = Number(String(punto).replace(/^D/i, '')) - 1;
       return [...document.querySelectorAll(`.item[data-i="${i}"]`)].find((g) => g.querySelector('foreignObject'));
@@ -1963,7 +2706,10 @@
     selezione: () => {
       const node = FLOW.nodes[state.selected];
       if (!node) return null;
-      if (state.edge) return `freccia D${node.number} → D${node.number + 1}${node.call?.label ? ` (${node.call.label})` : ''}`;
+      if (state.edge !== null) {
+        const edge = FLOW.edges[state.edge];
+        return `freccia D${FLOW.nodes[edge.from].number} → D${FLOW.nodes[edge.to].number}${edge.etichetta ? ` [${edge.etichetta}]` : ''}${edge.call?.label ? ` (${edge.call.label})` : ''}`;
+      }
       return `D${node.number} · ${node.element || node.file}${node.element ? ` (${node.file})` : ''}`;
     },
   };
@@ -2011,6 +2757,12 @@
         : parte.split(/\n{2,}/).filter((p) => p.trim()).map(paragrafo).join('')))
       .join('');
 
+    // CONSUMI
+    // Token usati da Claude, restituiti dal server della chat: numeri veri, non stime
+    const formatoToken = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1).replace('.', ',')}M` : n >= 1000 ? `${Math.round(n / 1000)}k` : String(n));
+    const testoToken = (token, cache) => `<b class="tok-num">${formatoToken(token)}</b>${cache ? ` + <b class="tok-cache">${formatoToken(cache)}</b> da cache` : ''}`;
+    const AIUTO_CONSUMI = 'Token di oggi, da mezzanotte (00:00) alle 23:59. I token da cache pesano molto meno.';
+
     function aggiungi(classe, html, contesto) {
       const msg = document.createElement('div');
       msg.className = `msg ${classe}`;
@@ -2039,11 +2791,36 @@
       }
     }
 
+    // CONTESTO TOLTO
+    // La X vale finché non cambia la selezione: un clic qualsiasi sulla mappa non lo riaccende
+    let tolto = false;
+    let toltoSu = null;
+    const senzaContesto = () => tolto && toltoSu === MAPPA_CHAT.selezione();
+
     function aggiornaContesto() {
       const selezione = MAPPA_CHAT.selezione();
-      $('chat-ctx').innerHTML = selezione
-        ? `Domanda su <b>${esc(selezione)}</b>`
-        : 'Nessun elemento selezionato: la domanda riguarda tutta la mappa';
+      if (tolto && toltoSu !== selezione) tolto = false;
+      const togli = '<button type="button" id="chat-ctx-togli" title="Non mandare a Claude né la selezione né la mappa">&#x2715;</button>';
+      $('chat-ctx').classList.toggle('vuoto', tolto);
+      $('chat-ctx').innerHTML = tolto ? '&nbsp;'
+        : (selezione
+          ? `Domanda su <b>${esc(selezione)}</b>`
+          : 'Nessun elemento selezionato: la domanda riguarda tutta la mappa') + togli;
+    }
+
+    $('chat-ctx').addEventListener('click', (e) => {
+      if (e.target.id !== 'chat-ctx-togli') return;
+      tolto = true;
+      toltoSu = MAPPA_CHAT.selezione();
+      aggiornaContesto();
+    });
+
+    // ALTEZZA INPUT
+    // Prima si azzera, altrimenti scrollHeight non cala quando cancelli righe
+    function adattaInput() {
+      const input = $('chat-input');
+      input.style.height = 'auto';
+      input.style.height = `${input.scrollHeight + input.offsetHeight - input.clientHeight}px`;
     }
 
     // INVIO DOMANDA
@@ -2056,9 +2833,11 @@
         return;
       }
 
-      const selezione = MAPPA_CHAT.selezione();
+      const vuoto = senzaContesto();
+      const selezione = vuoto ? null : MAPPA_CHAT.selezione();
       aggiungi('utente', paragrafo(esc(domanda)), selezione);
       $('chat-input').value = '';
+      adattaInput();
       inAttesa = true;
       $('chat-send').disabled = true;
       $('chat-open').classList.add('pensa');
@@ -2077,8 +2856,9 @@
             project: CONFIG.project,
             tipo: MAPPA_CHAT.tipo,
             titolo: MAPPA_CHAT.dati.title,
-            mappa: JSON.stringify(MAPPA_CHAT.mappa()),
+            mappa: vuoto ? '' : JSON.stringify(MAPPA_CHAT.mappa()),
             selezione,
+            senzaContesto: vuoto,
             storia: storia.slice(-MAX_STORIA),
             domanda,
             modalita: $('chat-modo').value,
@@ -2088,6 +2868,12 @@
         if (!res.ok) throw new Error(corpo.errore || `errore ${res.status}`);
         storia.push({ ruolo: 'utente', testo: selezione ? `[su ${selezione}] ${domanda}` : domanda }, { ruolo: 'claude', testo: corpo.risposta });
         aggiungi('claude', markdown(corpo.risposta));
+        if (corpo.consumo) {
+          const c = corpo.consumo;
+          const t = corpo.giornata?.perFunzione?.['chat-mappa'];
+          const totale = t ? `<span><span class="tok-chi">Chat delle mappe</span> · oggi: ${testoToken(t.token, t.cache)}</span>` : '';
+          aggiungi('consumo', `<details><summary>TOKEN</summary><div class="dati"><span><span class="tok-chi">Questa risposta</span>: ${testoToken(c.input + c.scritti + c.output, c.cache)}</span>${totale}</div></details>`).title = AIUTO_CONSUMI;
+        }
         if ($('chat').hidden) document.querySelector('#chat-open .dot').classList.add('pronta');
       } catch (err) {
         if (err instanceof TypeError) serverSpento();
@@ -2108,6 +2894,7 @@
     let indiziUsati = 0;
 
     let luceAttiva = null;
+    let ultimoIndizio = null;
 
     function illumina(indizio) {
       document.querySelectorAll('.luce').forEach((el) => el.classList.remove('luce', 'luce-zoom'));
@@ -2122,7 +2909,18 @@
       luceAttiva = null;
       document.querySelectorAll('.luce').forEach((el) => el.classList.remove('luce', 'luce-zoom'));
       document.body.classList.remove('con-indizio');
+      $('riaccendi').hidden = !ultimoIndizio;
     }
+
+    // LUCE DELL'INDIZIO
+    // Si spegne cliccando fuori dai punti illuminati (la chat non conta); la lampadina in basso a destra la riaccende
+    document.body.insertAdjacentHTML('beforeend', '<button type="button" id="riaccendi" title="Riaccendi l&#39;ultimo indizio" aria-label="Riaccendi l&#39;ultimo indizio" hidden>&#x1F4A1;</button>');
+    $('riaccendi').addEventListener('click', () => ultimoIndizio && accendiLuce(ultimoIndizio));
+    document.addEventListener('click', (e) => {
+      // Un bottone della chat che si toglie da solo (es. "Sì, mostramelo") non è più nella pagina: non conta come clic fuori
+      if (!luceAttiva || !e.target.isConnected || e.target.closest('#chat, #chat-open, #riaccendi, .luce')) return;
+      spegniLuce();
+    });
 
     // La mappa dati si ridisegna quando apri un riquadro: la luce va riaccesa sui riquadri nuovi
     document.addEventListener('mappa-ridisegnata', () => {
@@ -2131,6 +2929,8 @@
 
     function accendiLuce(indizio) {
       luceAttiva = indizio;
+      ultimoIndizio = indizio;
+      $('riaccendi').hidden = true;
       const trovati = illumina(indizio);
       if (!trovati.length) return;
       // Nella mappa struttura si scorre il telefono intero: scorrere dentro lo schermo simulato lo sposterebbe
@@ -2161,7 +2961,7 @@
     function mostraIndizio(i) {
       const indizio = INDIZI[i];
       const tipo = indizio.punti.length > 1 ? 'zona' : 'punto';
-      const msg = aggiungi('suggerimento', `<div class="par"><b>&#x1F4A1; Indizio ${i + 1} di ${INDIZI.length} · ${tipo}: ${esc(indizio.punti.join(', '))}</b><br>${inline(esc(indizio.testo))}</div><button type="button" data-rivedi>Illumina di nuovo</button> <button type="button" data-spegni>Spegni la luce</button>`);
+      const msg = aggiungi('suggerimento', `<div class="par"><b>&#x1F4A1; Indizio ${i + 1} di ${INDIZI.length} · ${tipo}: ${esc(indizio.punti.join(', '))}</b><br>${inline(esc(indizio.testo))}</div><button type="button" data-rivedi>&#x1F4A1; Illumina di nuovo</button> <button type="button" data-spegni>Spegni la luce</button>`);
       msg.querySelector('[data-rivedi]').addEventListener('click', () => accendiLuce(indizio));
       msg.querySelector('[data-spegni]').addEventListener('click', spegniLuce);
       accendiLuce(indizio);
@@ -2259,14 +3059,18 @@
     ];
     const paura = `<g class="paura">${PAURA.map(([x, y, c]) => pixel(x, y, c)).join('')}</g>`;
     const occhio = (x0) => `<g class="eye">${[3, 4, 5].flatMap((y) => [x0, x0 + 1].map((x) => pixel(x, y, SPRITE[y][x]))).join('')}</g>`;
-    const spirale = (cx, cy) => {
-      const punti = Array.from({ length: 61 }, (_, i) => {
-        const angolo = (i / 60) * 4 * Math.PI;
-        const raggio = 0.08 + (1.05 * i) / 60;
-        return `${(cx + raggio * Math.cos(angolo)).toFixed(2)},${(cy + raggio * Math.sin(angolo)).toFixed(2)}`;
-      });
-      return `<g class="ipno"><circle cx="${cx}" cy="${cy}" r="1.3" fill="${PIXEL.W}"/><polyline class="spirale" style="transform-origin: ${cx}px ${cy}px" points="${punti.join(' ')}" fill="none" stroke="${PIXEL.K}" stroke-width=".3" stroke-linecap="round"/></g>`;
-    };
+    // SPIRALE A PIXEL
+    // Spirale 7×7 a mezzi pixel (3,5×3,5 pixel) centrata sul centro dell'occhio normale (x 5 e 9, y 4,5), così gira sul posto; ogni fotogramma la ruota di 90° in senso orario
+    const SPIRALE = ['KKKKKKK', 'WWWWWWK', 'KKKKKWK', 'KWWWKWK', 'KWKKKWK', 'KWWWWWK', 'KKKKKKK'];
+    const ruota = (x, y, volte) => (volte ? ruota(SPIRALE.length - 1 - y, x, volte - 1) : [x, y]);
+    const mezzo = (x, y) => `<rect x="${x}" y="${y}" width=".5" height=".5" fill="${PIXEL.K}"/>`;
+    const fondo = (x0, y0) => `<rect x="${x0}" y="${y0}" width="3.5" height="3.5" fill="${PIXEL.W}"/>`;
+    const fotogramma = (x0, y0, volte) => SPIRALE.flatMap((riga, y) => [...riga].map((c, x) => {
+      if (c !== 'K') return '';
+      const [rx, ry] = ruota(x, y, volte);
+      return mezzo(x0 + rx / 2, y0 + ry / 2);
+    })).join('');
+    const ipno = (centro) => { const x0 = centro - 1.75; const y0 = 2.75; return `<g class="ipno">${fondo(x0, y0)}${[0, 1, 2, 3].map((volte) => `<g class="giro" style="animation-delay: ${volte * 0.15}s">${fotogramma(x0, y0, volte)}</g>`).join('')}</g>`; };
     // DECORAZIONI DELLE MODALITÀ
     // Pixel fuori dal corpo (la tela va da -2 a 15 in orizzontale e da -4 a 11 in verticale): ognuna si vede solo nella sua modalità
     const COLORI_ACCESSORI = { o: '#141312', g: '#9b968a', A: '#a7afb8', a: '#5f6670', L: '#3d6fb6', P: '#f4f2ec', N: '#22252b', n: '#454b55', Y: '#f2c14e', K: '#2b130b', C: '#4b5563', T: '#2bb3a3', t: '#8fe3d8', S: '#111111', s: '#6b7280', M: '#f4f2ec', m: '#c9c4b8', B: '#6b3e26', V: '#e6e6e6' };
@@ -2285,7 +3089,7 @@
     // Stelline che compaiono intorno quando cambi modalità
     const stellina = (x, y) => punti('Y', [[x, y], [x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]);
     const SCINTILLE = `<g class="scintille">${stellina(-1, -2)}${stellina(14, -1)}${stellina(-1, 9)}${stellina(15, 6)}</g>`;
-    $('chat-open').insertAdjacentHTML('afterbegin', `<svg class="sprite" viewBox="-2 -4 18 16" aria-hidden="true">${corpo}${occhio(4)}${occhio(8)}${bocca}${spirale(5, 4.5)}${spirale(9, 4.5)}${paura}${ACCESSORI}${SCINTILLE}</svg>`);
+    $('chat-open').insertAdjacentHTML('afterbegin', `<svg class="sprite" viewBox="-2 -4 18 16" aria-hidden="true">${corpo}${occhio(4)}${occhio(8)}${bocca}${ipno(5)}${ipno(9)}${paura}${ACCESSORI}${SCINTILLE}</svg>`);
 
     // TRASCINAMENTO
     // Chat e mascotte sono incollate: la chat sta sempre sopra la mascotte e chi viene spostato si porta dietro l'altro
@@ -2374,8 +3178,6 @@
     rendiTrascinabile($('chat'), $('chat').querySelector('.chat-head'), { mentreSposti: mascotteSottoChat });
     $('chat').querySelector('.chat-head').addEventListener('dblclick', (e) => {
       if (e.target.closest('button')) return;
-      $('chat').classList.remove('big');
-      $('chat-big').setAttribute('aria-pressed', false);
       Object.assign($('chat').style, { width: '', height: '' });
       chatSopraMascotte();
     });
@@ -2402,16 +3204,12 @@
     $('chat-close').addEventListener('click', () => {
       $('chat').hidden = true;
     });
-    $('chat-big').addEventListener('click', (e) => {
-      Object.assign($('chat').style, { width: '', height: '' });
-      e.currentTarget.setAttribute('aria-pressed', $('chat').classList.toggle('big'));
-      mascotteSottoChat();
-    });
     $('chat-clear').addEventListener('click', () => {
       storia.length = 0;
       $('chat-log').innerHTML = '';
     });
     $('chat-form').addEventListener('submit', invia);
+    $('chat-input').addEventListener('input', adattaInput);
     // La modalità scelta resta anche nelle prossime pagine
     try {
       $('chat-modo').value = localStorage.getItem('chattino.modo') || 'normale';

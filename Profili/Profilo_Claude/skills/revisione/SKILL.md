@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 Il codice da revisionare è: $ARGUMENTS
 
-L'obiettivo è che l'utente impari a giudicare criticamente il codice (anche quello prodotto dall'AI): capire cosa è sbagliato, perché e con quali conseguenze. Tieni le segnalazioni concrete: niente problemi ipotetici, niente preferenze stilistiche spacciate per errori.
+L'obiettivo è che l'utente impari a giudicare criticamente il codice (anche quello prodotto dall'AI): capire cosa è sbagliato, perché e con quali conseguenze. Tieni le segnalazioni concrete: niente problemi ipotetici, niente preferenze stilistiche spacciate per errori. Ogni messaggio segue il "Formato dei messaggi" di `~/.claude/shared/scheda-richiesta.md` e il "FORMATO RISPOSTE" del CLAUDE.md globale.
 
 ## Struttura
 
@@ -60,18 +60,19 @@ In qualsiasi fase:
 ## SEGNALAZIONI
 
 - raggruppa i problemi per gravità, dal più grave:
+  - sottotitoli `### GRAVI`, `### MEDI`, `### MINORI` (senza emoji) e, all'inizio di ogni problema, l'emoji del suo gruppo:
   - 🔴 Gravi: bug, crash, problemi di sicurezza, perdita di dati.
   - 🟡 Medi: casi limite non gestiti, incoerenze con l'architettura, codice fragile.
-  - 🟢 Minori: leggibilità, nomenclatura, commenti, formattazione.
+  - 🟡 Minori: leggibilità, nomenclatura, commenti, formattazione.
 - numera i problemi in modo progressivo tra tutti i gruppi.
 - per ogni problema indica:
-  - nomeFile:riga (cliccabile).
+  - nomeFile:riga in grassetto, con sotto il codice reale del punto in un riquadro.
   - il punto del diagramma in cui si trova (es. "D4 (`getAllUsers`)" o "S3 (`footerContainer`)").
   - cosa è sbagliato.
   - perché è sbagliato e lo scenario concreto in cui si manifesta.
   - come lo correggeresti, a parole e senza codice.
 - se non trovi problemi, dillo in modo esplicito senza inventarne.
-- chiedi all'utente quali problemi correggere, poi fermati e attendi.
+- chiudi con `## DOMANDA` (preceduta da `---`): "Quali problemi correggo?", poi fermati e attendi.
 
 ## CORREZIONE
 
@@ -82,6 +83,6 @@ In qualsiasi fase:
 
 ## RIEPILOGO
 
-- per ogni problema corretto indica il numero, nomeFile (cliccabile) e cosa hai cambiato.
+- mostra le correzioni in `## MODIFICHE ESEGUITE`: per ogni problema corretto il numero, `📄` + nomeFile in grassetto, cosa hai cambiato in una riga e i riquadri PRIMA / DOPO del codice.
 - indica i problemi non corretti, così l'utente sa cosa resta aperto.
 - fai il "Controllo finale" della scheda.

@@ -21,15 +21,26 @@ const FILE_PROGETTI = path.join(CARTELLA_DATI, 'progetti.json');
 const FILE_ATTIVITA = path.join(CARTELLA_DATI, 'attivita.json');
 const FILE_ARCHIVIO = path.join(CARTELLA_DATI, 'archivio.json');
 const FILE_PIANI = path.join(CARTELLA_DATI, 'piani.json');
+const FILE_LEZIONI = path.join(CARTELLA_DATI, 'lezioni.json');
+const FILE_CONTESTI = path.join(CARTELLA_DATI, 'contesti.json');
+const FILE_LEZIONI_MD = path.join(os.homedir(), 'Lezioni.md');
 const CARTELLA_MAPPE = path.join(os.homedir(), 'flussi');
 const FILE_PAGINA = path.join(__dirname, 'pagina.html');
 const FILE_TASK = path.join(__dirname, 'tasks.json');
+const CARTELLA_LETTURA = path.join(__dirname, 'lettura-codice');
+const FILE_STATICI = {
+  '/lettura-codice/analisi.js': [path.join(CARTELLA_LETTURA, 'analisi.js'), 'text/javascript; charset=utf-8'],
+  '/lettura-codice/pagina.js': [path.join(CARTELLA_LETTURA, 'pagina.js'), 'text/javascript; charset=utf-8'],
+  '/lettura-codice/pagina.css': [path.join(CARTELLA_LETTURA, 'pagina.css'), 'text/css; charset=utf-8'],
+};
 const SERVER_CHAT = 'http://127.0.0.1:4517';
 const FILE_GETTONE_CHAT = path.join(CARTELLA_CLAUDE, 'chat-mappa-token');
 const FILE_SERVER_CHAT = path.join(CARTELLA_CLAUDE, 'shared', 'chat-mappa-server.js');
 const MAX_BODY = 64 * 1024;
 const ATTIVA_DA_MS = 2 * 60 * 1000;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const consumi = require(path.join(CARTELLA_CLAUDE, 'shared', 'consumi-claude.js'));
+const { controllaMappa } = require('./controllo-mappa');
 const STATI_ATTIVITA = ['da-fare', 'in-corso', 'fatto'];
 const CAMPI_ATTIVITA = { titolo: 200, obiettivo: 5000, problema: 5000, dove: 1000, mappa: 20, note: 5000, branch: 100 };
 const MAPPE = ['', 'dati', 'struttura', 'entrambi'];
@@ -45,6 +56,8 @@ function preparaDati() {
   if (!fs.existsSync(FILE_ATTIVITA)) fs.writeFileSync(FILE_ATTIVITA, '[]\n', { mode: 0o600 });
   if (!fs.existsSync(FILE_ARCHIVIO)) fs.writeFileSync(FILE_ARCHIVIO, '[]\n', { mode: 0o600 });
   if (!fs.existsSync(FILE_PIANI)) fs.writeFileSync(FILE_PIANI, '[]\n', { mode: 0o600 });
+  if (!fs.existsSync(FILE_LEZIONI)) fs.writeFileSync(FILE_LEZIONI, '[]\n', { mode: 0o600 });
+  if (!fs.existsSync(FILE_CONTESTI)) fs.writeFileSync(FILE_CONTESTI, '[]\n', { mode: 0o600 });
 }
 
 function leggiGettone() {
@@ -90,6 +103,61 @@ function progetto(dati) {
   const trovato = progetti().find((p) => p.nome === dati.progetto);
   if (!trovato) throw errore(400, `progetto sconosciuto: ${dati.progetto}`);
   return trovato;
+}
+
+// SCELTA CARTELLA
+// Il browser non può dare il percorso di una cartella: la finestra di Windows la apre il server.
+// Lo script è fisso e non contiene nulla che arrivi dalla pagina; il percorso scelto viene solo controllato, non eseguito.
+// windowsHide nasconde la prima finestra che il processo apre: la consuma una finestra invisibile (trasparente, 1×1),
+// così la finestra di scelta compare davvero, in primo piano
+const SCRIPT_CARTELLA = [
+  '[Console]::OutputEncoding = [Text.Encoding]::UTF8',
+  'Add-Type -AssemblyName System.Windows.Forms',
+  '$finestra = New-Object System.Windows.Forms.FolderBrowserDialog',
+  "$finestra.Description = 'Scegli la cartella del progetto da aggiungere alla sala di controllo'",
+  '$finestra.ShowNewFolderButton = $false',
+  '$sopra = New-Object System.Windows.Forms.Form -Property @{ TopMost = $true; ShowInTaskbar = $false; Opacity = 0; FormBorderStyle = 0; Width = 1; Height = 1; StartPosition = 1 }',
+  '$sopra.Show()',
+  '$sopra.Activate()',
+  "if ($finestra.ShowDialog($sopra) -eq 'OK') { $finestra.SelectedPath }",
+  '$sopra.Close()',
+].join('; ');
+let sceltaAperta = false;
+
+function scegliCartella() {
+  if (process.platform !== 'win32') throw errore(501, 'la scelta della cartella c\'è solo su Windows');
+  if (sceltaAperta) throw errore(409, 'la finestra per scegliere la cartella è già aperta');
+  sceltaAperta = true;
+  return new Promise((resolve, reject) => {
+    execFile('powershell.exe', ['-NoProfile', '-STA', '-Command', SCRIPT_CARTELLA], { windowsHide: true, timeout: 4 * 60 * 1000 }, (e, out) => {
+      sceltaAperta = false;
+      if (e) return reject(errore(500, 'finestra di scelta chiusa o non avviata'));
+      const scelta = out.trim();
+      if (!scelta) return resolve({ annullato: true });
+      const radice = radiceGit(scelta);
+      if (!radice) return reject(errore(400, `${scelta} non è dentro un repo git: la sala lavora solo sui repo`));
+      const esistente = progetti().find((p) => stessaCartella(p.cartella, radice));
+      resolve({ cartella: radice, nome: esistente?.nome || path.basename(radice), esiste: Boolean(esistente) });
+    });
+  });
+}
+
+const stessaCartella = (a, b) => path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
+
+// Si riconferma che sia la radice di un repo: la pagina potrebbe mandare un percorso qualsiasi
+function aggiungiDaPagina(cartella) {
+  if (typeof cartella !== 'string' || !path.isAbsolute(cartella) || !fs.existsSync(cartella)) throw errore(400, 'cartella non valida');
+  const radice = radiceGit(cartella);
+  if (!radice || !stessaCartella(radice, cartella)) throw errore(400, 'la cartella deve essere la radice di un repo git');
+  return registraProgetto(radice);
+}
+
+// Toglie solo la voce dalla lista: cartella, attività e piani restano dove sono
+function rimuoviProgetto(nome) {
+  const lista = leggiJson(FILE_PROGETTI);
+  if (!lista.some((p) => p?.nome === nome)) throw errore(404, 'progetto non trovato');
+  scriviJson(FILE_PROGETTI, lista.filter((p) => p?.nome !== nome));
+  return { rimosso: nome };
 }
 
 // CARTELLE DELLE SESSIONI
@@ -295,15 +363,21 @@ async function chiudiSessione(prog, id) {
 }
 
 // COMANDI GIT
-// execFile senza shell: gli argomenti arrivano a git così come sono, senza poter diventare altri comandi
+// execFile senza shell: gli argomenti arrivano a git così come sono, senza poter diventare altri comandi.
+// core.fsmonitor spento: un .git/config estraneo non può far eseguire un programma già con git status
+const GIT_SICURO = ['-c', 'core.fsmonitor=false'];
+
 function git(cartella, args) {
   return new Promise((resolve, reject) => {
-    execFile('git', ['-C', cartella, ...args], { windowsHide: true, timeout: 15000, maxBuffer: 4 * 1024 * 1024 }, (e, out, err) => {
+    execFile('git', [...GIT_SICURO, '-C', cartella, ...args], { windowsHide: true, timeout: 15000, maxBuffer: 4 * 1024 * 1024 }, (e, out, err) => {
       if (e) reject(errore(500, (err || e.message).trim()));
       else resolve(out);
     });
   });
 }
+
+const letturaCodice = require('./lettura-codice/server')({ gitSicuro: GIT_SICURO });
+const catalogo = require('./lettura-codice/catalogo')({ lettura: letturaCodice, trovaClaude, cartellaDati: CARTELLA_DATI, registraConsumo: consumi.registra });
 
 // ELENCO BRANCH
 async function elencoBranch(prog) {
@@ -440,7 +514,7 @@ function creaAttivita(prog, dati) {
   const ordini = lista.filter((a) => a.progetto === prog.nome && Number.isFinite(a.ordine)).map((a) => a.ordine);
   const attivita = {
     id: crypto.randomUUID(), progetto: prog.nome, ...Object.fromEntries(Object.keys(CAMPI_ATTIVITA).map((c) => [c, ''])),
-    stato: 'da-fare', ordine: ordini.length ? Math.min(...ordini) - 1 : 0, creata: adesso, aggiornata: adesso,
+    backend: [], stato: 'da-fare', ordine: ordini.length ? Math.min(...ordini) - 1 : 0, creata: adesso, aggiornata: adesso,
   };
   applicaCampi(attivita, dati);
   scriviJson(FILE_ATTIVITA, [...lista, attivita]);
@@ -497,15 +571,15 @@ const FASI_PIANO = [
   {
     id: 'richiesta', nome: 'Richiesta',
     campi: [
-      { id: 'obiettivo', nome: 'Obiettivo', aiuto: 'cosa vuoi ottenere, visto da chi usa l\'app', tipi: ['aggiunta', 'modifica'] },
-      { id: 'cambia', nome: 'Cosa deve cambiare rispetto a oggi', aiuto: 'prima succede questo, dopo deve succedere quest\'altro', tipi: ['modifica'] },
-      { id: 'atteso', nome: 'Comportamento atteso', aiuto: 'cosa dovrebbe succedere', tipi: ['bug'] },
-      { id: 'problema', nome: 'Problema', aiuto: 'cosa succede invece, su quale piattaforma o dispositivo', tipi: ['bug'] },
-      { id: 'cosa', nome: 'Cosa cambiare', aiuto: 'testo, colore, dimensione, posizione, formattazione', tipi: ['minore'] },
-      { id: 'dove', nome: 'Dove', aiuto: 'pagina, flusso o file' },
-      { id: 'valore', nome: 'Valore nuovo', aiuto: 'il valore finale (vuoto: lo scegli guardando il resto del progetto)', tipi: ['minore'], facoltativo: true },
-      { id: 'vincoli', nome: 'Cosa non deve cambiare', tipi: ['minore'], facoltativo: true },
-      { id: 'note', nome: 'Note', aiuto: 'vincoli, dubbi, esempi', tipi: GRANDI, facoltativo: true },
+      { id: 'obiettivo', nome: 'Obiettivo', aiuto: 'cosa vuoi ottenere, visto da chi usa l\'app', tipi: ['aggiunta', 'modifica'], esempio: "Dalle Impostazioni l'utente cambia la lingua dell'app e la vede subito, senza riavviarla." },
+      { id: 'cambia', nome: 'Cosa deve cambiare rispetto a oggi', aiuto: 'prima succede questo, dopo deve succedere quest\'altro', tipi: ['modifica'], esempio: "Oggi dopo il login si apre sempre la Dashboard; dopo, deve aprirsi l'ultima sezione usata." },
+      { id: 'atteso', nome: 'Comportamento atteso', aiuto: 'cosa dovrebbe succedere', tipi: ['bug'], esempio: "Toccando \"Invia\" il messaggio compare subito nella chat." },
+      { id: 'problema', nome: 'Problema', aiuto: 'cosa succede invece, su quale piattaforma o dispositivo', tipi: ['bug'], esempio: "Su Android 14 il messaggio resta grigio con l'orologio e compare solo riaprendo la chat; su iOS va." },
+      { id: 'cosa', nome: 'Cosa cambiare', aiuto: 'testo, colore, dimensione, posizione, formattazione', tipi: ['minore'], esempio: "Il colore del pulsante \"Elimina\" nella scheda di un file." },
+      { id: 'dove', nome: 'Dove', aiuto: 'pagina, flusso o file', facoltativo: true, esempio: "Schermata Passkey (PasskeysScreen.jsx), flusso di registrazione di una nuova passkey." },
+      { id: 'valore', nome: 'Valore nuovo', aiuto: 'il valore finale (vuoto: lo scegli guardando il resto del progetto)', tipi: ['minore'], facoltativo: true, esempio: "Il rosso danger di colors.js, lo stesso degli altri pulsanti di eliminazione." },
+      { id: 'vincoli', nome: 'Cosa non deve cambiare', tipi: ['minore'], facoltativo: true, esempio: "Dimensione, posizione e testo del pulsante." },
+      { id: 'note', nome: 'Note', aiuto: 'vincoli, dubbi, esempi', tipi: GRANDI, facoltativo: true, esempio: "Il backend è già pronto su beta; non so se va gestito anche il caso senza rete." },
     ],
     spunte: [
       { id: 'frase', nome: 'So dire in una frase cosa cambia per chi usa l\'app', tipi: GRANDI },
@@ -516,16 +590,17 @@ const FASI_PIANO = [
   {
     id: 'oggi', nome: 'Com\'è oggi', tipi: ['modifica'],
     campi: [
-      { id: 'come', nome: 'Come funziona adesso', aiuto: 'con parole tue, passo per passo' },
-      { id: 'chi', nome: 'Chi lo usa', aiuto: 'schermate, componenti o funzioni che dipendono da questo comportamento' },
+      { id: 'come', nome: 'Come funziona adesso', aiuto: 'con parole tue, passo per passo', esempio: "L'utente preme Accedi, l'app chiama /auth/login e, se va bene, apre sempre la Dashboard." },
+      { id: 'chi', nome: 'Chi lo usa', aiuto: 'schermate, componenti o funzioni che dipendono da questo comportamento', esempio: "LoginScreen, la funzione login di AuthContext e il deep link di SetupAccount." },
     ],
     spunte: [{ id: 'provato', nome: 'L\'ho provato di persona com\'è adesso' }],
   },
   {
     id: 'riprodurre', nome: 'Riprodurre', tipi: ['bug'],
     campi: [
-      { id: 'passi', nome: 'Passi per riprodurlo', aiuto: 'dispositivo, account, dati usati' },
-      { id: 'quando', nome: 'Quando succede', aiuto: 'sempre, a volte, solo in certi casi' },
+      { id: 'ambiente', nome: 'Dove lo provi', aiuto: 'dispositivo, sistema, account e dati usati', facoltativo: true, esempio: "Pixel 7, Android 14, account di test." },
+      { id: 'passi', nome: 'Passi per riprodurlo', aiuto: 'un passo per riga', esempio: "1. apro una chat · 2. spengo il Wi-Fi · 3. invio un messaggio · 4. riaccendo il Wi-Fi." },
+      { id: 'quando', nome: 'Quando succede', aiuto: 'sempre, a volte, solo in certi casi', esempio: "Sempre al primo invio dopo che la rete torna; dal secondo invio in poi no." },
     ],
     spunte: [
       { id: 'riprodotto', nome: 'L\'ho riprodotto almeno una volta' },
@@ -535,13 +610,13 @@ const FASI_PIANO = [
   {
     id: 'indagare', nome: 'Indagare', tipi: GRANDI,
     campi: [
-      { id: 'aggancio', nome: 'Dove si aggancia il codice nuovo', aiuto: 'file, componente o funzione da cui parte', tipi: ['aggiunta'] },
-      { id: 'riuso', nome: 'Cosa esiste già che puoi riusare', aiuto: 'componenti, funzioni, servizi, stili', tipi: ['aggiunta'] },
-      { id: 'posizione', nome: 'Dove sta il comportamento attuale', aiuto: 'file e funzione', tipi: ['modifica'] },
-      { id: 'dipendenze', nome: 'Chi altro usa quel codice', tipi: ['modifica'] },
-      { id: 'dove', nome: 'Dove pensi che sia', aiuto: 'file e funzione', tipi: ['bug'] },
-      { id: 'ipotesi', nome: 'La tua ipotesi sulla causa', aiuto: 'perché secondo te succede', tipi: ['bug'] },
-      { id: 'verificato', nome: 'Cosa hai verificato', aiuto: 'log, breakpoint, prove fatte e cosa ti hanno detto', tipi: ['bug'] },
+      { id: 'aggancio', nome: 'Dove si aggancia il codice nuovo', aiuto: 'file, componente o funzione da cui parte', tipi: ['aggiunta'], esempio: "SettingsScreen.jsx: la nuova voce va nella lista delle impostazioni, sotto \"Tema\"." },
+      { id: 'riuso', nome: 'Cosa esiste già che puoi riusare', aiuto: 'componenti, funzioni, servizi, stili', tipi: ['aggiunta'], esempio: "LanguageContext (cambia già la lingua) e BaseModal per la finestra di scelta." },
+      { id: 'posizione', nome: 'Dove sta il comportamento attuale', aiuto: 'file e funzione', tipi: ['modifica'], esempio: "AuthContext.js, funzione login: è lì che si decide dove andare dopo l'accesso." },
+      { id: 'dipendenze', nome: 'Chi altro usa quel codice', tipi: ['modifica'], esempio: "TwoFAScreen e RecoveryCode chiamano la stessa funzione dopo la verifica." },
+      { id: 'dove', nome: 'Dove pensi che sia', aiuto: 'file e funzione', tipi: ['bug'], esempio: "chatService.js, funzione sendMessage, oppure la riconnessione in SocketManager.jsx." },
+      { id: 'ipotesi', nome: 'La tua ipotesi sulla causa', aiuto: 'perché secondo te succede', tipi: ['bug'], esempio: "Quando la rete torna il socket si ricollega, ma il messaggio rimasto in coda non viene rimandato." },
+      { id: 'verificato', nome: 'Cosa hai verificato', aiuto: 'log, breakpoint, prove fatte e cosa ti hanno detto', tipi: ['bug'], esempio: "Con un console.log in sendMessage ho visto che la chiamata parte, ma in quel momento il socket è \"disconnected\"." },
     ],
     spunte: [
       { id: 'letto', nome: 'Ho letto il codice intorno, non solo il punto che mi interessa' },
@@ -551,10 +626,10 @@ const FASI_PIANO = [
   {
     id: 'progettare', nome: 'Progettare', tipi: GRANDI,
     campi: [
-      { id: 'modifica', nome: 'La modifica a parole', aiuto: 'cosa cambi, senza scrivere codice' },
-      { id: 'file', nome: 'File e funzioni che tocchi' },
-      { id: 'dati', nome: 'Cosa entra e cosa esce', aiuto: 'parametri, valori restituiti, stato, chiamate al backend' },
-      { id: 'alternative', nome: 'Alternative scartate e perché', aiuto: 'almeno una: se non ne hai, scrivi perché' },
+      { id: 'modifica', nome: 'La modifica a parole', aiuto: 'cosa cambi, senza scrivere codice', esempio: "Dopo il login leggo l'ultima sezione salvata e, se c'è, apro quella invece della Dashboard." },
+      { id: 'file', nome: 'File e funzioni che tocchi', esempio: "AuthContext.js (login), BottomNavigator.jsx (salva la sezione aperta), AsyncStorage." },
+      { id: 'dati', nome: 'Cosa entra e cosa esce', aiuto: 'cosa riceve, cosa produce, cosa modifica, quali chiamate al backend; se non lo sai scrivi "da verificare"', esempio: "Entra: il nome della sezione (stringa). Esce: la navigazione verso quella sezione. Nessuna chiamata nuova al backend." },
+      { id: 'alternative', nome: 'Alternative scartate e perché', aiuto: "un'altra strada possibile e perché non la scegli, oppure perché non ce ne sono", esempio: "Salvarla nel backend: scartata, serve solo su questo dispositivo e richiederebbe una API nuova." },
     ],
     spunte: [
       { id: 'minima', nome: 'È la modifica più piccola che fa quello che serve' },
@@ -564,9 +639,9 @@ const FASI_PIANO = [
   {
     id: 'rischi', nome: 'Rischi', tipi: GRANDI,
     campi: [
-      { id: 'rompe', nome: 'Cosa può rompersi', aiuto: 'gli altri punti che usano il codice che cambi' },
-      { id: 'limite', nome: 'Casi limite', aiuto: 'valori vuoti, errori di rete, utente senza permessi, doppio clic…' },
-      { id: 'sicurezza', nome: 'Sicurezza e dati', aiuto: 'dati sensibili, permessi, cosa resta salvato' },
+      { id: 'rompe', nome: 'Cosa può rompersi', aiuto: 'gli altri file che usano la funzione che cambi', esempio: "Il deep link di SetupAccount, che dopo il login naviga anche lui." },
+      { id: 'limite', nome: 'Casi limite', aiuto: 'cosa succede in ogni situazione, oppure "non applicabile"', esempio: "Sezione salvata che non esiste più (es. \"Gestione utenti\" per chi non è ADMG); primo accesso senza nulla di salvato." },
+      { id: 'sicurezza', nome: 'Sicurezza e dati', aiuto: 'quali dati salvi, dove e chi li legge; se non salvi nulla scrivi "nessun dato salvato"', esempio: "Salvo solo il nome della sezione, niente token né dati dell'utente; al logout lo cancello." },
     ],
     spunte: [
       { id: 'chiamanti', nome: 'Ho controllato chi altro usa quello che cambio' },
@@ -576,8 +651,8 @@ const FASI_PIANO = [
   {
     id: 'verifica', nome: 'Verifica',
     campi: [
-      { id: 'prova', nome: 'Come provi che funziona', aiuto: 'passi manuali o test automatici' },
-      { id: 'finito', nome: 'Quando è davvero finito', aiuto: 'criteri concreti, non "quando sembra andare"', tipi: GRANDI },
+      { id: 'prova', nome: 'Come provi che funziona', aiuto: 'passi manuali o test automatici', esempio: "Login, vado in Agenda, chiudo l'app e rientro: si apre Agenda. Poi lo stesso con un utente non ADMG." },
+      { id: 'finito', nome: 'Quando è davvero finito', aiuto: 'criteri concreti, non "quando sembra andare"', tipi: GRANDI, esempio: "Va su Android e iOS, il primo accesso apre la Dashboard, il logout cancella la sezione salvata." },
     ],
     spunte: [
       { id: 'richiesto', nome: 'Fa quello che chiedeva la Richiesta', tipi: ['aggiunta', 'modifica'] },
@@ -586,15 +661,107 @@ const FASI_PIANO = [
       { id: 'pagina', nome: 'Il resto della pagina è rimasto uguale', tipi: ['minore'] },
     ],
   },
-  {
-    id: 'lezione', nome: 'Lezione', tipi: GRANDI,
-    campi: [
-      { id: 'imparato', nome: 'Cosa hai imparato' },
-      { id: 'prossima', nome: 'Cosa faresti diversamente la prossima volta' },
-    ],
-    spunte: [],
-  },
 ];
+
+// GUIDA ALLA SCRITTURA
+// Per ogni campo dei piani: forma del testo (elenco puntato, passi numerati o traccia da completare),
+// come scriverlo e quali controlli fa la pagina mentre scrivi. I controlli sono locali: non costano token.
+// forma: "elenco" (•) o "passi" (1. 2. …); traccia: testo di partenza da completare;
+// controlli: "vago" (parole come "sistemo", "non va"), "file" (serve un file o una funzione), "breve" (troppo corto)
+const GUIDA_CAMPI = {
+  'richiesta.obiettivo': { guida: ['Cosa potrà fare chi usa l\'app dopo la modifica, che oggi non può fare.'], controlli: ['vago', 'breve'] },
+  'richiesta.cambia': { traccia: 'Oggi: \nDopo: ', guida: ['Cosa succede oggi e cosa deve succedere dopo, visto da chi usa l\'app.'], controlli: ['vago'] },
+  'richiesta.atteso': { guida: ['Cosa dovrebbe vedere o poter fare l\'utente nel punto in cui oggi le cose vanno storte.'], controlli: ['vago', 'breve'] },
+  'richiesta.problema': { traccia: 'Cosa succede: \nDispositivo e piattaforma: \nDa quando (se lo sai): ', guida: ['Cosa vedi succedere e su quale dispositivo, non la causa che immagini.'], controlli: ['vago'] },
+  'richiesta.cosa': { guida: ['L\'elemento come lo vedi sullo schermo e cosa vuoi cambiare (testo, colore, dimensione, posizione).'] },
+  'richiesta.dove': { guida: ["Schermata, flusso o file coinvolti, uno per riga. Se non lo sai, lascialo vuoto: la mappa lo cerca partendo dall'obiettivo."], controlli: ['file'] },
+  'richiesta.vincoli': { guida: ['Ciò che deve restare com\'è, una cosa per riga.'] },
+  'richiesta.note': { guida: ['Vincoli, dubbi o esempi; va bene anche ciò che non sai.'] },
+  'oggi.come': { forma: 'passi', guida: ['I passi con cui funziona adesso, nell\'ordine in cui succedono.'], controlli: ['breve'] },
+  'oggi.chi': { guida: ['Schermate, componenti o funzioni che dipendono da questo comportamento.'], controlli: ['file'] },
+  'riprodurre.ambiente': { guida: ['Dispositivo, sistema, account e dati usati per provarlo.'] },
+  'riprodurre.passi': { forma: 'passi', guida: ['Cosa tocchi o digiti, un passo per riga, fino a vedere il problema.'] },
+  'riprodurre.quando': { guida: ['Se succede sempre, a volte o solo in certi casi.'], controlli: ['vago'] },
+  'indagare.aggancio': { guida: ['File e funzione da cui parte il codice nuovo.'], controlli: ['file'] },
+  'indagare.riuso': { guida: ['Cosa esiste già nel progetto e puoi riusare, una riga per cosa.'], controlli: ['file'] },
+  'indagare.posizione': { guida: ['File e funzione in cui si decide il comportamento di oggi.'], controlli: ['file'] },
+  'indagare.dipendenze': { guida: ['Gli altri file che usano questa funzione (cercala con Ctrl+Shift+F).'], controlli: ['file'] },
+  'indagare.dove': { guida: ['File e funzione dove pensi sia il problema, dal più probabile.'], controlli: ['file'] },
+  'indagare.ipotesi': { guida: ['Perché secondo te succede, in una frase che puoi verificare.'], controlli: ['vago'] },
+  'indagare.verificato': { guida: ['Le prove fatte e cosa hanno mostrato, una per riga.'] },
+  'progettare.modifica': { guida: ['Cosa cambi, a parole, senza scrivere codice.'], controlli: ['vago', 'breve'] },
+  'progettare.file': { guida: ['I file e le funzioni che tocchi, con cosa ci fai.'], controlli: ['file'] },
+  'progettare.dati': {
+    traccia: 'Entra: \nEsce: \nStato che cambia: \nChiamate al backend: ',
+    tutte: true,
+    guida: ['Cosa riceve la funzione, cosa produce, cosa modifica e quali chiamate al backend fa; se non lo sai scrivi "da verificare".'],
+  },
+  'progettare.alternative': {
+    traccia: 'Alternativa 1: \nPerché la scarto: ',
+    tutte: true,
+    guida: ['Un\'altra strada possibile e perché non la scegli; se non ce ne sono scrivi "Unica strada:" e il motivo.'],
+  },
+  'rischi.rompe': { guida: ['Gli altri file che usano la funzione che cambi e cosa succede a loro (cercala con Ctrl+Shift+F).'], controlli: ['file'] },
+  'rischi.limite': {
+    traccia: 'Valore vuoto o mancante: \nErrore di rete o del server: \nUtente senza permessi o con ruolo diverso: \nDoppio tocco o azione ripetuta: \nApp messa in background o chiusa a metà: ',
+    tutte: true,
+    guida: ['Cosa deve succedere a chi usa l\'app in ogni situazione; scrivi "non applicabile" o "da provare" se non lo sai.'],
+  },
+  'rischi.sicurezza': {
+    traccia: 'Cosa salvo e dove: \nChi può leggerlo: \nCosa resta dopo il logout: ',
+    tutte: true,
+    guida: ['Quali dati salvi, dove e chi può leggerli; se non salvi nulla scrivi "nessun dato salvato".'],
+  },
+  'verifica.prova': { forma: 'passi', guida: ['I passi per provare che funziona, con cosa devi vedere alla fine.'] },
+  'verifica.finito': { guida: ['I criteri per dire "finito", ciascuno controllabile con un sì o un no.'], controlli: ['vago'] },
+};
+// RIPRENDI DA
+// Un campo si può partire dal testo già scritto in un altro: il tasto compare solo a campo vuoto e con la fonte compilata
+const RIPRENDI_DA = {
+  'indagare.aggancio': 'richiesta.dove',
+  'indagare.posizione': 'richiesta.dove',
+  'indagare.dove': 'richiesta.dove',
+  'rischi.rompe': 'indagare.dipendenze',
+  'verifica.prova': 'rischi.limite',
+};
+
+// STRUMENTI DEI CAMPI
+// Cosa può fare la pagina per te invece di chiederti di scrivere a memoria:
+// codice = VEDI NEL CODICE (cerca il nome nel progetto e apre VS Code), riempi = mette i file trovati nel campo,
+// diagramma = VEDI NEL DIAGRAMMA (apre la mappa sul passo D/S citato), domanda = CHIEDI A CHATTINO (domanda già scritta, la invii tu),
+// scelte = risposte rapide a pulsante per le righe del campo
+const CASI_LIMITE = [
+  ['Valore vuoto o mancante', ['non succede nulla', 'mostra un errore', 'usa un valore di default']],
+  ['Errore di rete o del server', ['mostra un errore', 'riprova da solo', 'non succede nulla']],
+  ['Utente senza permessi o con ruolo diverso', ['non vede la funzione', 'riceve un errore', 'si comporta come prima']],
+  ['Doppio tocco o azione ripetuta', ['la seconda viene ignorata', 'si ripete due volte']],
+  ['App messa in background o chiusa a metà', ['riprende da dove era', 'riparte da zero']],
+].map(([titolo, opzioni]) => ({ titolo, opzioni: [...opzioni, 'non applicabile', 'da provare'] }));
+
+const STRUMENTI_CAMPI = {
+  'oggi.chi': { codice: true, riempi: true, diagramma: true, domanda: 'Quali schermate, componenti o funzioni dipendono da come funziona oggi questo comportamento? Una riga per voce, con il file.' },
+  'oggi.come': { diagramma: true },
+  'indagare.aggancio': { codice: true },
+  'indagare.riuso': { codice: true },
+  'indagare.posizione': { codice: true, diagramma: true },
+  'indagare.dipendenze': { codice: true, riempi: true, diagramma: true, domanda: 'Quali file usano la funzione che cambio in questo piano? Una riga per file, con cosa ci fa. Cerca nel codice.' },
+  'indagare.dove': { codice: true },
+  'progettare.file': { codice: true },
+  'progettare.dati': { diagramma: true, domanda: 'Per la modifica di questo piano: cosa riceve la funzione, cosa produce, quale stato modifica, quali chiamate al backend fa? Quattro righe: Entra, Esce, Stato che cambia, Chiamate al backend. Cita i passi D della mappa se c\'entrano.' },
+  'progettare.alternative': { domanda: 'Che alternative ha la modifica di questo piano? Massimo 3, ognuna con "Perché la scarto". Dimmi quale consiglieresti.' },
+  'rischi.rompe': { codice: true, riempi: true, diagramma: true, domanda: 'Cosa può rompersi con la modifica di questo piano? Una riga per file che usa ciò che cambio, con cosa succederebbe. Cerca nel codice e cita i passi D della mappa se c\'entrano.' },
+  'rischi.limite': { scelte: CASI_LIMITE, domanda: 'Per la modifica di questo piano: cosa succede oggi, nel codice, con valore vuoto, errore di rete, ruolo diverso, doppio tocco, app in background? Una riga per caso.' },
+  'rischi.sicurezza': {
+    scelte: [
+      { titolo: 'Cosa salvo e dove', opzioni: ['nessun dato salvato', 'solo in memoria', 'AsyncStorage', 'Keychain', 'backend'] },
+      { titolo: 'Chi può leggerlo', opzioni: ['solo l\'utente', 'anche il backend', 'altri utenti', 'nessuno'] },
+      { titolo: 'Cosa resta dopo il logout', opzioni: ['niente (viene cancellato)', 'resta sul telefono', 'da verificare'] },
+    ],
+    domanda: 'La modifica di questo piano salva dati? Cosa, dove (memoria, AsyncStorage, Keychain, backend), chi può leggerli e cosa resta dopo il logout?',
+  },
+};
+
+FASI_PIANO.forEach((f) => f.campi.forEach((c) => Object.assign(c, GUIDA_CAMPI[`${f.id}.${c.id}`], STRUMENTI_CAMPI[`${f.id}.${c.id}`], RIPRENDI_DA[`${f.id}.${c.id}`] ? { riprendi: RIPRENDI_DA[`${f.id}.${c.id}`] } : {})));
 
 // PIANI
 function pianoVuoto() {
@@ -602,6 +769,54 @@ function pianoVuoto() {
     campi: Object.fromEntries(f.campi.map((c) => [c.id, ''])),
     spunte: Object.fromEntries(f.spunte.map((s) => [s.id, false])),
   }]));
+}
+
+// MESSAGGI BACKEND
+// Una lista di blocchi { id, testo, data }: ognuno si aggiunge e si elimina da solo.
+// Il vecchio testo unico diventa il blocco "primo": un id fisso, perché questa conversione si ripete a ogni lettura finché non si salva
+const blocchiBackend = (valore, data) => {
+  if (Array.isArray(valore)) return valore.filter((b) => b && typeof b.testo === 'string' && b.testo.trim() && typeof b.id === 'string');
+  return typeof valore === 'string' && valore.trim() ? [{ id: 'primo', testo: valore.trim(), data: data || Date.now() }] : [];
+};
+
+function cambiaBackend(dati, cambia) {
+  const lista = leggiJson(FILE_PIANI);
+  const indice = lista.findIndex((p) => p.id === dati.id);
+  if (indice < 0) throw errore(404, 'piano non trovato');
+  const piano = completaPiano(lista[indice]);
+  piano.backend = cambia(piano.backend);
+  piano.aggiornato = Date.now();
+  lista[indice] = piano;
+  scriviJson(FILE_PIANI, lista);
+  return { backend: piano.backend };
+}
+
+// Le due modifiche valgono sia per i piani sia per le attività
+function conBlocco(dati) {
+  const blocco = testo(dati.testo, 20000);
+  if (!blocco) throw errore(400, 'il messaggio è vuoto');
+  return (blocchi) => {
+    if (blocchi.length >= 100) throw errore(400, 'troppi messaggi');
+    return [...blocchi, { id: crypto.randomUUID(), testo: blocco, data: Date.now() }];
+  };
+}
+
+const senzaBlocco = (dati) => (blocchi) => {
+  if (!blocchi.some((b) => b.id === dati.blocco)) throw errore(404, 'messaggio non trovato');
+  return blocchi.filter((b) => b.id !== dati.blocco);
+};
+
+const aggiungiBackend = (dati) => cambiaBackend(dati, conBlocco(dati));
+const eliminaBackend = (dati) => cambiaBackend(dati, senzaBlocco(dati));
+
+function cambiaBackendAttivita(dati, cambia) {
+  const lista = leggiJson(FILE_ATTIVITA);
+  const attivita = lista.find((a) => a.id === dati.id);
+  if (!attivita) throw errore(404, 'attività non trovata');
+  attivita.backend = cambia(blocchiBackend(attivita.backend, attivita.aggiornata));
+  attivita.aggiornata = Date.now();
+  scriviJson(FILE_ATTIVITA, lista);
+  return { backend: attivita.backend };
 }
 
 // I piani salvati prima di una fase o di un campo nuovo ricevono le parti mancanti vuote
@@ -617,29 +832,128 @@ function completaPiano(piano) {
     tipo: TIPI_PIANO.some((t) => t.id === piano.tipo) ? piano.tipo : 'aggiunta',
     mappa: MAPPE_PIANO.includes(piano.mappa) ? piano.mappa : '',
     mappe: Array.isArray(piano.mappe) ? piano.mappe : [],
+    backend: blocchiBackend(piano.backend, piano.aggiornato),
+    terminato: piano.terminato === true,
+    terminatoIl: piano.terminato === true && Number.isFinite(piano.terminatoIl) ? piano.terminatoIl : null,
+    // Come le attività: da fare, in corso, fatto. "Fatto" coincide con terminato
+    stato: piano.terminato === true ? 'fatto' : ['da-fare', 'in-corso'].includes(piano.stato) ? piano.stato : 'da-fare',
     fasi,
   };
 }
 
-// La pagina vede se il file di ogni mappa collegata esiste ancora
+// LEZIONI
+// Si generano solo a quiz superato (quiz-lezione.js), da Chattino insegnante o dal piano da terminare, e stanno in dati/lezioni.json.
+// ~/Lezioni.md si riscrive da solo a ogni cambiamento, le più recenti in alto: è generato, non va modificato a mano
+const ORIGINI_LEZIONE = ['chattino', 'piano'];
+const giorno = (ms) => new Date(ms).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const NOMI_ORIGINE_LEZIONE = { chattino: 'Chattino', piano: 'Piano', lezione: 'Lezione' };
+
+function elencoLezioni() {
+  return leggiJson(FILE_LEZIONI).filter((l) => l && l.titolo).map((l) => ({
+    id: l.id, origine: ORIGINI_LEZIONE.includes(l.origine) ? l.origine : 'lezione', data: l.data, progetto: l.progetto || '', titolo: l.titolo,
+    parti: [['Argomento', l.argomento], ['', l.testo]].filter(([, v]) => String(v || '').trim()),
+  })).sort((a, b) => b.data - a.data);
+}
+
+function scriviLezioni() {
+  const blocchi = elencoLezioni().map((l) => [
+    `## ${giorno(l.data)} · ${NOMI_ORIGINE_LEZIONE[l.origine]}: ${l.titolo}${l.progetto ? ` (${l.progetto})` : ''}`,
+    '',
+    ...l.parti.map(([nome, valore]) => (nome ? `**${nome}**\n\n${String(valore).trim()}\n` : `${String(valore).trim()}\n`)),
+  ].join('\n'));
+  const md = [
+    '# Lezioni',
+    '',
+    '> Generato dalla sala di controllo (sezione Lezioni), le più recenti in alto. Non modificarlo a mano: si riscrive da solo.',
+    '',
+    blocchi.length ? blocchi.join('\n---\n\n') : '_Ancora nessuna lezione._\n',
+  ].join('\n');
+  const temporaneo = `${FILE_LEZIONI_MD}.tmp`;
+  fs.writeFileSync(temporaneo, md);
+  fs.renameSync(temporaneo, FILE_LEZIONI_MD);
+}
+
+// Una lezione di piano sostituisce la precedente dello stesso piano: succede se lo riapri e lo termini di nuovo
+function aggiungiLezione(dati) {
+  const titolo = testo(dati?.titolo, 200);
+  if (!titolo) throw errore(400, 'il titolo della lezione è obbligatorio');
+  if (!ORIGINI_LEZIONE.includes(dati.origine)) throw errore(400, 'origine della lezione non valida');
+  const lezione = {
+    id: crypto.randomUUID(), data: Date.now(), origine: dati.origine, titolo, argomento: testo(dati.argomento, 1000),
+    progetto: testo(dati.progetto, 200), testo: testo(dati.testo, 20000), ...(dati.piano ? { piano: dati.piano } : {}),
+  };
+  const altre = leggiJson(FILE_LEZIONI).filter((l) => !lezione.piano || l.piano !== lezione.piano);
+  scriviJson(FILE_LEZIONI, [...altre, lezione]);
+  scriviLezioni();
+  return lezione;
+}
+
+function eliminaLezione(id) {
+  const lista = leggiJson(FILE_LEZIONI);
+  if (!lista.some((l) => l.id === id)) throw errore(404, 'lezione non trovata');
+  scriviJson(FILE_LEZIONI, lista.filter((l) => l.id !== id));
+  scriviLezioni();
+  return { eliminata: id };
+}
+
+// CONTESTI
+// Il passaggio tra una chat e la successiva: /chat-termina lo salva (dati/contesti.json), /chat-riprendi lo rilegge
+const CAMPI_CONTESTO = { obiettivo: 3000, fatto: 3000, file: 3000, decisioni: 3000, prossimo: 3000 };
+
+function aggiungiContesto(dati) {
+  const titolo = testo(dati?.titolo, 200);
+  if (!titolo) throw errore(400, 'il titolo del contesto è obbligatorio');
+  const contesto = {
+    id: crypto.randomUUID(), data: Date.now(), progetto: testo(dati.progetto, 200), titolo,
+    ...Object.fromEntries(Object.entries(CAMPI_CONTESTO).map(([c, massimo]) => [c, testo(dati[c], massimo)])),
+  };
+  scriviJson(FILE_CONTESTI, [...leggiJson(FILE_CONTESTI), contesto]);
+  return contesto;
+}
+
+function eliminaContesto(id) {
+  const lista = leggiJson(FILE_CONTESTI);
+  if (!lista.some((c) => c.id === id)) throw errore(404, 'contesto non trovato');
+  scriviJson(FILE_CONTESTI, lista.filter((c) => c.id !== id));
+  return { eliminato: id };
+}
+
+const contestiDi = (progetto) => leggiJson(FILE_CONTESTI).filter((c) => !progetto || c.progetto === progetto).sort((a, b) => b.data - a.data);
+
+// Il testo che /chat-riprendi legge: stessi campi che scrive /chat-termina
+const testoContesto = (c) => [
+  `CONTESTO: ${c.titolo} (${c.progetto || 'nessun progetto'}, ${giorno(c.data)})`,
+  ...[['OBIETTIVO', c.obiettivo], ['FATTO', c.fatto], ['FILE TOCCATI', c.file], ['DECISIONI', c.decisioni], ['PROSSIMO PASSO', c.prossimo]]
+    .filter(([, v]) => v).map(([nome, v]) => `${nome}:\n${v}`),
+].join('\n\n');
+
+// La pagina vede se il file di ogni mappa collegata esiste ancora e se ne sta generando una
 const piani = (prog) => leggiJson(FILE_PIANI).filter((p) => p.progetto === prog.nome).map(completaPiano)
-  .map((p) => ({ ...p, mappe: p.mappe.map((m) => ({ ...m, esiste: Boolean(fileMappa(m.file)) })) }));
+  .map((p) => ({
+    ...p,
+    mappe: p.mappe.map((m) => ({ ...m, esiste: Boolean(fileMappa(m.file)) })),
+    generazione: generazioni.get(p.id) || null,
+    generazioneSintesi: generazioniSintesi.get(p.id) || null,
+  }));
 
 // MAPPE DEI PIANI
-// Solo file .html dentro ~/flussi, anche seguendo i collegamenti: la sala non mostra nient'altro
-function fileMappa(percorso) {
+// Solo file dentro ~/flussi, anche seguendo i collegamenti: la sala non mostra né legge nient'altro
+function fileDentroFlussi(percorso, estensione) {
   try {
     const reale = fs.realpathSync(path.resolve(String(percorso || '')));
     const relativo = path.relative(fs.realpathSync(CARTELLA_MAPPE), reale);
     const dentro = relativo && !relativo.startsWith('..') && !path.isAbsolute(relativo);
-    return dentro && path.extname(reale).toLowerCase() === '.html' && fs.statSync(reale).isFile() ? reale : null;
+    return dentro && path.extname(reale).toLowerCase() === estensione && fs.statSync(reale).isFile() ? reale : null;
   } catch {
     return null;
   }
 }
 
-// La skill /piano, dopo aver disegnato la mappa, la aggancia al piano con questo comando
-function collegaMappa(id, tipo, file) {
+const fileMappa = (percorso) => fileDentroFlussi(percorso, '.html');
+
+// La skill /piano, dopo aver disegnato la mappa, la aggancia al piano con questo comando.
+// avvisi è il numero di incongruenze trovate dalla sala: dal comando della skill non arriva, perché lì il controllo non gira
+function collegaMappa(id, tipo, file, avvisi) {
   if (!['dati', 'struttura'].includes(tipo)) throw errore(400, 'tipo di mappa: dati o struttura');
   const reale = fileMappa(file);
   if (!reale) throw errore(400, 'la mappa deve essere un file .html dentro ~/flussi');
@@ -647,11 +961,276 @@ function collegaMappa(id, tipo, file) {
   const indice = lista.findIndex((p) => p.id === id);
   if (indice < 0) throw errore(404, 'piano non trovato');
   const piano = completaPiano(lista[indice]);
-  piano.mappe = [...piano.mappe.filter((m) => m.tipo !== tipo), { tipo, file: reale }];
+  piano.mappe = [...piano.mappe.filter((m) => m.tipo !== tipo), { tipo, file: reale, ...(Number.isInteger(avvisi) ? { avvisi } : {}) }];
   piano.aggiornato = Date.now();
   lista[indice] = piano;
   scriviJson(FILE_PIANI, lista);
   return { id, mappe: piano.mappe };
+}
+
+// GENERAZIONE MAPPA
+// Un claude -p in background disegna la mappa del piano: legge il progetto e le regole, scrive solo dentro ~/flussi
+// (--permission-mode dontAsk nega ogni scrittura non elencata in --allowedTools). Senza Bash non potrebbe copiare il template,
+// e riscriverlo intero costerebbe minuti: scrive solo il JSON dei dati, la sala copia il template e ce lo inserisce.
+// Il gettone della chat e il collegamento al piano li aggiunge la sala: Claude non vede il gettone e non serve Bash.
+const TIMEOUT_GENERAZIONE_MS = 15 * 60 * 1000;
+const TIPI_DA_GENERARE = { dati: ['dati'], struttura: ['struttura'], entrambi: ['dati', 'struttura'] };
+const TEMPLATE_MAPPA = {
+  dati: { file: path.join(CARTELLA_CLAUDE, 'shared', 'diagramma-flusso-template.html'), blocco: '<script id="flow-data" type="application/json">' },
+  struttura: { file: path.join(CARTELLA_CLAUDE, 'shared', 'diagramma-pagina-template.html'), blocco: '<script id="page-data" type="application/json">' },
+};
+const generazioni = new Map();
+const barre = (p) => p.split(path.sep).join('/');
+
+// Il percorso dell'eseguibile dell'estensione VS Code cambia a ogni aggiornamento (stessa ricerca del server della chat)
+function trovaClaude() {
+  const binario = process.platform === 'win32' ? 'claude.exe' : 'claude';
+  const cartella = path.join(os.homedir(), '.vscode', 'extensions');
+  try {
+    const candidati = fs.readdirSync(cartella)
+      .filter((nome) => nome.startsWith('anthropic.claude-code-'))
+      .map((nome) => path.join(cartella, nome, 'resources', 'native-binary', binario))
+      .filter((file) => fs.existsSync(file))
+      .sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
+    if (candidati.length) return candidati[0];
+  } catch {}
+  return 'claude';
+}
+
+const promptGenerazione = (prog, tipi, testo) => [
+  'Sei avviato in automatico dalla sala di controllo e nessuno può risponderti: genera SOLO la mappa del piano qui sotto, poi fermati.',
+  `- leggi ${barre(path.join(CARTELLA_CLAUDE, 'skills', 'piano', 'SKILL.md'))} e applica solo le sezioni "## LETTURA" e "## MAPPA"; ignora le altre fasi.`,
+  `- mappe da generare: ${tipi.join(' e ')}.`,
+  `- le regole citate dalla skill sono in ${barre(path.join(CARTELLA_CLAUDE, 'shared'))}; salva le mappe in ${barre(path.join(CARTELLA_MAPPE, path.basename(prog.cartella)))}.`,
+  '- eccezioni rispetto alla skill:',
+  '  - NON scrivere il file .html e non copiare il template: lo copia la sala. Scrivi con Write SOLO il JSON dei dati (quello che andrebbe dentro <script id="flow-data"> per la mappa dati o <script id="page-data"> per la struttura), in un file con il nome che avrebbe la mappa ma con estensione .json.',
+  '  - le regole del JSON sono in diagramma-flusso-json.md (dati) e diagramma-pagina-json.md (struttura), nella stessa cartella: NON aprire i file *-template.html (pagine da oltre 100 KB che non ti servono) e non leggere chat-mappa.md (la chat la configura la sala).',
+  '  - il JSON deve essere valido (niente commenti né virgole finali) e senza la chiave "chat": la aggiunge la sala.',
+  '  - non hai Bash: non avviare il server della chat e non lanciare "--piani collega", il collegamento al piano lo fa la sala.',
+  '  - puoi scrivere file solo in quella cartella; non modificare nient\'altro.',
+  "  - non fare domande: se manca l'obiettivo, non scrivere nessun file. Se manca il Dove, cercalo tu nel codice partendo dall'obiettivo.",
+  '- l\'ultima riga della risposta deve essere una sola di queste due:',
+  '  MAPPE: {"dati": "<percorso assoluto del file .json>", "struttura": "<percorso assoluto del file .json>"}   (solo i tipi generati)',
+  '  ERRORE: <il motivo in una frase>',
+  '',
+  testo,
+].join('\n');
+
+function generaMappa(prog, dati) {
+  const piano = leggiJson(FILE_PIANI).find((p) => p.id === dati.id && p.progetto === prog.nome);
+  if (!piano) throw errore(404, 'piano non trovato');
+  const tipi = TIPI_DA_GENERARE[piano.mappa];
+  if (!tipi) throw errore(400, 'scegli prima la mappa da generare');
+  if (generazioni.get(piano.id)?.stato === 'in-corso') throw errore(409, 'la mappa di questo piano si sta già generando');
+  const testo = String(dati.testo || '');
+  if (!testo.includes(`ID PIANO: ${piano.id}`)) throw errore(400, 'testo del piano non valido');
+  fs.mkdirSync(path.join(CARTELLA_MAPPE, path.basename(prog.cartella)), { recursive: true });
+  generazioni.set(piano.id, { stato: 'in-corso', inizio: Date.now() });
+  eseguiGenerazione(prog, piano.id, tipi, testo)
+    .then(() => generazioni.delete(piano.id))
+    .catch((e) => generazioni.set(piano.id, { stato: 'errore', errore: String(e.message).slice(0, 500) }));
+  return { generazione: generazioni.get(piano.id) };
+}
+
+// Solo .json: l'HTML lo costruisce la sala dal JSON validato, così un testo malevolo nel codice letto non può scrivere una pagina
+const eseguiGenerazione = (prog, id, tipi, testo) => avviaClaude(prog, [
+  '--tools', 'Read,Grep,Glob,Write',
+  '--add-dir', path.join(CARTELLA_CLAUDE, 'shared'), path.join(CARTELLA_CLAUDE, 'skills', 'piano'), CARTELLA_MAPPE,
+  '--allowedTools', 'Write(~/flussi/**/*.json)', 'Edit(~/flussi/**/*.json)',
+], promptGenerazione(prog, tipi, testo), TIMEOUT_GENERAZIONE_MS, 'mappa').then((risultato) => collegaGenerate(prog, id, tipi, risultato));
+
+// AVVIO CLAUDE
+// claude -p nella cartella del progetto, senza sessione salvata né server MCP; risolve con il testo della risposta
+// e registra i token usati sotto il nome della funzione
+function avviaClaude(prog, strumenti, prompt, timeout, funzione) {
+  return new Promise((resolve, reject) => {
+    const args = [
+      '-p', '--output-format', 'json', '--no-session-persistence', '--restricted', '--strict-mcp-config',
+      ...strumenti,
+      '--permission-mode', 'dontAsk',
+    ];
+    // Senza chiavi API nell'ambiente claude può usare solo il login dell'abbonamento, mai la fatturazione a consumo
+    const { ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, ...ambiente } = process.env;
+    const figlio = spawn(trovaClaude(), args, { cwd: prog.cartella, windowsHide: true, env: ambiente });
+    let out = '';
+    let err = '';
+    const timer = setTimeout(() => figlio.kill(), timeout);
+    figlio.stdout.on('data', (d) => { out += d; });
+    figlio.stderr.on('data', (d) => { err += d; });
+    figlio.on('error', (e) => {
+      clearTimeout(timer);
+      reject(new Error(`claude non avviato: ${e.message}`));
+    });
+    figlio.on('close', () => {
+      clearTimeout(timer);
+      try {
+        resolve(risultatoClaude(out, err, funzione));
+      } catch (e) {
+        reject(e);
+      }
+    });
+    figlio.stdin.end(prompt);
+  });
+}
+
+// Anche una risposta in errore ha consumato token: si registra prima di controllare l'esito
+function risultatoClaude(out, err, funzione) {
+  let risultato;
+  try {
+    risultato = JSON.parse(out);
+  } catch {
+    throw new Error((err || out || 'nessuna risposta (tempo scaduto?)').trim().slice(0, 500));
+  }
+  consumi.registra(funzione, risultato);
+  if (risultato.is_error) throw new Error(risultato.result || 'errore di claude');
+  return String(risultato.result || '');
+}
+
+// COSTRUZIONE MAPPA
+// Si fida solo dei .json dentro ~/flussi: la sala rilegge e riscrive il JSON, quindi nella pagina finisce solo JSON valido.
+// I < diventano <: il testo non può chiudere il blocco <script> e il JSON letto dalla pagina resta identico
+function collegaGenerate(prog, id, tipi, testo) {
+  const righe = testo.trim().split('\n');
+  const ultima = righe[righe.length - 1].trim();
+  if (ultima.startsWith('ERRORE:')) throw new Error(ultima.slice(7).trim());
+  if (!ultima.startsWith('MAPPE:')) throw new Error('claude non ha detto dove ha salvato la mappa');
+  let file;
+  try {
+    file = JSON.parse(ultima.slice(6));
+  } catch {
+    throw new Error('elenco delle mappe non leggibile');
+  }
+  const gettone = fs.existsSync(FILE_GETTONE_CHAT) ? fs.readFileSync(FILE_GETTONE_CHAT, 'utf8').trim() : '';
+  for (const tipo of tipi) {
+    const json = fileDentroFlussi(file[tipo], '.json');
+    if (!json) throw new Error(`dati della mappa ${tipo} non trovati in ~/flussi`);
+    let dati;
+    try {
+      dati = JSON.parse(fs.readFileSync(json, 'utf8'));
+    } catch (e) {
+      throw new Error(`dati della mappa ${tipo} non validi: ${e.message}`);
+    }
+    dati.chat = { token: gettone, project: barre(prog.cartella) };
+    // Gli avvisi li scrive solo la sala: quelli eventualmente messi da Claude si sostituiscono
+    dati.avvisi = controllaMappa(tipo, dati);
+    const { file: modello, blocco } = TEMPLATE_MAPPA[tipo];
+    const template = fs.readFileSync(modello, 'utf8');
+    const inizio = template.indexOf(blocco);
+    const fine = template.indexOf('</script>', inizio);
+    if (inizio < 0 || fine < 0) throw new Error(`template della mappa ${tipo} senza il blocco dei dati`);
+    const contenuto = JSON.stringify(dati, null, 2).replace(/</g, '\\u003c');
+    const html = json.replace(/\.json$/i, '.html');
+    fs.writeFileSync(html, `${template.slice(0, inizio + blocco.length)}\n${contenuto}\n${template.slice(fine)}`);
+    fs.unlinkSync(json);
+    collegaMappa(id, tipo, html, dati.avvisi.length);
+  }
+}
+
+// COMPILA LA RICHIESTA
+// Un claude -p in sola lettura legge i messaggi del backend del piano e propone il testo dei campi della Richiesta.
+// Risponde subito con le proposte: la pagina decide dove scriverle (solo nei campi vuoti)
+const TIMEOUT_COMPILA_MS = 3 * 60 * 1000;
+const NOMI_TIPI_PIANO = { aggiunta: 'Aggiunta', modifica: 'Modifica', bug: 'Bug fix', minore: 'Modifica minore' };
+
+const campiRichiestaDelTipo = (tipo) => FASI_PIANO.find((f) => f.id === 'richiesta').campi.filter((c) => !c.tipi || c.tipi.includes(tipo));
+
+const promptCompila = (tipo, campi, messaggi) => [
+  'Sei avviato in automatico dalla sala di controllo e nessuno può risponderti. Non modificare nessun file.',
+  `Qui sotto ci sono i messaggi che il backend ha mandato per un piano di lavoro di tipo "${NOMI_TIPI_PIANO[tipo] || tipo}" sull'app del progetto della cartella corrente. Capisci cosa chiedono e proponi il testo dei campi della Richiesta.`,
+  'Campi (id: nome, cosa scrivere):',
+  ...campi.map((c) => `- ${c.id}: ${c.nome}${c.aiuto ? `, ${c.aiuto}` : ''}`),
+  'Regole:',
+  '- scrivi come lo scriverebbe chi usa l\'app: italiano semplice, 1-3 frasi per campo, senza ripetere i messaggi per intero.',
+  '- nei campi che sono elenchi (dove, vincoli, note) una voce per riga, ognuna che comincia con "- ".',
+  '- puoi leggere il codice dei punti citati per capire di cosa si parla; non inventare nomi di file o funzioni che non esistono.',
+  '- se i messaggi non dicono nulla su un campo, lascia "" in quel campo: niente supposizioni.',
+  `L'ultima riga della risposta deve essere solo questa, con JSON valido su una riga e solo gli id dei campi qui sopra:`,
+  'COMPILA: {"id_campo": "testo", ...}',
+  '',
+  'MESSAGGI DEL BACKEND:',
+  ...messaggi.map((m, i) => `--- messaggio ${i + 1} ---\n${m}`),
+].join('\n');
+
+async function compilaRichiesta(prog, dati) {
+  const piano = leggiJson(FILE_PIANI).find((p) => p.id === dati.id && p.progetto === prog.nome);
+  if (!piano) throw errore(404, 'piano non trovato');
+  const messaggi = blocchiBackend(piano.backend, piano.aggiornato).map((b) => b.testo).filter(Boolean);
+  if (!messaggi.length) throw errore(400, 'aggiungi prima un messaggio del backend');
+  const tipo = completaPiano(piano).tipo;
+  const campi = campiRichiestaDelTipo(tipo);
+  const risultato = await avviaClaude(prog, ['--tools', 'Read,Grep,Glob', '--model', 'sonnet'], promptCompila(tipo, campi, messaggi), TIMEOUT_COMPILA_MS, 'compila');
+  const riga = risultato.trim().split('\n').reverse().find((r) => r.trim().startsWith('COMPILA:'));
+  if (!riga) throw errore(502, 'claude non ha restituito i campi');
+  let valori;
+  try {
+    valori = JSON.parse(riga.trim().slice(8));
+  } catch {
+    throw errore(502, 'risposta di claude non leggibile');
+  }
+  const proposte = Object.fromEntries(campi.map((c) => [c.id, testo(valori?.[c.id], 5000)]).filter(([, v]) => v));
+  return { campi: proposte };
+}
+
+// IN BREVE
+// Un claude -p in sola lettura riassume la Richiesta in due riquadri: com'è oggi e come deve essere dopo, per chi usa l'app.
+// Non è la mappa e non è la soluzione: niente file, funzioni né cause, solo comportamento visibile
+const TIMEOUT_SINTESI_MS = 5 * 60 * 1000;
+const MAX_SINTESI = 2000;
+const generazioniSintesi = new Map();
+
+const promptSintesi = (testo) => [
+  'Sei avviato in automatico dalla sala di controllo e nessuno può risponderti. Non modificare nessun file.',
+  'Qui sotto c\'è la Richiesta di un piano di lavoro sul progetto della cartella corrente. Leggi il codice dei punti citati quanto basta per capire com\'è oggi, poi scrivi due testi:',
+  '- "oggi": cosa fa oggi l\'app riguardo alla richiesta (per un Bug fix: cosa succede, cioè il sintomo).',
+  '- "dopo": cosa deve fare dopo la modifica.',
+  'Regole per i due testi:',
+  '- italiano semplice e chiaro, dal punto di vista di chi usa l\'app; 2-4 frasi brevi ciascuno, non prolisso.',
+  '- niente nomi di file, funzioni, variabili o endpoint; niente causa del problema, punto del codice da cambiare o modo di implementarlo.',
+  '- se la richiesta è incomprensibile, contraddittoria o troppo vaga per capire di cosa parla, metti "chiaro": false e in entrambi i testi scrivi cosa non si capisce e cosa andrebbe precisato.',
+  'L\'ultima riga della risposta deve essere solo questa, con JSON valido su una riga:',
+  'SINTESI: {"chiaro": true, "oggi": "...", "dopo": "..."}',
+  '',
+  testo,
+].join('\n');
+
+function generaSintesi(prog, dati) {
+  const piano = leggiJson(FILE_PIANI).find((p) => p.id === dati.id && p.progetto === prog.nome);
+  if (!piano) throw errore(404, 'piano non trovato');
+  if (generazioniSintesi.get(piano.id)?.stato === 'in-corso') throw errore(409, 'il riassunto di questo piano si sta già generando');
+  const testoRichiesta = testo(dati.testo, 40000);
+  if (!testoRichiesta) throw errore(400, 'scrivi qualcosa nella Richiesta prima di generare');
+  const firma = testo(dati.firma, 40000);
+  generazioniSintesi.set(piano.id, { stato: 'in-corso', inizio: Date.now() });
+  // Un riassunto di poche frasi non ha bisogno di Opus: Sonnet pesa meno sui limiti dell'abbonamento
+  avviaClaude(prog, ['--tools', 'Read,Grep,Glob', '--model', 'sonnet'], promptSintesi(testoRichiesta), TIMEOUT_SINTESI_MS, 'sintesi')
+    .then((risultato) => salvaSintesi(piano.id, leggiSintesi(risultato), firma))
+    .then(() => generazioniSintesi.delete(piano.id))
+    .catch((e) => generazioniSintesi.set(piano.id, { stato: 'errore', errore: String(e.message).slice(0, 500) }));
+  return { generazioneSintesi: generazioniSintesi.get(piano.id) };
+}
+
+function leggiSintesi(risultato) {
+  const riga = risultato.trim().split('\n').reverse().find((r) => r.trim().startsWith('SINTESI:'));
+  if (!riga) throw new Error('claude non ha restituito il riassunto');
+  let valore;
+  try {
+    valore = JSON.parse(riga.trim().slice(8));
+  } catch {
+    throw new Error('riassunto non leggibile');
+  }
+  const oggi = testo(valore?.oggi, MAX_SINTESI);
+  const dopo = testo(valore?.dopo, MAX_SINTESI);
+  if (!oggi || !dopo) throw new Error('riassunto incompleto');
+  return { chiaro: valore.chiaro !== false, oggi, dopo };
+}
+
+// Il piano si rilegge qui: mentre claude lavorava l'utente può aver continuato a scrivere
+function salvaSintesi(id, sintesi, firma) {
+  const lista = leggiJson(FILE_PIANI);
+  const indice = lista.findIndex((p) => p.id === id);
+  if (indice < 0) return;
+  lista[indice] = { ...completaPiano(lista[indice]), sintesi: { ...sintesi, firma, data: Date.now() } };
+  scriviJson(FILE_PIANI, lista);
 }
 
 function inviaMappa(res, parametri) {
@@ -661,7 +1240,15 @@ function inviaMappa(res, parametri) {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     return res.end('Mappa non trovata: forse il file è stato eliminato. Rigenerala con /piano.');
   }
-  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer' });
+  // sandbox: la mappa ha un'origine anonima e non può leggere la pagina della sala (e il suo gettone) anche se fosse malevola.
+  // allow-top-navigation-to-custom-protocols lascia funzionare i link vscode:// ai file
+  res.writeHead(200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'Content-Security-Policy': 'sandbox allow-scripts allow-popups allow-top-navigation-to-custom-protocols',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'no-referrer',
+  });
   res.end(fs.readFileSync(file));
 }
 
@@ -673,7 +1260,7 @@ function creaPiano(prog, dati) {
   const piano = {
     id: crypto.randomUUID(), progetto: prog.nome, titolo: testo(dati.titolo || attivita?.titolo, 200),
     tipo: attivita?.problema ? 'bug' : 'aggiunta', mappa: MAPPE_PIANO.includes(attivita?.mappa) ? attivita.mappa : '', mappe: [],
-    attivita: attivita?.id || '', fasi: pianoVuoto(), creato: adesso, aggiornato: adesso,
+    attivita: attivita?.id || '', backend: blocchiBackend(attivita?.backend, adesso), fasi: pianoVuoto(), creato: adesso, aggiornato: adesso,
   };
   if (attivita) {
     const richiesta = piano.fasi.richiesta.campi;
@@ -691,8 +1278,22 @@ function aggiornaPiano(dati) {
   if (indice < 0) throw errore(404, 'piano non trovato');
   const piano = completaPiano(lista[indice]);
   if (dati.titolo !== undefined) piano.titolo = testo(dati.titolo, 200);
+  // Terminare un piano si può solo superando il quiz (/api/quiz/rispondi); riaprirlo no
+  if (!piano.terminato && (dati.terminato === true || dati.stato === 'fatto')) throw errore(409, 'per terminare il piano supera il quiz');
+  if (dati.terminato !== undefined) {
+    piano.terminato = dati.terminato === true;
+    piano.terminatoIl = piano.terminato ? (piano.terminatoIl || Date.now()) : null;
+    piano.stato = piano.terminato ? 'fatto' : 'in-corso';
+  }
+  if (dati.stato !== undefined) {
+    if (!['da-fare', 'in-corso', 'fatto'].includes(dati.stato)) throw errore(400, 'stato non valido');
+    piano.terminato = dati.stato === 'fatto';
+    piano.terminatoIl = piano.terminato ? (piano.terminatoIl || Date.now()) : null;
+    piano.stato = dati.stato;
+  }
   if (dati.mappa !== undefined) {
     if (!MAPPE_PIANO.includes(dati.mappa)) throw errore(400, 'mappa non valida');
+    if (generazioni.get(piano.id)?.stato === 'in-corso' && dati.mappa !== piano.mappa) throw errore(409, 'la mappa si sta generando: cambiala quando ha finito');
     piano.mappa = dati.mappa;
   }
   if (dati.tipo !== undefined) {
@@ -718,10 +1319,55 @@ function eliminaPiano(dati) {
   return { eliminato: dati.id };
 }
 
+// QUIZ DI FINE PIANO
+// Il piano si chiude solo qui, a quiz superato e lezione salvata
+function terminaPiano(id) {
+  const lista = leggiJson(FILE_PIANI);
+  const indice = lista.findIndex((p) => p.id === id);
+  if (indice < 0) throw errore(404, 'piano non trovato');
+  const adesso = Date.now();
+  lista[indice] = { ...completaPiano(lista[indice]), terminato: true, terminatoIl: adesso, stato: 'fatto', aggiornato: adesso };
+  scriviJson(FILE_PIANI, lista);
+}
+
+// Dà al quiz i campi scritti nel piano e, se l'attività collegata ha un branch, i commit e il codice cambiato rispetto al principale.
+// I file con segreti restano fuori dal diff: il testo parte per claude
+const ESCLUDI_DAL_DIFF = ['.env*', '*.pem', '*.key', '*.p12', '*.pfx', '*.keystore', '*.jks', 'google-services.json', 'GoogleService-Info.plist'].map((p) => `:(exclude,glob)**/${p}`);
+const MAX_DIFF = 20000;
+
+async function codiceDelPiano(prog, branch) {
+  const stato = await elencoBranch(prog);
+  if (!branch || !stato.principale || branch === stato.principale || !stato.branch.some((b) => b.nome === branch)) return '';
+  const [commit, diff] = await Promise.all([
+    git(prog.cartella, ['log', '-n', String(MAX_COMMIT), '--format=%h %s', `${stato.principale}..${branch}`, '--']),
+    git(prog.cartella, ['diff', `${stato.principale}...${branch}`, '--', '.', ...ESCLUDI_DAL_DIFF]),
+  ]);
+  return ['', `COMMIT DEL BRANCH ${branch}:`, commit.trim() || '(nessuno)', '', `CODICE CAMBIATO (${diff.length > MAX_DIFF ? `primi ${MAX_DIFF} caratteri` : 'intero'}):`, diff.slice(0, MAX_DIFF)].join('\n');
+}
+
+async function materialePiano(prog, id) {
+  const grezzo = leggiJson(FILE_PIANI).find((p) => p.id === id && p.progetto === prog.nome);
+  if (!grezzo) throw errore(404, 'piano non trovato');
+  const piano = completaPiano(grezzo);
+  if (piano.terminato) throw errore(409, 'il piano è già terminato');
+  const campi = FASI_PIANO.filter((f) => !f.tipi || f.tipi.includes(piano.tipo)).flatMap((f) => f.campi
+    .filter((c) => (!c.tipi || c.tipi.includes(piano.tipo)) && String(piano.fasi[f.id].campi[c.id] || '').trim())
+    .map((c) => `${f.nome} › ${c.nome}: ${String(piano.fasi[f.id].campi[c.id]).trim()}`));
+  const branch = leggiJson(FILE_ATTIVITA).find((a) => a.id === piano.attivita)?.branch || '';
+  const codice = await codiceDelPiano(prog, branch).catch(() => '');
+  const testoPiano = [`PIANO: ${piano.titolo || 'Senza titolo'}`, `TIPO: ${NOMI_TIPI_PIANO[piano.tipo] || piano.tipo}`, '', ...campi, codice].join('\n');
+  return { piano, testo: testoPiano };
+}
+
+const quiz = require('./quiz-lezione')({ avviaClaude, testo, materialePiano, salvaLezione: aggiungiLezione, terminaPiano });
+
 const senzaFile = (sessioni) => sessioni.map(({ file, ...s }) => s);
 
 const AZIONI = {
   '/api/progetti': () => progetti().map(({ nome, cartella }) => ({ nome, cartella })),
+  '/api/progetti/scegli': () => scegliCartella(),
+  '/api/progetti/aggiungi': (d) => aggiungiDaPagina(d.cartella),
+  '/api/progetti/rimuovi': (d) => rimuoviProgetto(d.nome),
   '/api/sessioni': (d) => senzaFile(elencoSessioni(progetto(d))),
   '/api/sessioni/elimina': (d) => eliminaSessione(progetto(d), d.id),
   '/api/sessioni/chiudi': (d) => chiudiSessione(progetto(d), d.id),
@@ -733,7 +1379,10 @@ const AZIONI = {
   '/api/branch/commit': (d) => commitBranch(progetto(d), d.nome),
   '/api/branch/committa': (d) => committaTutto(progetto(d), d.messaggio),
   '/api/branch/torna': (d) => tornaACommit(progetto(d), d.hash),
-  '/api/attivita': (d) => leggiJson(FILE_ATTIVITA).filter((a) => a.progetto === progetto(d).nome),
+  '/api/attivita': (d) => leggiJson(FILE_ATTIVITA).filter((a) => a.progetto === progetto(d).nome)
+    .map((a) => ({ ...a, backend: blocchiBackend(a.backend, a.aggiornata) })),
+  '/api/attivita/backend/aggiungi': (d) => cambiaBackendAttivita(d, conBlocco(d)),
+  '/api/attivita/backend/elimina': (d) => cambiaBackendAttivita(d, senzaBlocco(d)),
   '/api/attivita/crea': (d) => creaAttivita(progetto(d), d),
   '/api/attivita/aggiorna': (d) => aggiornaAttivita(d),
   '/api/attivita/elimina': (d) => eliminaAttivita(d),
@@ -742,6 +1391,29 @@ const AZIONI = {
   '/api/piani/crea': (d) => creaPiano(progetto(d), d),
   '/api/piani/aggiorna': (d) => aggiornaPiano(d),
   '/api/piani/elimina': (d) => eliminaPiano(d),
+  '/api/piani/genera-mappa': (d) => generaMappa(progetto(d), d),
+  '/api/piani/genera-sintesi': (d) => generaSintesi(progetto(d), d),
+  '/api/piani/compila': (d) => compilaRichiesta(progetto(d), d),
+  '/api/consumi': () => consumi.oggi(),
+  '/api/piani/backend/aggiungi': (d) => aggiungiBackend(d),
+  '/api/piani/backend/elimina': (d) => eliminaBackend(d),
+  '/api/contesti': (d) => contestiDi(progetto(d).nome),
+  '/api/contesti/elimina': (d) => eliminaContesto(d.id),
+  '/api/lezioni': () => ({ lezioni: elencoLezioni(), file: barre(FILE_LEZIONI_MD) }),
+  '/api/lezioni/elimina': (d) => eliminaLezione(d.id),
+  '/api/quiz/avvia': (d) => quiz.avvia(progetto(d), d),
+  '/api/quiz/rispondi': (d) => quiz.rispondi(progetto(d), d),
+  '/api/codice/albero': (d) => letturaCodice.albero(progetto(d)),
+  '/api/codice/file': (d) => letturaCodice.file(progetto(d), d.percorso),
+  '/api/codice/importato-da': (d) => letturaCodice.importatoDa(progetto(d), d.percorso),
+  '/api/codice/cerca': (d) => letturaCodice.cerca(progetto(d), d.testo),
+  '/api/codice/segui': (d) => letturaCodice.segui(progetto(d), d.percorso, Number(d.inizio), Number(d.fine)),
+  '/api/funzionalita': (d) => catalogo.elenco(progetto(d)),
+  '/api/funzionalita/stato': (d) => catalogo.stato(progetto(d)),
+  '/api/funzionalita/crea': (d) => catalogo.crea(progetto(d)),
+  '/api/funzionalita/assegna-nuovi': (d) => catalogo.assegnaNuovi(progetto(d)),
+  '/api/funzionalita/apri': (d) => catalogo.apri(progetto(d), String(d.id || '')),
+  '/api/funzionalita/correlate': (d) => catalogo.correlate(progetto(d), String(d.percorso || ''), Number(d.inizio), Number(d.fine)),
 };
 
 function rispondi(res, status, corpo) {
@@ -780,7 +1452,7 @@ function inviaPagina(res, gettone) {
   res.writeHead(200, {
     'Content-Type': 'text/html; charset=utf-8',
     'Cache-Control': 'no-store',
-    'Content-Security-Policy': `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self' ${SERVER_CHAT}; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
+    'Content-Security-Policy': `default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${SERVER_CHAT}; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`,
     'X-Frame-Options': 'DENY',
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'no-referrer',
@@ -788,10 +1460,19 @@ function inviaPagina(res, gettone) {
   res.end(fs.readFileSync(FILE_PAGINA, 'utf8').replace('__GETTONE__', gettone).replace('__GETTONE_CHAT__', /^[0-9a-f]+$/.test(gettoneChat) ? gettoneChat : ''));
 }
 
+// FILE STATICI
+// Solo i file elencati in FILE_STATICI: nessun percorso arriva dalla richiesta
+function inviaStatico(res, [file, tipo]) {
+  res.writeHead(200, { 'Content-Type': tipo, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
+  res.end(fs.readFileSync(file));
+}
+
 // AVVIO SERVER
 // Controllo dell'Host: blocca i siti che si fingono 127.0.0.1 cambiando il proprio DNS (DNS rebinding)
 function avvia() {
   preparaDati();
+  scriviLezioni();
+  consumi.pulisci();
   const gettone = leggiGettone();
   // Se il server della chat è già acceso, --sfondo non fa nulla
   if (fs.existsSync(FILE_SERVER_CHAT)) spawn(process.execPath, [FILE_SERVER_CHAT, '--sfondo'], { stdio: 'ignore', windowsHide: true });
@@ -800,6 +1481,7 @@ function avvia() {
     if (!HOST_AMMESSI.includes(req.headers.host)) return rispondi(res, 403, { errore: 'host non ammesso' });
     const url = req.url.split('?')[0];
     if (req.method === 'GET' && url === '/') return inviaPagina(res, gettone);
+    if (req.method === 'GET' && Object.hasOwn(FILE_STATICI, url)) return inviaStatico(res, FILE_STATICI[url]);
     if (req.method === 'GET' && url === '/api/stato') return rispondi(res, 200, { attivo: true });
     if (req.method === 'GET' && url === '/mappa') return inviaMappa(res, new URL(req.url, ORIGINE).searchParams);
     if (req.method !== 'POST' || !(url in AZIONI || url === '/api/ferma')) return rispondi(res, 404, { errore: 'non trovato' });
@@ -831,16 +1513,24 @@ function avvia() {
 // PROGETTO CORRENTE
 // La radice della repo git della cartella da cui si lancia: se non è tra i progetti, si aggiunge con il nome della cartella
 function progettoCorrente() {
-  let radice;
+  const radice = radiceGit(process.cwd());
+  if (!radice) return null;
+  preparaDati();
+  return registraProgetto(radice);
+}
+
+function radiceGit(cartella) {
   try {
-    radice = require('child_process').execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: process.cwd(), stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true }).toString().trim();
+    const radice = require('child_process').execFileSync('git', [...GIT_SICURO, 'rev-parse', '--show-toplevel'], { cwd: cartella, stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true }).toString().trim();
+    return radice || null;
   } catch {
     return null;
   }
-  preparaDati();
+}
+
+function registraProgetto(radice) {
   const lista = leggiJson(FILE_PROGETTI);
-  const stessa = (a, b) => path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
-  const esistente = lista.find((p) => p && typeof p.cartella === 'string' && stessa(p.cartella, radice));
+  const esistente = lista.find((p) => p && typeof p.cartella === 'string' && stessaCartella(p.cartella, radice));
   if (esistente) return esistente;
   const base = path.basename(radice);
   let nome = base;
@@ -942,6 +1632,56 @@ function leggiCampi(args) {
   return campi;
 }
 
+// LEZIONI DA TERMINALE
+// Le lezioni si aggiungono solo superando un quiz nella sala: da qui si può solo rigenerare ~/Lezioni.md
+function lezioniDaTerminale(azione) {
+  preparaDati();
+  if (azione !== 'rigenera') {
+    console.log('uso: node server.js --lezioni rigenera');
+    process.exitCode = 1;
+    return;
+  }
+  scriviLezioni();
+  console.log(`Aggiornato ${barre(FILE_LEZIONI_MD)}`);
+}
+
+// CONTESTI DA TERMINALE
+// /chat-termina manda il JSON sullo standard input; /chat-riprendi legge l'ultimo (o quello con l'id dato) di un progetto
+function contestoDaTerminale([azione, nome, id]) {
+  preparaDati();
+  if (azione === 'aggiungi') {
+    let corpo = '';
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('data', (d) => { corpo += d; });
+    process.stdin.on('end', () => {
+      try {
+        console.log(`Contesto salvato: ${aggiungiContesto(JSON.parse(corpo)).titolo}`);
+      } catch (e) {
+        console.error(`errore: ${e.message}`);
+        process.exitCode = 1;
+      }
+    });
+    return;
+  }
+  if (azione === 'elenco') {
+    console.log(contestiDi(nome).slice(0, 15).map((c) => `${c.id.slice(0, 8)}  ${giorno(c.data)}  ${c.titolo}`).join('\n') || 'nessun contesto salvato');
+    return;
+  }
+  if (azione === 'ultimo') {
+    const lista = contestiDi(nome);
+    const scelto = id ? lista.find((c) => c.id.startsWith(id)) : lista[0];
+    if (!scelto) {
+      console.log('nessun contesto salvato per questo progetto');
+      process.exitCode = 1;
+      return;
+    }
+    console.log(testoContesto(scelto));
+    return;
+  }
+  console.log('uso: node server.js --contesto aggiungi   (JSON su stdin: { "titolo", "progetto", "obiettivo", "fatto", "file", "decisioni", "prossimo" })\n     node server.js --contesto ultimo <progetto> [id]\n     node server.js --contesto elenco <progetto>');
+  process.exitCode = 1;
+}
+
 function attivitaDaTerminale([azione, ...args]) {
   preparaDati();
   const stampa = (valore) => console.log(JSON.stringify(valore, null, 2));
@@ -989,6 +1729,8 @@ const comando = process.argv[2];
 if (comando === '--terminale') attendiInvio();
 else if (comando === '--piani') pianiDaTerminale(process.argv.slice(3));
 else if (comando === '--attivita') attivitaDaTerminale(process.argv.slice(3));
+else if (comando === '--contesto') contestoDaTerminale(process.argv.slice(3));
+else if (comando === '--lezioni') lezioniDaTerminale(process.argv[3]);
 else if (comando === '--sfondo') avviaInSfondo(false);
 else if (comando === '--apri') avviaInSfondo(true);
 else if (comando === '--aggiungi') aggiungiProgetto();

@@ -24,10 +24,10 @@ Argomento richiesto dall'utente: $ARGUMENTS
 
 ## Regole
 
-- Schematico, chiaro e conciso.
-- Esempi semplici e piccoli; se esiste, preferisci un esempio preso dal progetto corrente con riferimento al file cliccabile.
+- Segui il FORMATO RISPOSTE del CLAUDE.md globale: sezioni con titolo `##` (massimo 3 parole, maiuscolo), `---` tra una sezione e l'altra, tutto a schema, mai prosa lunga.
+- Esempi semplici e piccoli, in un riquadro di codice; se esiste, preferisci un esempio preso dal progetto corrente, con il nome del file in grassetto sopra il riquadro.
 - Oggetti, liste e JSON sempre con le proprietà in colonna.
-- Termina con un mini glossario dei termini tecnici nuovi.
+- Termina con la sezione `## GLOSSARIO`: i termini tecnici nuovi, una riga ciascuno.
 - Poni attenzione oltre che alla struttura anche alla sintassi del codice che spieghi.
 
 ## Obiettivo

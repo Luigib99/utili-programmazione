@@ -83,7 +83,7 @@
 
   main {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 440px;
+    grid-template-columns: minmax(0, 1fr) 6px var(--larghezza-pannello, 440px);
     height: calc(100vh - 74px);
   }
 
@@ -193,6 +193,35 @@
     display: block;
   }
 
+/* PANNELLO DI DESTRA: largo quanto lo trascini; con "Dettagli" spento resta solo il diagramma */
+  #divisore {
+    position: relative;
+    cursor: col-resize;
+    touch-action: none;
+  }
+
+  #divisore::after {
+    content: "";
+    position: absolute;
+    inset: 0 2px;
+    border-radius: 2px;
+    transition: background .15s;
+  }
+
+  #divisore:hover::after,
+  #divisore.attivo::after {
+    background: var(--muted);
+  }
+
+  main.senza-pannello {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  main.senza-pannello #divisore,
+  main.senza-pannello #panel {
+    display: none;
+  }
+
   #panel {
     overflow: auto;
     padding: 20px;
@@ -204,6 +233,10 @@
     main {
       grid-template-columns: 1fr;
       height: auto;
+    }
+
+    #divisore {
+      display: none;
     }
 
     #panel {
@@ -391,6 +424,18 @@
   }
 
   /* Azioni sul file della mappa, in fondo al riepilogo */
+  /* AVVISI: incongruenze tra mappa e codice trovate dalla sala dopo la generazione */
+  .avvisi-mappa {
+    margin: 14px 0;
+    padding: 10px 14px;
+    border: 1px solid #d29922;
+    border-radius: 8px;
+    background: rgba(210, 153, 34, .1);
+  }
+
+  .avvisi-mappa h3 { margin-top: 0; color: #e3b341; }
+  .avvisi-mappa ul { margin: 6px 0 0; padding-left: 18px; }
+
   .azioni-mappa {
     display: flex;
     justify-content: flex-end;
@@ -542,7 +587,7 @@
     display: inline;
   }
 
-  /* Occhiali e occhiali da sole spariscono quando urla o quando gli occhi girano a spirale */
+  /* Occhiali e occhiali da sole spariscono quando urla o quando gli occhi girano mentre pensa */
   #chat-open.dragging .viso,
   #chat-open.pensa .acc-senior .viso {
     display: none;
@@ -599,10 +644,9 @@
     opacity: .3;
   }
 
-  /* Mentre aspetta la risposta gli occhi diventano spirali che girano */
+  /* Mentre aspetta la risposta gli occhi diventano spirali a pixel che girano a scatti */
   #chat-open .ipno {
     display: none;
-    shape-rendering: geometricPrecision;
   }
 
   #chat-open.pensa .ipno {
@@ -613,16 +657,25 @@
     display: none;
   }
 
-  #chat-open .spirale {
-    transform-box: view-box;
-    animation: chat-spin .9s linear infinite;
+  /* 4 fotogrammi sfasati: ognuno resta acceso per un quarto del giro */
+  #chat-open .giro {
+    opacity: 0;
+    animation: chat-giro .6s steps(1, end) infinite;
   }
 
-  @keyframes chat-spin {
-    to { rotate: 360deg; }
+  @keyframes chat-giro {
+    0% { opacity: 1; }
+    25%, 100% { opacity: 0; }
   }
 
-  /* Faccia che urla mentre la trascini: ha la precedenza anche sugli occhi a spirale */
+  /* Senza animazioni resta ferma la prima spirale */
+  @media (prefers-reduced-motion: reduce) {
+    #chat-open .giro:first-child {
+      opacity: 1;
+    }
+  }
+
+  /* Faccia che urla mentre la trascini: ha la precedenza anche sugli occhi che girano */
   #chat-open .paura {
     display: none;
   }
@@ -646,7 +699,7 @@
     #chat-open .sprite,
     #chat-open::after,
     #chat-open .eye,
-    #chat-open .spirale,
+    #chat-open .giro,
     #chat-open .dot {
       animation: none;
     }
@@ -699,11 +752,6 @@
 
   #chat[hidden] {
     display: none;
-  }
-
-  #chat.big {
-    width: min(620px, calc(100vw - 40px));
-    height: calc(100vh - 110px);
   }
 
   #chat .chat-head {
@@ -775,6 +823,38 @@
     font-size: 12.5px;
   }
 
+  #chat-log .msg.consumo {
+    align-self: stretch;
+    max-width: none;
+    padding: 0 4px;
+    background: none;
+    border: 0;
+    color: var(--muted);
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    white-space: normal;
+  }
+
+  #chat-log .msg.consumo .tok-num { color: #e3b341; font-weight: 700; font-size: 1.15em; }
+  #chat-log .msg.consumo .tok-cache { color: #6cc07e; font-weight: 700; font-size: 1.15em; }
+  #chat-log .msg.consumo summary {
+    display: inline-block;
+    padding: 1px 9px;
+    border: 1px solid var(--border, #555);
+    border-radius: 6px;
+    color: #e3b341;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    list-style: none;
+    cursor: pointer;
+  }
+  #chat-log .msg.consumo summary::-webkit-details-marker { display: none; }
+  #chat-log .msg.consumo .dati { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; }
+  #chat-log .msg.consumo .tok-chi { color: var(--text); font-weight: 600; }
+
   #chat-log .msg.errore {
     align-self: stretch;
     max-width: none;
@@ -800,6 +880,28 @@
   }
 
   /* LUCE DELL'INDIZIO: la zona si illumina, il punto si illumina e pulsa ingrandito */
+  /* Lampadina per riaccendere l'ultimo indizio dopo averlo spento cliccando fuori */
+  #riaccendi {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 20;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid #facc15;
+    border-radius: 50%;
+    background: var(--surface);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 0 12px rgba(250, 204, 21, .35);
+  }
+
+  #riaccendi[hidden] {
+    display: none;
+  }
+
   .luce {
     filter: drop-shadow(0 0 6px #fde047) drop-shadow(0 0 16px rgba(253, 224, 71, .75));
   }
@@ -895,21 +997,35 @@
     font-size: 12px;
   }
 
+  #chat .chat-ctx.vuoto {
+    visibility: hidden;
+  }
+
   #chat .chat-ctx b {
     color: var(--chat);
   }
 
+  #chat .chat-ctx button {
+    margin-left: 4px;
+    padding: 0 5px;
+    font-size: 11px;
+    line-height: 16px;
+  }
+
   #chat form {
+    position: relative;
     display: flex;
-    gap: 8px;
     padding: 8px 12px 12px;
   }
 
+  /* Cresce con il testo fino a 9 righe, poi scorre */
   #chat textarea {
     flex: 1;
     min-height: 40px;
-    max-height: 140px;
-    padding: 8px 10px;
+    max-height: calc(9 * 1.4em + 18px);
+    line-height: 1.4;
+    overflow-y: auto;
+    padding: 8px 40px 8px 10px;
     background: var(--bg);
     color: var(--text);
     border: 1px solid var(--border);
@@ -917,6 +1033,15 @@
     font: inherit;
     font-size: 13.5px;
     resize: none;
+  }
+
+  #chat textarea {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  #chat textarea:hover {
+    scrollbar-color: var(--muted) transparent;
   }
 
   #chat textarea:focus {
@@ -929,6 +1054,20 @@
     background: var(--chat);
     border-color: var(--chat);
     color: #fff;
+  }
+
+  /* Il tasto sta dentro l'input, in basso a destra: il testo ha tutta la larghezza */
+  #chat #chat-send {
+    position: absolute;
+    right: 22px;
+    bottom: 19px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border-radius: 6px;
   }
 
   #chat form button:disabled {
@@ -944,23 +1083,78 @@
     <p class="subtitle" id="subtitle"></p>
   </div>
   <div class="controls">
-    <button id="zoom-out" title="Riduci (Ctrl + rotella)">&minus;</button>
-    <button id="zoom-reset" title="Torna al 100%">100%</button>
-    <button id="zoom-in" title="Ingrandisci (Ctrl + rotella)">+</button>
     <button id="numbers" aria-pressed="false" title="Mostra il numero S di ogni elemento">Numeri</button>
-    <button id="prev" title="Elemento precedente (freccia su)">&uarr;</button>
-    <button id="next" title="Elemento successivo (freccia giù)">&darr;</button>
+    <button id="pannello" aria-pressed="true" title="Mostra o nascondi il pannello di destra">Dettagli</button>
   </div>
 </header>
 <main>
   <div id="stage"></div>
+  <div id="divisore" title="Trascina per allargare o stringere il pannello · doppio clic per la larghezza iniziale"></div>
   <aside id="panel"></aside>
   <div id="toast" role="status" hidden></div>
 </main>
+<script>
+  // PANNELLO DI DESTRA
+  // Si allarga trascinando il bordo (doppio clic: larghezza iniziale) e si nasconde con "Dettagli"; le scelte restano nel browser
+  (() => {
+    const main = document.querySelector('main');
+    const divisore = document.getElementById('divisore');
+    const tasto = document.getElementById('pannello');
+    const MINIMA = 260;
+    const leggi = (chiave) => {
+      try {
+        return localStorage.getItem(chiave);
+      } catch {
+        return null;
+      }
+    };
+    const scrivi = (chiave, valore) => {
+      try {
+        localStorage.setItem(chiave, valore);
+      } catch {}
+    };
+    const allarga = (px) => {
+      const larghezza = Math.round(Math.min(Math.max(px, MINIMA), window.innerWidth * 0.7));
+      main.style.setProperty('--larghezza-pannello', `${larghezza}px`);
+      return larghezza;
+    };
+    const mostra = (visibile) => {
+      main.classList.toggle('senza-pannello', !visibile);
+      tasto.setAttribute('aria-pressed', String(visibile));
+      scrivi('mappa.pannello', visibile ? 'si' : 'no');
+      window.dispatchEvent(new Event('resize'));
+    };
+
+    if (Number(leggi('mappa.larghezza-pannello'))) allarga(Number(leggi('mappa.larghezza-pannello')));
+    mostra(leggi('mappa.pannello') !== 'no');
+    tasto.addEventListener('click', () => mostra(main.classList.contains('senza-pannello')));
+
+    divisore.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      divisore.setPointerCapture(e.pointerId);
+      divisore.classList.add('attivo');
+      const sposta = (ev) => allarga(window.innerWidth - ev.clientX);
+      const lascia = (ev) => {
+        divisore.removeEventListener('pointermove', sposta);
+        divisore.removeEventListener('pointerup', lascia);
+        divisore.classList.remove('attivo');
+        scrivi('mappa.larghezza-pannello', String(allarga(window.innerWidth - ev.clientX)));
+        window.dispatchEvent(new Event('resize'));
+      };
+      divisore.addEventListener('pointermove', sposta);
+      divisore.addEventListener('pointerup', lascia);
+    });
+    divisore.addEventListener('dblclick', () => {
+      main.style.removeProperty('--larghezza-pannello');
+      scrivi('mappa.larghezza-pannello', '');
+      window.dispatchEvent(new Event('resize'));
+    });
+  })();
+</script>
 <button id="chat-open" title="Chiedi sulla mappa (trascinami per spostarmi)"><i class="dot"></i></button>
 <section id="chat" hidden>
   <div class="chat-head">
-    <b title="Trascina per spostare · angolo in basso a destra per ridimensionare · doppio clic per rimetterla vicino alla mascotte">Chiedi sulla mappa</b>
+    <b title="Trascina per spostare · angolo in basso a destra per ridimensionare · doppio clic per rimetterla vicino alla mascotte">Chattino</b>
     <select id="chat-modo" title="Come ti risponde Chattino">
       <option value="normale">Normale</option>
       <option value="insegnante">Insegnante</option>
@@ -969,46 +1163,18 @@
     </select>
     <button id="chat-hint" title="Indizio: ti mostro dove guardare, mai la soluzione" hidden>&#x1F4A1; Indizio</button>
     <button id="chat-clear" title="Ricomincia la conversazione">Nuova</button>
-    <button id="chat-big" title="Alza / abbassa la chat">&#x2922;</button>
     <button id="chat-close" title="Chiudi (la conversazione resta finché la pagina è aperta)">&#x2715;</button>
   </div>
   <div id="chat-log"></div>
   <div class="chat-ctx" id="chat-ctx"></div>
   <form id="chat-form">
     <textarea id="chat-input" rows="2" placeholder="Fai una domanda…"></textarea>
-    <button type="submit" id="chat-send">Invia</button>
+    <button type="submit" id="chat-send" title="Invia (Invio)" aria-label="Invia"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></button>
   </form>
 </section>
 
 <!--
-  DATI DELLA STRUTTURA (unica parte da modificare). Ogni schermata coinvolta è disegnata come appare sul
-  telefono: gli elementi sono div flex in colonna come in React Native, con gli stili reali presi dal codice.
-  I numeri S1, S2… sono assegnati in automatico in ordine (schermata per schermata, prima un elemento poi i suoi figli).
-  - device: (opzionale) { "width": 390, "height": 844 } misure del telefono simulato
-  - screens: [{ "name": "cosa mostra", "background": colore di fondo, "root": elemento }]
-  Elemento:
-  - name: nome nel codice (componente o chiave di stile, es. "footer", "nextButton") o descrizione breve
-  - kind: "component" | "view" | "list" | "control" | "text" | "image" | "icon"
-  - file, path, line: dove si trova; path assoluto con "/" e riga verificata: rendono cliccabile il nome
-  - style: lo stile React Native REALE, già risolto: colori in esadecimale (non "colors.primary"), numeri in punti,
-           percentuali come stringhe ("100%"), fontWeight numerico al posto di fontFamily (Regular 400, SemiBold 600, Bold 700);
-           paddingHorizontal/Vertical, marginHorizontal/Vertical e elevation sono convertiti dal template
-  - styleSource: (opzionale) { "proprietà": "da dove arriva", es. "colors.secondary", "theme.textMuted", "globalStyles.tutorialTitle" }
-  - text: testo che si vede (traduzione nella lingua principale del progetto)
-  - glyph: per le icone, un carattere che le rappresenta (es. "←", "✕", "☰")
-  - image: per le immagini, cosa mostrano (es. "logo dell'app"); le misure vanno in style
-  - condition: (opzionale) quando compare (es. "solo admin", "dalla 2ª pagina")
-  - badges: (opzionale) note brevi (es. "×11 pallini", "position: absolute")
-  - explanation: cosa è, 1-2 frasi semplici
-  - props, terms: (opzionali) { "nome": "valore o significato" }
-  - children: (opzionale) elementi contenuti, in ordine di comparsa
-  - overview: (opzionale) riepilogo nel pannello all'apertura e cliccando fuori:
-    { "goal": obiettivo, "problem": problema, "todo": cosa deve fare ora l'utente, "files": [{ "file", "path", "role" }], "notes": [..] }
-    senza "files" il pannello elenca da solo i file della mappa
-  - indizi: (opzionale) [{ "testo": cosa osservare, "punti": ["S12", "S13"] }, { "testo", "punti": ["S13"] }]
-    tasto Indizio della chat: il primo illumina la zona, il secondo il punto; mai la soluzione
-  - chat: { "token": contenuto di ~/.claude/chat-mappa-token, "project": percorso assoluto del progetto con "/" }
-    attiva la chat in basso a sinistra (server: ~/.claude/shared/chat-mappa-server.js)
+  DATI DELLA STRUTTURA (unica parte da modificare): le regole del JSON sono in ~/.claude/shared/diagramma-pagina-json.md.
   Non inserire la sequenza </script> nel JSON.
 -->
 <script id="page-data" type="application/json">
@@ -1098,10 +1264,8 @@
   document.addEventListener('click', async (e) => {
     const link = e.target.closest('a.code-link');
     if (!link) return;
-    const copied = await copyText(link.dataset.copy);
-    showToast(copied
-      ? `Copiato <code>${esc(link.dataset.copy)}</code><br>In VS Code premi <kbd>Ctrl</kbd>+<kbd>P</kbd>, incolla e premi <kbd>Invio</kbd>`
-      : 'Copia non riuscita: apri il file in un browser esterno per usare il link diretto');
+    // Il percorso si copia in silenzio: l'avviso compare solo se la copia non riesce
+    if (!(await copyText(link.dataset.copy))) showToast('Copia non riuscita: apri il file in un browser esterno per usare il link diretto');
   });
 
   // CONVERSIONE STILE REACT NATIVE → CSS
@@ -1217,6 +1381,7 @@
     return `
       <span class="panel-tag">RIEPILOGO</span>
       <h2>${esc(DATA.title)}</h2>
+      ${(DATA.avvisi || []).length ? `<div class="avvisi-mappa"><h3>&#x26A0; Avvisi · ${DATA.avvisi.length}</h3><p class="route">La sala ha confrontato la mappa con il codice e qui qualcosa non torna: controlla questi punti prima di fidarti.</p><ul>${DATA.avvisi.map((a) => `<li>${fmt(a)}</li>`).join('')}</ul></div>` : ''}
       ${sezione('Obiettivo', o.goal)}
       ${sezione('Problema', o.problem)}
       ${sezione('Cosa fare', o.todo)}
@@ -1294,8 +1459,6 @@
     const on = document.body.classList.toggle('numbers');
     e.currentTarget.setAttribute('aria-pressed', on);
   });
-  document.getElementById('prev').addEventListener('click', () => move(-1));
-  document.getElementById('next').addEventListener('click', () => move(1));
   // Cliccando fuori dai telefoni torna il riepilogo
   document.getElementById('stage').addEventListener('click', (e) => {
     if (!e.target.closest('.el')) select(null);
@@ -1345,12 +1508,8 @@
       // Il punto sotto il puntatore resta fermo mentre la mappa cambia dimensione
       area.scrollLeft = fx * zoom - px;
       area.scrollTop = fy * zoom - py;
-      document.getElementById('zoom-reset').textContent = `${Math.round(zoom * 100)}%`;
     }
 
-    document.getElementById('zoom-in').addEventListener('click', () => impostaZoom(zoom * PASSO));
-    document.getElementById('zoom-out').addEventListener('click', () => impostaZoom(zoom / PASSO));
-    document.getElementById('zoom-reset').addEventListener('click', () => impostaZoom(1));
     area.addEventListener('wheel', (e) => {
       if (!e.ctrlKey) return;
       e.preventDefault();
@@ -1486,6 +1645,12 @@
         : parte.split(/\n{2,}/).filter((p) => p.trim()).map(paragrafo).join('')))
       .join('');
 
+    // CONSUMI
+    // Token usati da Claude, restituiti dal server della chat: numeri veri, non stime
+    const formatoToken = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1).replace('.', ',')}M` : n >= 1000 ? `${Math.round(n / 1000)}k` : String(n));
+    const testoToken = (token, cache) => `<b class="tok-num">${formatoToken(token)}</b>${cache ? ` + <b class="tok-cache">${formatoToken(cache)}</b> da cache` : ''}`;
+    const AIUTO_CONSUMI = 'Token di oggi, da mezzanotte (00:00) alle 23:59. I token da cache pesano molto meno.';
+
     function aggiungi(classe, html, contesto) {
       const msg = document.createElement('div');
       msg.className = `msg ${classe}`;
@@ -1514,11 +1679,36 @@
       }
     }
 
+    // CONTESTO TOLTO
+    // La X vale finché non cambia la selezione: un clic qualsiasi sulla mappa non lo riaccende
+    let tolto = false;
+    let toltoSu = null;
+    const senzaContesto = () => tolto && toltoSu === MAPPA_CHAT.selezione();
+
     function aggiornaContesto() {
       const selezione = MAPPA_CHAT.selezione();
-      $('chat-ctx').innerHTML = selezione
-        ? `Domanda su <b>${esc(selezione)}</b>`
-        : 'Nessun elemento selezionato: la domanda riguarda tutta la mappa';
+      if (tolto && toltoSu !== selezione) tolto = false;
+      const togli = '<button type="button" id="chat-ctx-togli" title="Non mandare a Claude né la selezione né la mappa">&#x2715;</button>';
+      $('chat-ctx').classList.toggle('vuoto', tolto);
+      $('chat-ctx').innerHTML = tolto ? '&nbsp;'
+        : (selezione
+          ? `Domanda su <b>${esc(selezione)}</b>`
+          : 'Nessun elemento selezionato: la domanda riguarda tutta la mappa') + togli;
+    }
+
+    $('chat-ctx').addEventListener('click', (e) => {
+      if (e.target.id !== 'chat-ctx-togli') return;
+      tolto = true;
+      toltoSu = MAPPA_CHAT.selezione();
+      aggiornaContesto();
+    });
+
+    // ALTEZZA INPUT
+    // Prima si azzera, altrimenti scrollHeight non cala quando cancelli righe
+    function adattaInput() {
+      const input = $('chat-input');
+      input.style.height = 'auto';
+      input.style.height = `${input.scrollHeight + input.offsetHeight - input.clientHeight}px`;
     }
 
     // INVIO DOMANDA
@@ -1531,9 +1721,11 @@
         return;
       }
 
-      const selezione = MAPPA_CHAT.selezione();
+      const vuoto = senzaContesto();
+      const selezione = vuoto ? null : MAPPA_CHAT.selezione();
       aggiungi('utente', paragrafo(esc(domanda)), selezione);
       $('chat-input').value = '';
+      adattaInput();
       inAttesa = true;
       $('chat-send').disabled = true;
       $('chat-open').classList.add('pensa');
@@ -1552,8 +1744,9 @@
             project: CONFIG.project,
             tipo: MAPPA_CHAT.tipo,
             titolo: MAPPA_CHAT.dati.title,
-            mappa: JSON.stringify(MAPPA_CHAT.mappa()),
+            mappa: vuoto ? '' : JSON.stringify(MAPPA_CHAT.mappa()),
             selezione,
+            senzaContesto: vuoto,
             storia: storia.slice(-MAX_STORIA),
             domanda,
             modalita: $('chat-modo').value,
@@ -1563,6 +1756,12 @@
         if (!res.ok) throw new Error(corpo.errore || `errore ${res.status}`);
         storia.push({ ruolo: 'utente', testo: selezione ? `[su ${selezione}] ${domanda}` : domanda }, { ruolo: 'claude', testo: corpo.risposta });
         aggiungi('claude', markdown(corpo.risposta));
+        if (corpo.consumo) {
+          const c = corpo.consumo;
+          const t = corpo.giornata?.perFunzione?.['chat-mappa'];
+          const totale = t ? `<span><span class="tok-chi">Chat delle mappe</span> · oggi: ${testoToken(t.token, t.cache)}</span>` : '';
+          aggiungi('consumo', `<details><summary>TOKEN</summary><div class="dati"><span><span class="tok-chi">Questa risposta</span>: ${testoToken(c.input + c.scritti + c.output, c.cache)}</span>${totale}</div></details>`).title = AIUTO_CONSUMI;
+        }
         if ($('chat').hidden) document.querySelector('#chat-open .dot').classList.add('pronta');
       } catch (err) {
         if (err instanceof TypeError) serverSpento();
@@ -1583,6 +1782,7 @@
     let indiziUsati = 0;
 
     let luceAttiva = null;
+    let ultimoIndizio = null;
 
     function illumina(indizio) {
       document.querySelectorAll('.luce').forEach((el) => el.classList.remove('luce', 'luce-zoom'));
@@ -1597,7 +1797,18 @@
       luceAttiva = null;
       document.querySelectorAll('.luce').forEach((el) => el.classList.remove('luce', 'luce-zoom'));
       document.body.classList.remove('con-indizio');
+      $('riaccendi').hidden = !ultimoIndizio;
     }
+
+    // LUCE DELL'INDIZIO
+    // Si spegne cliccando fuori dai punti illuminati (la chat non conta); la lampadina in basso a destra la riaccende
+    document.body.insertAdjacentHTML('beforeend', '<button type="button" id="riaccendi" title="Riaccendi l&#39;ultimo indizio" aria-label="Riaccendi l&#39;ultimo indizio" hidden>&#x1F4A1;</button>');
+    $('riaccendi').addEventListener('click', () => ultimoIndizio && accendiLuce(ultimoIndizio));
+    document.addEventListener('click', (e) => {
+      // Un bottone della chat che si toglie da solo (es. "Sì, mostramelo") non è più nella pagina: non conta come clic fuori
+      if (!luceAttiva || !e.target.isConnected || e.target.closest('#chat, #chat-open, #riaccendi, .luce')) return;
+      spegniLuce();
+    });
 
     // La mappa dati si ridisegna quando apri un riquadro: la luce va riaccesa sui riquadri nuovi
     document.addEventListener('mappa-ridisegnata', () => {
@@ -1606,6 +1817,8 @@
 
     function accendiLuce(indizio) {
       luceAttiva = indizio;
+      ultimoIndizio = indizio;
+      $('riaccendi').hidden = true;
       const trovati = illumina(indizio);
       if (!trovati.length) return;
       // Nella mappa struttura si scorre il telefono intero: scorrere dentro lo schermo simulato lo sposterebbe
@@ -1636,7 +1849,7 @@
     function mostraIndizio(i) {
       const indizio = INDIZI[i];
       const tipo = indizio.punti.length > 1 ? 'zona' : 'punto';
-      const msg = aggiungi('suggerimento', `<div class="par"><b>&#x1F4A1; Indizio ${i + 1} di ${INDIZI.length} · ${tipo}: ${esc(indizio.punti.join(', '))}</b><br>${inline(esc(indizio.testo))}</div><button type="button" data-rivedi>Illumina di nuovo</button> <button type="button" data-spegni>Spegni la luce</button>`);
+      const msg = aggiungi('suggerimento', `<div class="par"><b>&#x1F4A1; Indizio ${i + 1} di ${INDIZI.length} · ${tipo}: ${esc(indizio.punti.join(', '))}</b><br>${inline(esc(indizio.testo))}</div><button type="button" data-rivedi>&#x1F4A1; Illumina di nuovo</button> <button type="button" data-spegni>Spegni la luce</button>`);
       msg.querySelector('[data-rivedi]').addEventListener('click', () => accendiLuce(indizio));
       msg.querySelector('[data-spegni]').addEventListener('click', spegniLuce);
       accendiLuce(indizio);
@@ -1734,14 +1947,18 @@
     ];
     const paura = `<g class="paura">${PAURA.map(([x, y, c]) => pixel(x, y, c)).join('')}</g>`;
     const occhio = (x0) => `<g class="eye">${[3, 4, 5].flatMap((y) => [x0, x0 + 1].map((x) => pixel(x, y, SPRITE[y][x]))).join('')}</g>`;
-    const spirale = (cx, cy) => {
-      const punti = Array.from({ length: 61 }, (_, i) => {
-        const angolo = (i / 60) * 4 * Math.PI;
-        const raggio = 0.08 + (1.05 * i) / 60;
-        return `${(cx + raggio * Math.cos(angolo)).toFixed(2)},${(cy + raggio * Math.sin(angolo)).toFixed(2)}`;
-      });
-      return `<g class="ipno"><circle cx="${cx}" cy="${cy}" r="1.3" fill="${PIXEL.W}"/><polyline class="spirale" style="transform-origin: ${cx}px ${cy}px" points="${punti.join(' ')}" fill="none" stroke="${PIXEL.K}" stroke-width=".3" stroke-linecap="round"/></g>`;
-    };
+    // SPIRALE A PIXEL
+    // Spirale 7×7 a mezzi pixel (3,5×3,5 pixel) centrata sul centro dell'occhio normale (x 5 e 9, y 4,5), così gira sul posto; ogni fotogramma la ruota di 90° in senso orario
+    const SPIRALE = ['KKKKKKK', 'WWWWWWK', 'KKKKKWK', 'KWWWKWK', 'KWKKKWK', 'KWWWWWK', 'KKKKKKK'];
+    const ruota = (x, y, volte) => (volte ? ruota(SPIRALE.length - 1 - y, x, volte - 1) : [x, y]);
+    const mezzo = (x, y) => `<rect x="${x}" y="${y}" width=".5" height=".5" fill="${PIXEL.K}"/>`;
+    const fondo = (x0, y0) => `<rect x="${x0}" y="${y0}" width="3.5" height="3.5" fill="${PIXEL.W}"/>`;
+    const fotogramma = (x0, y0, volte) => SPIRALE.flatMap((riga, y) => [...riga].map((c, x) => {
+      if (c !== 'K') return '';
+      const [rx, ry] = ruota(x, y, volte);
+      return mezzo(x0 + rx / 2, y0 + ry / 2);
+    })).join('');
+    const ipno = (centro) => { const x0 = centro - 1.75; const y0 = 2.75; return `<g class="ipno">${fondo(x0, y0)}${[0, 1, 2, 3].map((volte) => `<g class="giro" style="animation-delay: ${volte * 0.15}s">${fotogramma(x0, y0, volte)}</g>`).join('')}</g>`; };
     // DECORAZIONI DELLE MODALITÀ
     // Pixel fuori dal corpo (la tela va da -2 a 15 in orizzontale e da -4 a 11 in verticale): ognuna si vede solo nella sua modalità
     const COLORI_ACCESSORI = { o: '#141312', g: '#9b968a', A: '#a7afb8', a: '#5f6670', L: '#3d6fb6', P: '#f4f2ec', N: '#22252b', n: '#454b55', Y: '#f2c14e', K: '#2b130b', C: '#4b5563', T: '#2bb3a3', t: '#8fe3d8', S: '#111111', s: '#6b7280', M: '#f4f2ec', m: '#c9c4b8', B: '#6b3e26', V: '#e6e6e6' };
@@ -1760,7 +1977,7 @@
     // Stelline che compaiono intorno quando cambi modalità
     const stellina = (x, y) => punti('Y', [[x, y], [x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]);
     const SCINTILLE = `<g class="scintille">${stellina(-1, -2)}${stellina(14, -1)}${stellina(-1, 9)}${stellina(15, 6)}</g>`;
-    $('chat-open').insertAdjacentHTML('afterbegin', `<svg class="sprite" viewBox="-2 -4 18 16" aria-hidden="true">${corpo}${occhio(4)}${occhio(8)}${bocca}${spirale(5, 4.5)}${spirale(9, 4.5)}${paura}${ACCESSORI}${SCINTILLE}</svg>`);
+    $('chat-open').insertAdjacentHTML('afterbegin', `<svg class="sprite" viewBox="-2 -4 18 16" aria-hidden="true">${corpo}${occhio(4)}${occhio(8)}${bocca}${ipno(5)}${ipno(9)}${paura}${ACCESSORI}${SCINTILLE}</svg>`);
 
     // TRASCINAMENTO
     // Chat e mascotte sono incollate: la chat sta sempre sopra la mascotte e chi viene spostato si porta dietro l'altro
@@ -1849,8 +2066,6 @@
     rendiTrascinabile($('chat'), $('chat').querySelector('.chat-head'), { mentreSposti: mascotteSottoChat });
     $('chat').querySelector('.chat-head').addEventListener('dblclick', (e) => {
       if (e.target.closest('button')) return;
-      $('chat').classList.remove('big');
-      $('chat-big').setAttribute('aria-pressed', false);
       Object.assign($('chat').style, { width: '', height: '' });
       chatSopraMascotte();
     });
@@ -1877,16 +2092,12 @@
     $('chat-close').addEventListener('click', () => {
       $('chat').hidden = true;
     });
-    $('chat-big').addEventListener('click', (e) => {
-      Object.assign($('chat').style, { width: '', height: '' });
-      e.currentTarget.setAttribute('aria-pressed', $('chat').classList.toggle('big'));
-      mascotteSottoChat();
-    });
     $('chat-clear').addEventListener('click', () => {
       storia.length = 0;
       $('chat-log').innerHTML = '';
     });
     $('chat-form').addEventListener('submit', invia);
+    $('chat-input').addEventListener('input', adattaInput);
     // La modalità scelta resta anche nelle prossime pagine
     try {
       $('chat-modo').value = localStorage.getItem('chattino.modo') || 'normale';

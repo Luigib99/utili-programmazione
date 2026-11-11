@@ -7,6 +7,7 @@ const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
+const consumi = require('./consumi-claude');
 
 const PORTA = 4517;
 const HOST = '127.0.0.1';
@@ -17,7 +18,7 @@ const TIMEOUT_MS = 4 * 60 * 1000;
 
 const ISTRUZIONI = `Sei il tutor di programmazione di uno sviluppatore che sta imparando (React Native, JavaScript).
 Ti scrive da una chat dentro una mappa interattiva del suo progetto (i passi del flusso dati si chiamano D1, D2…, gli elementi di una schermata S1, S2…) oppure dalla sua sala di controllo, la pagina in cui gestisce sessioni di Claude Code, branch git e attività del progetto.
-Nel messaggio hai i dati completi (JSON) della mappa o della sala, cosa sta guardando e la conversazione finora. La cartella corrente è il progetto: leggi il codice con Read, Grep e Glob solo quando serve per rispondere bene.
+In fondo a queste istruzioni hai i dati completi (JSON) della mappa o della sala; nel messaggio la modalità di risposta, cosa sta guardando e la conversazione finora. La cartella corrente è il progetto: leggi il codice con Read, Grep e Glob solo quando serve per rispondere bene.
 Regole valide in ogni modalità:
 - rispondi sempre in italiano; i termini tecnici restano in inglese e li spieghi la prima volta.
 - quando c'entra, collega la risposta alla mappa (es. "in D4…", "S3 è…") o alla sala; niente premesse né convenevoli.
@@ -30,13 +31,47 @@ Regole valide in ogni modalità:
 // MODALITÀ DELLA CHAT
 // L'utente la sceglie nella chat; le pagine vecchie non la mandano e restano sull'insegnante, lo stile di sempre
 const MODALITA = {
-  normale: `Modalità NORMALE: rispondi direttamente alla domanda, in modo chiaro e breve (poche righe o al massimo 3 punti), senza lezioni.`,
-  insegnante: `Modalità INSEGNANTE: prendi quello di cui chiede (codice, passo della mappa, concetto) e spiegalo pezzo per pezzo nell'ordine in cui si legge: per ogni pezzo scrivi il pezzo tra backtick e cosa fa in parole semplici, così sa cosa sta leggendo. Chiudi con un esempio concreto (un paragone della vita reale o un mini snippet generico di poche righe). Al massimo 3 blocchi numerati con un titolo in grassetto.`,
-  traduttore: `Modalità TRADUTTORE: l'utente ti scrive codice (o indica un pezzo della mappa o del progetto); traducilo in italiano normale, come lo racconteresti a voce a chi non programma: blocco per blocco nello stesso ordine, ogni riga o gruppo di righe tra backtick seguito dalla sua traduzione. Solo cosa dice il codice: niente giudizi, consigli o correzioni. Se ti scrive una domanda e non del codice, rispondi in una riga che in questa modalità traduci il codice che incolla.`,
-  senior: `Modalità SENIOR DEVELOPER: fai da mentore esperto: di' qual è la cosa giusta da fare e perché (struttura, nomi, convenzioni, sicurezza, manutenzione), quali errori fa di solito chi sceglie la strada sbagliata e cosa controlleresti tu. Sii diretto: se l'idea dell'utente non è la migliore, dillo e indica l'alternativa. Spiega cosa fare a parole; il codice completo solo se lo chiede esplicitamente. Al massimo 3 blocchi numerati con un titolo in grassetto.`,
+  normale: `Modalità NORMALE: risposte CORTE. L'utente odia i muri di testo: meno si legge, meglio è.
+- una domanda semplice: 1-3 frasi. Una domanda complessa: al massimo 5-6 righe in totale, salvo che chieda esplicitamente di più.
+- più domande o richieste: una voce numerata per ciascuna, nello stesso ordine, nessuna saltata, ognuna di 1-2 righe.
+- parti dalla risposta, nella prima riga. Se è sì o no, dillo subito; il motivo solo se serve, in una frase.
+- vietati: premesse, ripetere la domanda, riepiloghi finali, frasi di cortesia o di passaggio, elenchi di alternative non richieste, avvertenze ovvie, sezioni con titoli.
+- tieni solo i dettagli che servono davvero (nomi di file e funzioni, valori, un'avvertenza critica); niente esempi né spiegazioni a meno che li chieda.
+- se c'è altro che potrebbe servire, chiudi con una riga sola ("Posso approfondire X") invece di scriverlo.`,
+  traduttore: `Modalità TRADUTTORE: il messaggio dell'utente è un testo da tradurre, non una domanda. Riscrivilo LETTERALMENTE in termini semplici. NON spiegare, NON commentare, NON rispondere, NON fare paragoni o esempi, NON leggere il codice: questa modalità ha la precedenza su ogni altra regola.
+- output: lo stesso testo riscritto tra virgolette doppie, con lo stesso significato, le stesse idee e lo stesso ordine; sostituisci i termini difficili con parole di tutti i giorni e accorcia le frasi lunghe senza perdere nulla.
+- se il testo ha più frasi, paragrafi o punti elenco, riscrivili uno per uno nello stesso ordine, ognuno tra virgolette.
+- dopo le virgolette, fuori da esse, una riga vuota e "Glossario:" con una voce per riga nel formato "termine originale → come l'hai reso in parole semplici", solo per i termini difficili che compaiono davvero nel testo; se non ce ne sono, niente glossario.
+- nessuna premessa, nessun commento finale, nessun'altra parola oltre alla traduzione e al glossario.
+- se il testo è in un'altra lingua, traducilo in italiano semplice.`,
+  insegnante: `Modalità INSEGNANTE: fai una lezione guidata sul concetto richiesto, dall'origine, così l'utente capisce esattamente come funziona e sa riutilizzarlo.
+- parti da perché esiste: quale problema risolve e cosa succederebbe senza.
+- poi spiega ogni elemento che lo compone, uno alla volta e in ordine logico: cos'è, cosa fa, come si collega agli altri; scrivi tra backtick i pezzi di codice di cui parli.
+- mostra come funziona su un esempio concreto, preferibilmente del suo progetto o della mappa, passo per passo.
+- chiudi con come riusarlo: in quali altri casi si usa, gli errori tipici da evitare e come riconoscere quando serve.
+- blocchi numerati con un titolo in grassetto, che seguono questo percorso.`,
+  senior: `Modalità SENIOR DEVELOPER: sei la guida dell'utente per capire e implementare correttamente l'attività o la richiesta. Lo accompagni in 4 fasi, ognuna è una sezione con titolo ## fisso (stile di risposta come tutte le altre modalità).
+FASI 1-3 (prima risposta, quando l'utente espone un'attività o una richiesta):
+1. ## SPIEGAZIONE: spiega in modo comprensibile di cosa stiamo parlando o cosa stiamo implementando, e perché.
+2. ## FILE E FUNZIONI: per ogni file e funzione del progetto interessati, evidenziali e spiega cosa fanno rispetto a ciò che ci serve (un albero file o una tabella aiuta); leggi il codice reale, non inventare.
+3. ## IPOTESI: elenca TUTTE le strade possibili per implementarla, in ordine neutro. Ogni ipotesi è un sottotitolo "### IPOTESI N" (N = numero) seguito da tre voci fisse, una per riga:
+   - Cosa comporta: cosa cambia nel codice, in una riga.
+   - Lati positivi: ognuno con 🟢.
+   - Rischi: ognuno con 🟡 se lieve o 🔴 se alto o problematico.
+   NON consigliare un'ipotesi e NON metterne una in evidenza: decide l'utente. Se chiede apertamente quale sceglieresti, rispondi solo allora.
+   Chiudi la risposta con il blocco "scelta" (vedi BLOCCHI VISIVI) con una voce per ipotesi, così l'utente la sceglie con un clic.
+FASE 4 (risposta successiva, quando l'utente sceglie un'ipotesi: di solito il messaggio è "Scelgo l'ipotesi N: ..." dal clic sul blocco scelta):
+4. ## IPOTESI SCELTA: apri con un riquadro "nota" che riporta l'ipotesi scelta, poi guidalo passo passo, con elenco numerato: dove guardare (file e funzioni), cosa controllare prima di toccare, come implementarla nell'ordine giusto, cosa verificare alla fine e gli errori tipici da evitare.
+REGOLE:
+- non scrivere codice pronto da incollare: spiega i passi a parole, l'utente scrive il codice e tu lo rivedi; codice solo se lo chiede esplicitamente (poi in riquadro, modifiche in PRIMA / DOPO).
+- se l'utente non sceglie ma pone un'altra domanda, rispondi a quella; se cambia attività, riparti dalla fase 1.`,
 };
 
-const istruzioni = (modalita) => `${ISTRUZIONI}\n\n${Object.hasOwn(MODALITA, modalita) ? MODALITA[modalita] : MODALITA.insegnante}`;
+const testoModalita = (modalita) => (Object.hasOwn(MODALITA, modalita) ? MODALITA[modalita] : MODALITA.insegnante);
+
+// MODELLO
+// Risposte brevi o semplici vanno bene con Sonnet; lezioni e consigli da senior restano sul modello predefinito (Opus)
+const MODELLI_LEGGERI = { normale: 'sonnet', traduttore: 'sonnet' };
 
 // GETTONE
 // Senza gettone qualsiasi pagina web aperta nel browser potrebbe usare il server.
@@ -73,15 +108,84 @@ function trovaClaude() {
   return 'claude';
 }
 
+// PROPOSTE DI ATTIVITÀ
+// Claude resta in sola lettura: scrive solo la proposta, la sala la crea quando l'utente clicca Aggiungi
+const PROPOSTA_ATTIVITA = `CREARE ATTIVITÀ: solo se l'utente ti chiede di creare o aggiungere una o più attività, scrivi una riga di risposta e poi, per ogni attività, un blocco di codice con linguaggio "attivita" che contiene un solo oggetto JSON valido, così:
+\`\`\`attivita
+{"titolo": "...", "obiettivo": "...", "problema": "", "dove": "...", "mappa": "dati", "note": ""}
+\`\`\`
+- titolo obbligatorio (breve, max 200 caratteri); obiettivo = cosa vuole ottenere; problema solo se è un bug (cosa succede, cosa si aspettava, come riprodurlo); dove = pagina, flusso o file (cercalo nel codice se serve); mappa = "dati", "struttura" o "entrambi"; note = vincoli o dubbi. Lascia "" i campi che non sai.
+- l'utente vede ogni blocco come una scheda con il tasto Aggiungi: non dire che l'hai aggiunta, perché la aggiunge lui.
+- se non te lo chiede, non scrivere blocchi "attivita".`;
+
+// BLOCCHI VISIVI
+// Solo la chat della sala sa disegnarli: la pagina li legge e li trasforma in schemi, Claude non scrive HTML né SVG
+const FORMATI_SALA = `BLOCCHI VISIVI: la chat della sala disegna questi blocchi (scrivili esattamente così, ognuno in un blocco di codice con il nome indicato):
+1) schema a riquadri e frecce, con linguaggio "flusso":
+\`\`\`flusso
+titolo: Login con 2FA
+A: L'utente inserisce email e password
+B: L'app chiama /auth/login
+C: Il server chiede il codice OTP
+D: L'utente inserisce il codice
+A -> B: invia
+B -> C: richiesta
+C -> D: schermata OTP
+\`\`\`
+  · righe "id: testo" = un riquadro (id breve senza spazi; testo di 3-10 parole); righe "id -> id: etichetta" = freccia (l'etichetta è facoltativa, 1-3 parole); "titolo: ..." facoltativo.
+  · da 3 a 10 riquadri, una sola idea per schema; l'ordine dei riquadri è l'ordine di lettura. Per un ciclo o un "se" usa più frecce dallo stesso riquadro con etichette ("sì", "no", "errore").
+2) riquadri di testo, con linguaggio "esempio" (un esempio concreto), "nota" (un concetto da ricordare) o "attenzione" (un errore tipico o un rischio). Dentro: testo breve, elenchi puntati, \`codice\` e **grassetto**; la prima riga può essere "titolo: ...".
+3) tabelle markdown (| a | b |) per confronti e riepiloghi.
+4) scelta cliccabile, con linguaggio "scelta": la pagina la disegna come bottoni e, al clic, invia da sola "Scelgo l'ipotesi N: testo". Usala solo in SENIOR, a chiusura delle ipotesi:
+\`\`\`scelta
+titolo: Quale ipotesi scegli?
+1: Nome breve della prima ipotesi
+2: Nome breve della seconda ipotesi
+\`\`\`
+  · righe "N: testo" (da 2 a 6 voci, testo di 3-10 parole); "titolo: ..." facoltativo.
+5) i blocchi di codice normali (con il linguaggio, es. \`\`\`js) per il codice vero.
+Quando usarli, in base alla modalità:
+- INSEGNANTE e SENIOR: usali ogni volta che aiutano. Ogni percorso, sequenza di passi o flusso dati va in un "flusso"; ogni esempio in un riquadro "esempio"; confronti in tabella; il resto in elenchi corti. Meglio uno schema chiaro che un paragrafo.
+- NORMALE: solo se l'utente chiede uno schema, un grafico o un esempio.
+- TRADUTTORE: mai.
+Non ripetere a parole ciò che lo schema già mostra: dopo uno schema bastano 1-2 righe di commento.`;
+
+// FORMATO VISIVO
+// Solo la chat della sala: la pagina disegna titoli, linee, citazioni e checklist. Le chat delle mappe hanno un altro renderer
+const FORMATO_VISIVO_SALA = `FORMATO VISIVO (vince sulle regole di stile della modalità; il TRADUTTORE resta una pura traduzione). L'utente è visivo e ha difficoltà di attenzione: davanti a testo denso salta le parole e non capisce.
+- niente muri di testo: poche parole, un'idea per riga, mai paragrafi in prosa. Anche una risposta brevissima ha un titolo e uno schema.
+- la risposta è divisa in sezioni; ogni sezione comincia con un titolo "## TITOLO" (massimo 3 parole, MAIUSCOLO, senza emoji). Tra un titolo e il successivo una riga "---", con una riga vuota prima e dopo.
+- sottotitolo solo se serve: "### SOTTOTITOLO" (massimo 3 parole, MAIUSCOLO, senza emoji).
+- ogni passaggio spiegato è uno schema, che continua sotto ogni titolo.
+- elenchi: un'idea per riga, un solo livello, riga vuota tra le voci; numerati (1. 2. 3.) quando l'ordine conta, puntati ("- ") altrimenti.
+- parole importanti in **grassetto** (la pagina le colora): solo le parole chiave, mai frasi intere.
+- emoji: SOLO queste 5, sempre con questo significato: 🟢 lato positivo / vantaggio · 🟡 rischio lieve · 🔴 rischio alto / problema grave · ⚠️ attenzione · ✅ fatto / corretto. Nessun'altra emoji.
+- la prima riga di ogni sezione è la conclusione. Chiudi con una domanda o una richiesta SOLO se serve davvero (mai domande di cortesia come "va bene così?"); in quel caso mettila sotto un titolo ("## DOMANDA" o "## RICHIESTA", preceduto da "---") con una sola riga; mai riepiloghi alla fine.
+- stili ammessi quando aiutano: nota = una frase da non perdere in **grassetto** su una riga a sé (niente etichetta "DA RICORDARE", niente emoji, niente citazione ">") · checklist "- [ ]" e "- [x]" · tabella confronto (massimo 3 colonne, celle di 1-4 parole) · albero file in un blocco di testo con ├── e └── · codice vero in blocchi con il linguaggio. Per un prima/dopo di codice: due blocchi con i sottotitoli "### PRIMA" e "### DOPO".`;
+const NO_ATTIVITA = 'CREARE ATTIVITÀ: da questa chat non si possono creare attività. Se l\'utente te lo chiede, digli di chiederlo a Chattino nella sala di controllo.';
+
 // COSTRUZIONE PROMPT
-function costruisciPrompt({ tipo, titolo, mappa, selezione, storia, domanda }) {
+// La parte che non cambia tra una domanda e l'altra (istruzioni e dati della mappa) va nel system prompt, che claude
+// mette in cache: dalla seconda domanda sulla stessa mappa la rilegge a circa 1/10 del costo.
+// Modalità, selezione, conversazione e domanda cambiano a ogni domanda: stanno nel messaggio, così non rompono la cache.
+// Con senzaContesto l'utente ha tolto il contesto dalla chat: niente mappa né selezione, anche se arrivassero
+function sistemaChat({ tipo, titolo, mappa, senzaContesto }) {
+  const contesto = senzaContesto
+    ? 'CONTESTO: l\'utente ha scelto di non mandarti né la mappa/sala né l\'elemento selezionato. Rispondi solo alla domanda; leggi il codice del progetto solo se serve.'
+    : `${{ struttura: 'MAPPA STRUTTURA (elementi S)', sala: 'SALA DI CONTROLLO (solo il blocco che l\'utente ha selezionato)' }[tipo] || 'MAPPA DATI (passi D)'}: ${titolo || ''}\n${String(mappa || '')}`;
+  return [ISTRUZIONI, tipo === 'sala' ? PROPOSTA_ATTIVITA : NO_ATTIVITA, ...(tipo === 'sala' ? [FORMATO_VISIVO_SALA, FORMATI_SALA] : []), contesto].join('\n\n');
+}
+
+const PROMEMORIA_FORMATO = 'PROMEMORIA: in questa chat valgono sempre le regole FORMATO VISIVO del sistema (titoli "## ", righe "---", schemi, un\'idea per riga), anche in modalità NORMALE: la brevità resta, la prosa no.';
+
+function messaggioChat({ tipo, modalita, selezione, senzaContesto, storia, domanda }) {
   const conversazione = (Array.isArray(storia) ? storia : [])
     .map((m) => `${m.ruolo === 'utente' ? 'Utente' : 'Tu'}: ${m.testo}`)
     .join('\n\n');
   return [
-    `${{ struttura: 'MAPPA STRUTTURA (elementi S)', sala: 'SALA DI CONTROLLO (sessioni, branch, attività)' }[tipo] || 'MAPPA DATI (passi D)'}: ${titolo || ''}`,
-    String(mappa || ''),
-    `ELEMENTO SELEZIONATO: ${selezione || 'nessuno'}`,
+    testoModalita(modalita),
+    tipo === 'sala' && modalita !== 'traduttore' ? PROMEMORIA_FORMATO : '',
+    senzaContesto ? '' : `ELEMENTO SELEZIONATO: ${selezione || 'nessuno'}`,
     conversazione ? `CONVERSAZIONE FINORA:\n${conversazione}` : '',
     `NUOVA DOMANDA: ${domanda}`,
   ].filter(Boolean).join('\n\n');
@@ -89,12 +193,18 @@ function costruisciPrompt({ tipo, titolo, mappa, selezione, storia, domanda }) {
 
 // CHIAMATA CLAUDE
 // --restricted limita la lettura dei file alla cartella del progetto; --no-session-persistence non salva la chat.
-function chiediClaude(progetto, prompt, modalita) {
+// Il system prompt passa da un file temporaneo: con la mappa dentro supera il limite di lunghezza della riga di comando di Windows
+function chiediClaude(progetto, dati) {
+  const fileSistema = path.join(os.tmpdir(), `chat-mappa-${process.pid}-${crypto.randomUUID()}.txt`);
+  fs.writeFileSync(fileSistema, sistemaChat(dati), { mode: 0o600 });
+  const pulisci = () => fs.rm(fileSistema, { force: true }, () => {});
   return new Promise((resolve, reject) => {
+    const modello = MODELLI_LEGGERI[dati.modalita];
     const args = [
       '-p', '--output-format', 'json', '--no-session-persistence',
       '--restricted', '--strict-mcp-config', '--tools', 'Read,Grep,Glob',
-      '--permission-mode', 'dontAsk', '--system-prompt', istruzioni(modalita),
+      '--permission-mode', 'dontAsk', '--system-prompt-file', fileSistema,
+      ...(modello ? ['--model', modello] : []),
     ];
     // Senza chiavi API nell'ambiente claude può usare solo il login dell'abbonamento, mai la fatturazione a consumo
     const { ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, ...ambiente } = process.env;
@@ -107,19 +217,24 @@ function chiediClaude(progetto, prompt, modalita) {
     figlio.stderr.on('data', (d) => { err += d; });
     figlio.on('error', (e) => {
       clearTimeout(timer);
+      pulisci();
       reject(new Error(`claude non avviato: ${e.message}`));
     });
     figlio.on('close', () => {
       clearTimeout(timer);
+      pulisci();
+      let risultato;
       try {
-        const risultato = JSON.parse(out);
-        if (risultato.is_error) return reject(new Error(risultato.result || 'errore di claude'));
-        resolve(risultato.result);
+        risultato = JSON.parse(out);
       } catch {
-        reject(new Error((err || out || 'nessuna risposta (tempo scaduto?)').slice(0, 500)));
+        return reject(new Error((err || out || 'nessuna risposta (tempo scaduto?)').slice(0, 500)));
       }
+      const funzione = dati.tipo === 'sala' ? 'chattino' : 'chat-mappa';
+      const consumo = consumi.registra(funzione, risultato);
+      if (risultato.is_error) return reject(new Error(risultato.result || 'errore di claude'));
+      resolve({ risposta: risultato.result, consumo, giornata: consumi.oggi() });
     });
-    figlio.stdin.end(prompt);
+    figlio.stdin.end(messaggioChat(dati));
   });
 }
 
@@ -219,7 +334,7 @@ function avvia() {
 
     occupato = true;
     try {
-      rispondi(res, 200, { risposta: await chiediClaude(progetto, costruisciPrompt(dati), dati.modalita) });
+      rispondi(res, 200, await chiediClaude(progetto, dati));
     } catch (e) {
       rispondi(res, 500, { errore: e.message });
     } finally {

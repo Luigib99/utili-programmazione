@@ -29,6 +29,9 @@
 
   * { box-sizing: border-box; }
 
+  /* Spazio della barra di scorrimento sempre riservato: il contenuto non si sposta quando compare */
+  html { scrollbar-gutter: stable; }
+
   body {
     margin: 0;
     min-height: 100vh;
@@ -102,6 +105,63 @@
 
   .pillole .pillola { border-color: transparent; }
 
+  /* La ✕ per togliere un progetto compare solo passandoci sopra */
+  .voce-progetto {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .togli-progetto {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    z-index: 1;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: var(--muted);
+    font-size: 9px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .voce-progetto:hover .togli-progetto,
+  .togli-progetto.pericolo {
+    display: inline-flex;
+  }
+
+  .togli-progetto:hover { color: var(--text); }
+
+  .togli-progetto.pericolo {
+    width: auto;
+    padding: 0 8px;
+    border-color: var(--danger);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--danger-text);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .aggiungi-progetto {
+    min-width: 32px;
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  /* Il percorso può essere lungo: va a capo lui, i tasti restano sulla stessa riga */
+  .conferma-progetto { flex-wrap: nowrap; }
+  .conferma-progetto .riepilogo { flex: 1; min-width: 0; }
+  .conferma-progetto code { margin-left: 4px; overflow-wrap: anywhere; }
+  .conferma-progetto .btn { flex-shrink: 0; }
+  .conferma-progetto .nota { display: block; margin-top: 4px; }
+
   .pillola:hover { color: var(--text); background: var(--surface-2); }
 
   .pillola.attiva {
@@ -166,7 +226,11 @@
     padding: 22px 28px 120px;
   }
 
-  button.btn {
+  /* a.btn: i link che sembrano tasti (es. Apri mappa) hanno lo stesso aspetto dei bottoni */
+  button.btn, a.btn {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
     padding: 7px 14px;
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -179,11 +243,12 @@
     transition: background .15s, border-color .15s, color .15s, transform .1s;
   }
 
-  button.btn:hover:not(:disabled) { border-color: var(--border-forte); background: #37352f; }
+  button.btn:hover:not(:disabled), a.btn:hover { border-color: var(--border-forte); background: #37352f; }
   button.btn:active:not(:disabled) { transform: translateY(1px); }
   button.btn:disabled { opacity: .35; cursor: default; }
-  button.btn.primario { border-color: var(--accent); background: var(--accent); color: #fff; font-weight: 500; }
-  button.btn.primario:hover:not(:disabled) { border-color: var(--accent-chiaro); background: #e0866a; }
+  button.btn.primario, a.btn.primario { border-color: var(--accent); background: var(--accent); color: #fff; font-weight: 500; }
+  button.btn.primario:hover:not(:disabled), a.btn.primario:hover { border-color: var(--accent-chiaro); background: #e0866a; }
+  .pillola:disabled { opacity: .45; cursor: not-allowed; }
   button.btn.pericolo { border-color: var(--danger); background: rgba(229, 83, 75, .12); color: var(--danger-text); }
 
   input, textarea, select {
@@ -300,6 +365,16 @@
     box-shadow: 0 0 0 1px rgba(217, 119, 87, .25), 0 8px 28px rgba(217, 119, 87, .12);
   }
 
+  /* ATTIVITÀ COMPLETATE */
+  .scheda.fatto,
+  .scheda.fatto:hover {
+    border-color: var(--ok);
+    background: linear-gradient(var(--ok-bg), var(--ok-bg)), var(--surface);
+    box-shadow: 0 0 0 1px rgba(108, 192, 126, .2), 0 8px 28px rgba(108, 192, 126, .08);
+  }
+
+  .scheda.fatto .titolo { color: var(--ok); }
+
   .scheda.branch.corrente .titolo code { color: #fff; }
   .riga.aperta .titolo, .scheda.attiva .titolo { color: #fff; }
 
@@ -350,6 +425,7 @@
   }
 
   .modulo {
+    position: relative;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px 18px;
@@ -360,6 +436,18 @@
     border-radius: var(--raggio);
     box-shadow: var(--ombra);
   }
+
+  .modulo .chiudi-modulo {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 28px;
+    padding: 0;
+    color: var(--muted);
+  }
+
+  .modulo .chiudi-modulo:hover { color: var(--text); }
 
   .lista .modulo {
     margin: 0;
@@ -454,6 +542,306 @@
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
+
+  /* MESSAGGI BACKEND: testo lungo incollato, scorre dentro il suo riquadro */
+  .scheda dd.messaggi-backend {
+    max-height: 280px;
+    overflow: auto;
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 12.5px;
+  }
+
+  .scheda dt .copia-backend {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-top: 8px;
+    padding: 3px 8px;
+    font-size: 11.5px;
+    letter-spacing: 0;
+  }
+
+  .copia-backend svg, .backend-piano .piede svg { width: 14px; height: 14px; }
+
+  .backend-piano {
+    grid-column: 1 / -1;
+    padding: 12px 14px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .fase-piano h2.con-azione { display: flex; align-items: center; gap: 10px; }
+  .compila-auto { color: var(--accent-chiaro); }
+  .compila-auto.attivo { opacity: .6; animation: pulsa 1s ease-in-out infinite; }
+  @keyframes pulsa { 50% { opacity: .25; } }
+
+  .aggiungi-backend {
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px 0;
+    background: none;
+    border: 1px dashed var(--border-forte);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .aggiungi-backend:hover { border-color: var(--accent); color: var(--accent-chiaro); }
+  .aggiungi-backend[hidden] { display: none; }
+
+  .backend-attivita { margin: 4px 0 22px; }
+  .modulo .backend-attivita { grid-column: 1 / -1; margin: 0; }
+  .scheda dd.backend-dd { white-space: normal; }
+  .backend-espandi summary { width: max-content; color: var(--muted); cursor: pointer; }
+  .backend-espandi summary:hover, .backend-espandi[open] summary { color: var(--text); }
+  .backend-espandi .blocco-backend { margin-top: 10px; }
+  .backend-attivita > .titolo-sezione {
+    color: var(--muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+  }
+  .backend-attivita > .titolo-sezione i {
+    margin-left: 6px;
+    font-style: normal;
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+  .backend-attivita textarea {
+    width: 100%;
+    min-height: 84px;
+    max-height: calc(14 * 1.5em + 22px);
+    margin-top: 12px;
+    line-height: 1.5;
+    overflow-y: auto;
+    resize: none;
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 12.5px;
+  }
+  .backend-attivita .piede { margin-top: 10px; }
+  .backend-attivita .piede svg { width: 14px; height: 14px; }
+
+  .backend-piano summary {
+    color: var(--muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    cursor: pointer;
+  }
+
+  .backend-piano summary i {
+    margin-left: 6px;
+    font-style: normal;
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  .backend-piano textarea {
+    width: 100%;
+    min-height: 84px;
+    max-height: calc(14 * 1.5em + 22px);
+    margin-top: 12px;
+    line-height: 1.5;
+    overflow-y: auto;
+    resize: none;
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 12.5px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .backend-piano .piede { margin-top: 10px; }
+
+  /* Esempio sotto il nome del campo: mostra il livello di dettaglio che serve */
+  .modulo label .esempio {
+    margin-top: -3px;
+    color: var(--muted);
+    font-size: 12px;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1.45;
+  }
+
+  /* PIANO TERMINATO E LEZIONI */
+  .spunta-fatto.attiva,
+  .spunta-fatto.attiva:hover:not(:disabled) {
+    border-color: #3fb950;
+    background: #3fb950;
+    color: #fff;
+  }
+
+  .spunta-fatto:hover:not(:disabled):not(.attiva) { color: #3fb950; }
+
+  .blocco-backend {
+    margin-top: 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+  }
+
+  .testa-blocco {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 4px 6px 4px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .testa-blocco b { color: var(--text); }
+  .testa-blocco .btn.icona { width: 30px; height: 28px; }
+
+  .blocco-backend pre {
+    max-height: 280px;
+    margin: 0;
+    padding: 10px 12px;
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 12.5px;
+  }
+  .btn svg { vertical-align: -2px; }
+
+  #cerca-lezioni {
+    width: min(360px, 100%);
+    padding: 8px 12px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font: inherit;
+    font-size: 13.5px;
+  }
+
+  #cerca-lezioni:focus { border-color: var(--accent); outline: none; }
+
+  .scheda.lezione { padding: 16px 20px; }
+
+  .testa-lezione {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .testa-lezione .corpo { flex: 1; min-width: 0; }
+  .scheda.lezione dl { margin: 0; }
+
+  /* QUIZ DI FINE LEZIONE */
+  #quiz {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, .62);
+  }
+
+  #quiz[hidden] { display: none; }
+
+  .quiz-finestra {
+    display: flex;
+    flex-direction: column;
+    width: min(760px, 100%);
+    max-height: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border-forte);
+    border-radius: var(--raggio);
+    box-shadow: var(--ombra);
+  }
+
+  .quiz-testa {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .quiz-testa .corpo { flex: 1; min-width: 0; }
+  .quiz-testa .sotto { color: var(--muted); font-size: 12.5px; }
+
+  #quiz-corpo {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px 18px;
+    overflow-y: auto;
+  }
+
+  .quiz-piede {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--border);
+  }
+
+  .quiz-domanda {
+    padding: 12px 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .quiz-domanda.ok { border-color: var(--ok); background: var(--ok-bg); }
+  .quiz-domanda.no { border-color: var(--danger); opacity: .8; }
+  .quiz-domanda .tipo-domanda { color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+  .quiz-domanda p { margin: 4px 0 10px; font-weight: 500; }
+
+  .quiz-opzione {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .quiz-opzione:hover { background: var(--surface-2); }
+  .quiz-opzione.giusta { color: var(--ok); }
+  .quiz-opzione.sbagliata { color: var(--danger-text); }
+
+  .quiz-domanda textarea {
+    width: 100%;
+    padding: 9px 12px;
+    background: var(--bg-input);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font: inherit;
+    resize: vertical;
+  }
+
+  .quiz-domanda textarea:focus { border-color: var(--accent); outline: none; }
+  .quiz-esito { margin-top: 10px; color: var(--muted); font-size: 13px; }
+  .quiz-esito b { color: var(--text); }
+  .quiz-messaggio { padding: 24px 6px; color: var(--muted); text-align: center; }
+  .quiz-messaggio.errore { color: var(--danger-text); }
+
+  #chat-log .termina-lezione {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+
+  #chat-log .termina-lezione:hover { color: var(--text); }
+  #chat-log .termina-lezione input { accent-color: var(--accent); cursor: pointer; }
 
   .scheda .piede {
     display: flex;
@@ -561,7 +949,21 @@
 
   .stato.tipo { min-width: 112px; }
 
-  .testa-piano + .passi { margin-top: 0; }
+  /* PIANO ESPANSO: l'editor sta dentro la scheda, senza le cornici evidenziate dei moduli */
+  .scheda.piano .interno { padding-left: 0; }
+  .scheda.piano .interno .modulo {
+    background: var(--bg);
+    border-color: var(--border);
+    box-shadow: none;
+  }
+  .scheda.piano .interno .backend-piano { background: var(--bg-input); }
+  .scheda.piano .interno .modulo:last-child { margin-bottom: 0; }
+
+  /* TITOLI DEI CAMPI: arancione il nome, grigia la guida */
+  .fase-piano label.largo > span:first-child,
+  .testa-piano label > span:first-child { color: var(--accent); }
+
+  .testa-piano + .passi { margin-top: 18px; }
   a.btn { text-decoration: none; display: inline-flex; align-items: center; }
   .fase-piano .piede .nota { flex: 1; align-self: center; }
 
@@ -582,6 +984,12 @@
   }
 
   .filtri-tipo .pillola { letter-spacing: 0; font-weight: 400; }
+
+  /* RIQUADRO MAPPA: una sola colonna, tutto a sinistra sotto il titolo; la nota sta su una riga sua e i pulsanti vanno sotto */
+  .riquadro-mappa { grid-template-columns: 1fr; justify-items: start; }
+  .lista .modulo.riquadro-mappa { margin-top: 18px; }
+  .riquadro-mappa > * { justify-self: start; width: 100%; }
+  .riquadro-mappa .piede { flex-wrap: wrap; align-items: center; justify-content: flex-end; }
 
   .modulo label span i {
     margin-left: 6px;
@@ -660,6 +1068,7 @@
   }
 
   .passo .numero svg { width: 14px; height: 14px; }
+  .passo:disabled { opacity: .4; cursor: not-allowed; }
   .passo.iniziata { color: var(--text); }
   .passo.iniziata .numero { background: var(--accent-bg); color: var(--accent-chiaro); }
   .passo.completa { color: var(--text); }
@@ -673,7 +1082,132 @@
     letter-spacing: 0;
   }
 
-  .fase-piano textarea { min-height: 84px; }
+  /* Crescono con il testo fino a 10 righe, poi scorrono */
+  .fase-piano textarea {
+    min-height: 84px;
+    max-height: calc(10 * 1.5em + 22px);
+    line-height: 1.5;
+    overflow-y: auto;
+    resize: none;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .errore-generazione { color: var(--danger-text); }
+
+  /* GUIDA ALLA SCRITTURA: come si scrive il campo, consigli mentre scrivi, tasto per partire da un altro campo */
+  .guida-campo {
+    color: var(--muted);
+    font-size: 12.5px;
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  .guida-campo summary { width: max-content; color: var(--muted); cursor: pointer; }
+  .guida-campo summary:hover { color: var(--text); }
+  .guida-campo p { margin: 6px 0 0; }
+  .guida-campo ul { margin: 6px 0 0; padding-left: 18px; }
+  .guida-campo li { margin: 2px 0; line-height: 1.45; }
+
+  .consigli { display: flex; flex-direction: column; gap: 3px; }
+  .consigli:empty { display: none; }
+
+  .consiglio {
+    color: #e3b341;
+    font-size: 12.5px;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1.45;
+  }
+
+  /* STRUMENTI DEI CAMPI: pulsanti sotto il campo, pannello dei risultati e risposte rapide */
+  .strumenti-campo { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .strumenti-campo .btn { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; }
+  .pannello {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-forte);
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .pannello:empty { display: none; }
+  .pannello a { color: var(--accent-chiaro); text-decoration: underline; }
+  .pannello .riga-cerca { display: flex; gap: 6px; }
+  .pannello .riga-cerca input { flex: 1; min-width: 0; }
+  .pannello .trovato { display: flex; gap: 8px; align-items: baseline; }
+  .pannello .trovato code { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pannello .azioni-pannello { display: flex; flex-wrap: wrap; gap: 6px; }
+  .scelte { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .scelta { display: flex; flex-direction: column; gap: 4px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+  .modulo .scelta b { color: var(--text); font-size: 12.5px; }
+  .scelta .opzioni { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .riprendi { align-self: flex-start; font-size: 12.5px; font-weight: 500; letter-spacing: 0; }
+  .avvisi-mappa { align-self: center; color: #e3b341; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+  .consumo { align-self: center; color: var(--muted); font-size: 12px; font-weight: 400; letter-spacing: 0; white-space: nowrap; }
+  .consumo .tok-num { color: var(--accent-chiaro); font-weight: 700; font-size: 1.15em; }
+  .consumo .tok-cache, #chat-consumo .tok-cache { color: var(--ok); font-weight: 700; font-size: 1.15em; }
+  .consumo .tok-chi { color: var(--text); font-weight: 600; }
+
+  /* IN BREVE: oggi e dopo la modifica, affiancati; su schermo stretto uno sotto l'altro */
+  .sintesi {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .sintesi .piede { align-items: center; }
+  .sintesi .nota { font-size: 13px; font-weight: 400; letter-spacing: 0; }
+
+  .sintesi-riquadri {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .sintesi-riquadro {
+    min-height: 96px;
+    padding: 12px 14px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1.5;
+  }
+
+  .sintesi-riquadro p { margin: 0; white-space: pre-wrap; }
+
+  .sintesi-riquadro h3 {
+    margin: 0 0 6px;
+    color: var(--muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+  }
+
+  .sintesi-riquadro .vuoto { color: var(--muted); font-style: italic; }
+  .sintesi-riquadro.non-chiaro { border-color: var(--danger); background: rgba(229, 83, 75, .08); }
+  .sintesi-riquadro.non-chiaro h3 { color: var(--danger-text); }
+  .sintesi.vecchia .sintesi-riquadro { opacity: .6; }
+
+  @media (max-width: 800px) {
+    .sintesi-riquadri { grid-template-columns: 1fr; }
+  }
+
+  .fase-piano textarea:hover {
+    scrollbar-color: var(--muted) transparent;
+  }
 
   .spunte {
     display: flex;
@@ -709,11 +1243,7 @@
   .naviga-fasi {
     display: flex;
     gap: 8px;
-  }
-
-  .salvataggio {
-    color: var(--muted);
-    font-size: 12.5px;
+    margin-top: 18px;
   }
 
   .scheda .stati {
@@ -912,7 +1442,7 @@
     display: inline;
   }
 
-  /* Occhiali e occhiali da sole spariscono quando urla o quando gli occhi girano a spirale */
+  /* Occhiali e occhiali da sole spariscono quando urla o quando gli occhi girano mentre pensa */
   #chat-open.dragging .viso,
   #chat-open.pensa .acc-senior .viso {
     display: none;
@@ -969,10 +1499,9 @@
     opacity: .3;
   }
 
-  /* Mentre aspetta la risposta gli occhi diventano spirali che girano */
+  /* Mentre aspetta la risposta gli occhi diventano spirali a pixel che girano a scatti */
   #chat-open .ipno {
     display: none;
-    shape-rendering: geometricPrecision;
   }
 
   #chat-open.pensa .ipno {
@@ -983,16 +1512,25 @@
     display: none;
   }
 
-  #chat-open .spirale {
-    transform-box: view-box;
-    animation: chat-spin .9s linear infinite;
+  /* 4 fotogrammi sfasati: ognuno resta acceso per un quarto del giro */
+  #chat-open .giro {
+    opacity: 0;
+    animation: chat-giro .6s steps(1, end) infinite;
   }
 
-  @keyframes chat-spin {
-    to { rotate: 360deg; }
+  @keyframes chat-giro {
+    0% { opacity: 1; }
+    25%, 100% { opacity: 0; }
   }
 
-  /* Faccia che urla mentre la trascini: ha la precedenza anche sugli occhi a spirale */
+  /* Senza animazioni resta ferma la prima spirale */
+  @media (prefers-reduced-motion: reduce) {
+    #chat-open .giro:first-child {
+      opacity: 1;
+    }
+  }
+
+  /* Faccia che urla mentre la trascini: ha la precedenza anche sugli occhi che girano */
   #chat-open .paura {
     display: none;
   }
@@ -1016,7 +1554,7 @@
     #chat-open .sprite,
     #chat-open::after,
     #chat-open .eye,
-    #chat-open .spirale,
+    #chat-open .giro,
     #chat-open .dot {
       animation: none;
     }
@@ -1071,11 +1609,6 @@
     display: none;
   }
 
-  #chat.big {
-    width: min(620px, calc(100vw - 40px));
-    height: calc(100vh - 110px);
-  }
-
   #chat .chat-head {
     display: flex;
     gap: 6px;
@@ -1095,6 +1628,71 @@
     flex: 1;
     font-size: 14px;
   }
+
+  /* PUNTATORE ALT: mini Chattino accanto al mouse e blocco illuminato */
+  #chat-mini {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px;
+    background: var(--surface-2);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    pointer-events: none;
+    box-shadow: var(--ombra);
+  }
+
+  #chat-mini[hidden] { display: none; }
+  #chat-mini .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  body.puntatore, body.puntatore * { cursor: crosshair !important; user-select: none; }
+  .blocco-puntato { outline: 2px solid var(--accent); outline-offset: 2px; box-shadow: 0 0 0 6px var(--accent-bg); }
+
+  /* RIQUADRO TOKEN: chiuso mostra solo la scritta, aperto il dettaglio dei consumi */
+  .token-box { color: var(--muted); font-size: 12px; font-weight: 400; letter-spacing: 0; }
+  .token-box summary {
+    display: inline-block;
+    padding: 1px 9px;
+    border: 1px solid var(--border-forte);
+    border-radius: 6px;
+    color: var(--accent-chiaro);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+  }
+  .token-box summary::-webkit-details-marker { display: none; }
+  .token-box[open] summary { border-color: var(--accent); background: var(--accent-bg); }
+  .token-box { position: relative; }
+  .token-box .dati {
+    /* fixed: non viene tagliata dai contenitori con overflow; la posizione la calcola posizionaToken() */
+    position: fixed;
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: max-content;
+    max-width: min(420px, calc(100vw - 16px));
+    padding: 10px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-forte);
+    border-radius: 10px;
+    box-shadow: var(--ombra);
+    white-space: normal;
+  }
+  .token-box .tok-chi { color: var(--text); font-weight: 600; }
+  .token-box .tok-num { color: var(--accent-chiaro); font-weight: 700; font-size: 1.15em; }
+  .token-box .tok-cache { color: var(--ok); font-weight: 700; font-size: 1.15em; }
+  #chat-consumo { padding: 0 12px 8px; }
+  #chat-consumo .tok-num { color: var(--accent-chiaro); font-weight: 700; font-size: 1.15em; }
 
   #chat .chat-head button {
     padding: 2px 8px;
@@ -1145,6 +1743,20 @@
     font-size: 12.5px;
   }
 
+  #chat-log .msg.consumo {
+    align-self: stretch;
+    max-width: none;
+    padding: 0 4px;
+    background: none;
+    border: 0;
+    color: var(--muted);
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    white-space: normal;
+  }
+
   #chat-log .msg.errore {
     align-self: stretch;
     max-width: none;
@@ -1162,6 +1774,57 @@
   #chat-log .msg button {
     margin-top: 8px;
     padding: 3px 10px;
+    font-size: 12.5px;
+  }
+
+  /* Attività proposta da Chattino: diventa vera solo con Aggiungi */
+  #chat-log .proposta {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: var(--bg);
+    border: 1px solid var(--chat);
+    border-radius: 8px;
+  }
+
+  #chat-log .proposta .tipo-proposta {
+    display: block;
+    color: var(--chat);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  #chat-log .proposta dl {
+    margin: 4px 0 0;
+    font-size: 12.5px;
+  }
+
+  #chat-log .proposta dt {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  #chat-log .proposta dd {
+    margin: 0;
+    white-space: pre-wrap;
+  }
+
+  #chat-log .proposta .piede-proposta {
+    display: flex;
+    gap: 6px;
+  }
+
+  #chat-log .proposta [data-proposta="aggiungi"] {
+    background: var(--chat);
+    border-color: var(--chat);
+    color: #fff;
+  }
+
+  #chat-log .proposta .fatta {
+    margin-top: 8px;
+    color: #3fb950;
     font-size: 12.5px;
   }
 
@@ -1210,17 +1873,283 @@
   }
 
   #chat-log .par {
-    margin: 0 0 6px;
+    margin: 0 0 12px;
   }
 
   #chat-log .par:last-child {
     margin-bottom: 0;
   }
 
-  #chat-log ul {
-    margin: 0 0 6px;
-    padding-left: 18px;
+  #chat-log ul,
+  #chat-log ol {
+    margin: 0 0 8px;
+    padding-left: 22px;
   }
+
+  #chat-log li { margin: 0 0 6px; }
+
+  /* Parole importanti: il grassetto di Chattino è colorato */
+  #chat-log .msg.claude b { color: var(--accent-chiaro); }
+
+  /* TITOLI E LINEE: titolo grande, sottotitolo piccolo e colorato, linea tra le sezioni */
+  #chat-log .t1 {
+    margin: 16px 0 10px;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+
+  #chat-log .t2 {
+    margin: 12px 0 8px;
+    color: var(--accent-chiaro);
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  #chat-log .par:first-child > .t1:first-child { margin-top: 2px; }
+
+  #chat-log hr {
+    height: 0;
+    margin: 18px 0;
+    border: 0;
+    border-top: 1px solid var(--border-forte);
+  }
+
+  #chat-log blockquote {
+    margin: 12px 0;
+    padding: 10px 14px;
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    background: var(--accent-bg);
+  }
+
+  #chat-log li.spunta { list-style: none; margin-left: -20px; }
+  #chat-log li.spunta::before { content: "\2610\00a0"; color: var(--muted); }
+  #chat-log li.spunta.fatta::before { content: "\2611\00a0"; color: var(--ok); }
+
+  /* BLOCCHI VISIVI: codice, riquadri, tabelle e schemi a frecce */
+  #chat-log .codice {
+    margin: 8px 0;
+    overflow: hidden;
+    border: 1px solid var(--border-forte);
+    border-radius: 8px;
+    background: var(--bg);
+  }
+
+  #chat-log .codice .lingua {
+    display: block;
+    padding: 3px 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  #chat-log .codice pre {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  #chat-log .riquadro {
+    --cr: var(--accent);
+    --cr-bg: var(--accent-bg);
+    margin: 10px 0;
+    overflow: hidden;
+    border: 1px solid var(--cr);
+    border-radius: 10px;
+    background: var(--bg);
+  }
+
+  #chat-log .riquadro.nota { --cr: var(--ok); --cr-bg: var(--ok-bg); }
+  #chat-log .riquadro.attenzione { --cr: #d29922; --cr-bg: rgba(210, 153, 34, .14); }
+
+  #chat-log .riquadro-testa {
+    padding: 4px 12px;
+    background: var(--cr-bg);
+    color: var(--cr);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  #chat-log .riquadro-corpo { padding: 12px 16px; }
+
+  #chat-log .scelta {
+    margin: 12px 0;
+    overflow: hidden;
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    background: var(--bg);
+  }
+
+  #chat-log .scelta-testa {
+    padding: 4px 12px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  #chat-log .scelta-voci { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; }
+
+  #chat-log .scelta-voce {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  #chat-log .scelta-voce:hover:not(:disabled) { background: var(--accent-bg); }
+  #chat-log .scelta-voce:disabled { cursor: default; opacity: .45; }
+  #chat-log .scelta-voce.scelta-presa { opacity: 1; background: var(--accent-bg); font-weight: 700; }
+
+  #chat-log .scelta-num {
+    flex: none;
+    min-width: 24px;
+    text-align: center;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  #chat-log table {
+    display: block;
+    max-width: 100%;
+    margin: 8px 0;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+
+  #chat-log th,
+  #chat-log td {
+    padding: 9px 16px;
+    border: 1px solid var(--border-forte);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  #chat-log th { background: var(--surface); color: var(--accent-chiaro); }
+
+  #chat-log .flusso {
+    margin: 10px 0;
+    padding: 12px;
+    border: 1px solid var(--border-forte);
+    border-radius: 10px;
+    background: var(--bg);
+  }
+
+  #chat-log .flusso-titolo {
+    margin-bottom: 12px;
+    color: var(--accent-chiaro);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  #chat-log .flusso-area {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  #chat-log .flusso-riga {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px 24px;
+  }
+
+  #chat-log .nodo {
+    position: relative;
+    flex: 0 1 160px;
+    min-width: 100px;
+    padding: 8px 10px 8px 36px;
+    border: 1px solid var(--border-forte);
+    border-radius: 8px;
+    background: var(--surface-2);
+    font-size: 12.5px;
+    line-height: 1.35;
+  }
+
+  #chat-log .nodo.inizio { border-color: var(--accent); }
+  #chat-log .nodo.fine { border-color: var(--ok); }
+
+  #chat-log .nodo-n {
+    position: absolute;
+    top: 8px;
+    left: 9px;
+    display: grid;
+    width: 19px;
+    height: 19px;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--accent-bg);
+    color: var(--accent-chiaro);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  #chat-log .flusso-frecce {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    color: var(--accent-chiaro);
+    pointer-events: none;
+  }
+
+  #chat-log .flusso-frecce svg { position: absolute; inset: 0; overflow: visible; }
+  #chat-log .flusso-frecce line { stroke: currentColor; stroke-width: 1.7; }
+
+  #chat-log .freccia-etichetta {
+    position: absolute;
+    padding: 1px 7px;
+    transform: translate(-50%, -50%);
+    border: 1px solid var(--border-forte);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  /* SCHERMO INTERO: la chat copre la pagina ma sta sotto la mascotte (z-index minore), che resta dov'è */
+  #chat.schermo-intero {
+    inset: 0 !important;
+    align-items: center;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none;
+    max-height: none;
+    padding-inline: clamp(0px, 8vw, 96px);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    resize: none;
+  }
+
+  #chat.schermo-intero > * { width: min(960px, 100%); }
+  #chat.schermo-intero .chat-head { cursor: default; }
+  #chat.schermo-intero #chat-log .msg { max-width: 96%; font-size: 14.5px; }
 
   #chat .chat-ctx {
     padding: 6px 12px 0;
@@ -1228,21 +2157,35 @@
     font-size: 12px;
   }
 
+  #chat .chat-ctx.vuoto {
+    visibility: hidden;
+  }
+
   #chat .chat-ctx b {
     color: var(--chat);
   }
 
+  #chat .chat-ctx button {
+    margin-left: 4px;
+    padding: 0 5px;
+    font-size: 11px;
+    line-height: 16px;
+  }
+
   #chat form {
+    position: relative;
     display: flex;
-    gap: 8px;
     padding: 8px 12px 12px;
   }
 
+  /* Cresce con il testo fino a 9 righe, poi scorre */
   #chat textarea {
     flex: 1;
     min-height: 40px;
-    max-height: 140px;
-    padding: 8px 10px;
+    max-height: calc(9 * 1.4em + 18px);
+    line-height: 1.4;
+    overflow-y: auto;
+    padding: 8px 40px 8px 10px;
     background: var(--bg);
     color: var(--text);
     border: 1px solid var(--border);
@@ -1250,6 +2193,15 @@
     font: inherit;
     font-size: 13.5px;
     resize: none;
+  }
+
+  #chat textarea {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  #chat textarea:hover {
+    scrollbar-color: var(--muted) transparent;
   }
 
   #chat textarea:focus {
@@ -1264,11 +2216,26 @@
     color: #fff;
   }
 
+  /* Il tasto sta dentro l'input, in basso a destra: il testo ha tutta la larghezza */
+  #chat #chat-send {
+    position: absolute;
+    right: 22px;
+    bottom: 19px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border-radius: 6px;
+  }
+
   #chat form button:disabled {
     opacity: .5;
     cursor: default;
   }
 </style>
+<link rel="stylesheet" href="/lettura-codice/pagina.css">
 </head>
 <body>
 <header>
@@ -1282,35 +2249,56 @@
   <button data-sezione="branch">Branch<span class="conta" id="conta-branch"></span></button>
   <button data-sezione="attivita">Attività<span class="conta" id="conta-attivita"></span></button>
   <button data-sezione="piani">Piani<span class="conta" id="conta-piani"></span></button>
+  <button data-sezione="contesto">Contesto<span class="conta" id="conta-contesto"></span></button>
+  <button data-sezione="lezioni">Lezioni<span class="conta" id="conta-lezioni"></span></button>
+  <button data-sezione="funzionalita">Funzionalità</button>
+  <button data-sezione="codice">Lettura codice</button>
 </nav>
 <main id="contenuto"></main>
 <div id="avviso"></div>
 <button id="chat-open" title="Chiedi a Chattino (trascinami per spostarmi)"><i class="dot"></i></button>
 <section id="chat" hidden>
   <div class="chat-head">
-    <b title="Trascina per spostare · angolo in basso a destra per ridimensionare · doppio clic per rimetterla vicino alla mascotte">Chiedi a Chattino</b>
+    <b title="Trascina per spostare · angolo in basso a destra per ridimensionare · doppio clic per rimetterla vicino alla mascotte">Chattino</b>
     <select id="chat-modo" title="Come ti risponde Chattino">
       <option value="normale">Normale</option>
       <option value="insegnante">Insegnante</option>
       <option value="traduttore">Traduttore</option>
       <option value="senior">Senior developer</option>
     </select>
+    <button id="chat-schermo" aria-pressed="false" title="Schermo intero">&#x2922;</button>
     <button id="chat-clear" title="Ricomincia la conversazione">Nuova</button>
-    <button id="chat-big" title="Alza / abbassa la chat">&#x2922;</button>
     <button id="chat-close" title="Chiudi (la conversazione resta finché la pagina è aperta)">&#x2715;</button>
   </div>
   <div id="chat-log"></div>
   <div class="chat-ctx" id="chat-ctx"></div>
   <form id="chat-form">
     <textarea id="chat-input" rows="2" placeholder="Fai una domanda…"></textarea>
-    <button type="submit" id="chat-send">Invia</button>
+    <button type="submit" id="chat-send" title="Invia (Invio)" aria-label="Invia"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></button>
   </form>
+  <details class="token-box" id="chat-consumo"><summary>TOKEN</summary><div class="dati" id="chat-consumo-dati"></div></details>
 </section>
+<div id="quiz" hidden>
+  <div class="quiz-finestra" role="dialog" aria-modal="true" aria-labelledby="quiz-titolo">
+    <div class="quiz-testa">
+      <div class="corpo"><b id="quiz-titolo"></b><div class="sotto" id="quiz-sotto"></div></div>
+      <button type="button" class="btn" id="quiz-chiudi" title="Chiudi (Esc)">&#x2715;</button>
+    </div>
+    <div id="quiz-corpo"></div>
+    <div class="quiz-piede" id="quiz-piede"></div>
+  </div>
+</div>
 
+<script src="/lettura-codice/analisi.js"></script>
+<script src="/lettura-codice/pagina.js"></script>
 <script>
   const GETTONE = '__GETTONE__';
   const AGGIORNA_MS = 15000;
   const STATI = [['in-corso', 'In corso'], ['da-fare', 'Da fare'], ['fatto', 'Fatto']];
+  // FILTRI PER STATO
+  // Valgono per attività e piani: "Aperti" (da fare + in corso) è quello di partenza, "Tutte" sta in fondo
+  const FILTRI_STATO = [['aperti', 'Aperti'], ...STATI, ['tutte', 'Tutte']];
+  const passaFiltro = (filtro, statoElemento) => filtro === 'tutte' || (filtro === 'aperti' ? statoElemento !== 'fatto' : statoElemento === filtro);
   // Le attività mai trascinate non hanno ancora un ordine: vanno in fondo, dalla più recente
   const perOrdine = (a, b) => (a.ordine ?? Infinity) - (b.ordine ?? Infinity) || b.creata - a.creata;
   const SOGLIA_CONTESTO = 0.4;
@@ -1335,6 +2323,7 @@
     chiudi: '<path d="M12 3v8"/><path d="M6.3 6.3a8 8 0 1 0 11.4 0"/>',
     archivia: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M10 13h4"/>',
     ripristina: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M12 18v-5"/><path d="m9.5 15.5 2.5-2.5 2.5 2.5"/>',
+    compila: '<path d="M10 3l1.8 5.2L17 10l-5.2 1.8L10 17l-1.8-5.2L3 10l5.2-1.8z"/><path d="M18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8z"/>',
     elimina: '<path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/>',
     'da-fare': '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
     'in-corso': '<path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/>',
@@ -1364,9 +2353,16 @@
     progetto: memoria.leggi('sala.progetto', ''),
     sezione: memoria.leggi('sala.sezione', 'sessioni'),
     filtro: 'tutte',
-    filtroAttivita: 'tutte',
+    filtroAttivita: 'aperti',
+    filtroPiani: 'aperti',
     trascinata: null,
     piani: [],
+    lezioni: [],
+    contesti: [],
+    fileLezioni: '',
+    backendAperti: new Set(),
+    contestiAperti: new Set(),
+    cercaLezioni: '',
     fasiPiano: [],
     tipiPiano: [],
     pianoAperto: null,
@@ -1416,16 +2412,21 @@
   // CARICAMENTO DATI
   async function carica() {
     if (!stato.progetto) return;
-    const [sessioni, branch, attivita, piani] = await Promise.allSettled([
-      api('/api/sessioni'), api('/api/branch'), api('/api/attivita'), api('/api/piani'),
+    const [sessioni, branch, attivita, piani, lezioni, consumiClaude, contesti] = await Promise.allSettled([
+      api('/api/sessioni'), api('/api/branch'), api('/api/attivita'), api('/api/piani'), api('/api/lezioni'), api('/api/consumi'), api('/api/contesti'),
     ]);
+    if (consumiClaude.status === 'fulfilled') stato.consumi = consumiClaude.value;
+    stato.contesti = contesti.status === 'fulfilled' ? contesti.value : [];
+    if (lezioni.status === 'fulfilled') Object.assign(stato, { lezioni: lezioni.value.lezioni, fileLezioni: lezioni.value.file });
     if (piani.status === 'fulfilled') Object.assign(stato, { piani: piani.value.piani, fasiPiano: piani.value.fasi, tipiPiano: piani.value.tipi });
     stato.sessioni = sessioni.status === 'fulfilled' ? sessioni.value : [];
     stato.branch = branch.status === 'fulfilled' ? branch.value : { errore: branch.reason.message };
-    stato.attivita = attivita.status === 'fulfilled' ? attivita.value : [];
+    // Un server non riavviato manda ancora il vecchio testo unico: senza questo la scheda non si disegna
+    stato.attivita = attivita.status === 'fulfilled' ? attivita.value.map((a) => ({ ...a, backend: Array.isArray(a.backend) ? a.backend : [] })) : [];
     stato.commit = {};
     await Promise.all([...stato.branchAperti].map(caricaCommit));
     if (sessioni.status === 'rejected') avvisa(sessioni.reason.message, true);
+    if (stato.piani.some(generaInCorso)) seguiGenerazione();
     $('aggiornato').textContent = `aggiornato ${new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
     disegna();
   }
@@ -1454,24 +2455,66 @@
     if (!stato.progetti.some((p) => p.nome === stato.progetto)) stato.progetto = stato.progetti[0]?.nome || '';
     memoria.scrivi('sala.progetto', stato.progetto);
     if (richiesto) history.replaceState(null, '', '/');
-    if (!stato.progetto) {
-      $('contenuto').innerHTML = '<p class="vuoto">Nessun progetto configurato: aggiungili in ~/.claude/sala-controllo/dati/progetti.json</p>';
-      return;
-    }
+    if (!stato.progetto) return disegnaSenzaProgetti();
+    await carica();
+  }
+
+  function disegnaSenzaProgetti() {
+    $('progetti').innerHTML = htmlProgetti();
+    $('contenuto').innerHTML = `${htmlNuovoProgetto()}<p class="vuoto">Nessun progetto: aggiungine uno con il + in alto.</p>`;
+  }
+
+  // PROGETTI
+  // La ✕ toglie solo la voce dalla lista; il + apre la finestra di Windows per scegliere la cartella
+  const htmlProgetti = () => stato.progetti.map((p) => `<span class="voce-progetto">
+      <button class="pillola${p.nome === stato.progetto ? ' attiva' : ''}" data-progetto="${esc(p.nome)}" title="${esc(p.cartella)}">${esc(p.nome)}</button>
+      <button class="togli-progetto" data-azione="rimuovi-progetto" data-nome="${esc(p.nome)}" title="Togli ${esc(p.nome)} dalla sala (la cartella non viene toccata)">&#x2715;</button>
+    </span>`).join('') + '<button class="pillola aggiungi-progetto" data-azione="scegli-progetto" title="Aggiungi un progetto scegliendo la sua cartella">+</button>';
+
+  const htmlNuovoProgetto = () => (stato.nuovoProgetto ? `<div class="barra conferma-progetto">
+      <span class="riepilogo">Aggiungere <b>${esc(stato.nuovoProgetto.nome)}</b> alla sala? <code>${esc(stato.nuovoProgetto.cartella)}</code>
+        <span class="nota">Aggiungi solo repo tuoi o di cui ti fidi: la sala ci lancia comandi git.</span></span>
+      <button class="btn" data-azione="annulla-progetto">Annulla</button>
+      <button class="btn primario" data-azione="conferma-progetto">Aggiungi</button>
+    </div>` : '');
+
+  // Dopo aver tolto o aggiunto un progetto si riparte da zero, come cambiando progetto
+  async function apriProgetto(nome) {
+    stato.progetti = await api('/api/progetti');
+    stato.progetto = stato.progetti.some((p) => p.nome === nome) ? nome : stato.progetti[0]?.nome || '';
+    Object.assign(stato, { modifica: null, nuova: false, commitAperto: false, pianoAperto: null });
+    stato.branchAperti.clear();
+    memoria.scrivi('sala.progetto', stato.progetto);
+    if (!stato.progetto) return disegnaSenzaProgetti();
     await carica();
   }
 
   // DISEGNO
   function disegna() {
-    $('progetti').innerHTML = stato.progetti.map((p) =>
-      `<button class="pillola${p.nome === stato.progetto ? ' attiva' : ''}" data-progetto="${esc(p.nome)}" title="${esc(p.cartella)}">${esc(p.nome)}</button>`).join('');
+    $('progetti').innerHTML = htmlProgetti();
     document.querySelectorAll('#sezioni button').forEach((b) => b.classList.toggle('attiva', b.dataset.sezione === stato.sezione));
     $('conta-sessioni').textContent = stato.sessioni.length;
     $('conta-branch').textContent = stato.branch?.branch?.length ?? '';
     $('conta-attivita').textContent = stato.attivita.filter((a) => a.stato !== 'fatto').length;
     $('conta-piani').textContent = stato.piani.length;
-    const sezioni = { sessioni: htmlSessioni, branch: htmlBranch, attivita: htmlAttivita, piani: htmlPiani };
-    $('contenuto').innerHTML = sezioni[stato.sezione]();
+    $('conta-lezioni').textContent = stato.lezioni.length;
+    $('conta-contesto').textContent = stato.contesti.length;
+    const sezioni = { sessioni: htmlSessioni, branch: htmlBranch, attivita: htmlAttivita, piani: htmlPiani, contesto: htmlContesti, lezioni: htmlLezioni };
+    // Lettura codice e Funzionalità sono elementi che sopravvivono ai ridisegni: si riagganciano invece di ricrearli
+    const persistenti = { codice: LetturaCodice.nodo, funzionalita: LetturaCodice.catalogo };
+    const persistente = persistenti[stato.sezione];
+    $('contenuto').classList.toggle('largo', stato.sezione === 'codice');
+    $('contenuto').innerHTML = htmlNuovoProgetto() + (persistente ? '' : sezioni[stato.sezione]());
+    if (persistente) $('contenuto').append(persistente());
+    if (stato.sezione === 'codice') LetturaCodice.ripristinaScroll();
+    document.querySelectorAll('.fase-piano textarea, .backend-piano textarea').forEach(adattaAltezza);
+  }
+
+  // ALTEZZA CAMPI
+  // Prima si azzera, altrimenti scrollHeight non cala quando cancelli righe
+  function adattaAltezza(campo) {
+    campo.style.height = 'auto';
+    campo.style.height = `${campo.scrollHeight + campo.offsetHeight - campo.clientHeight}px`;
   }
 
   function sessioniFiltrate() {
@@ -1520,7 +2563,7 @@
       const motivo = motivoNonChiudibile(s);
       const etichetta = !aperta ? `<span class="stato">${s.stato}</span>`
         : s.lavoro === 'busy' ? '<span class="stato lavoro">al lavoro</span>' : '<span class="stato aperta">aperta</span>';
-      return `<div class="riga${aperta ? ' aperta' : ''}">
+      return `<div class="riga${aperta ? ' aperta' : ''}" data-blocco="sessione" data-bid="${esc(s.id)}">
         ${etichetta}
         <div class="corpo">
           <div class="titolo" title="${esc(s.titolo)}">${esc(s.titolo)}</div>
@@ -1569,6 +2612,7 @@
   function htmlModuloCommit(b) {
     const altri = b.modifiche > b.file.length ? `<li>… e altri ${b.modifiche - b.file.length}</li>` : '';
     return `<div class="modulo">
+        <button class="btn chiudi-modulo" data-azione="annulla-commit" title="Annulla">&#x2715;</button>
         <label class="largo"><span>FILE CHE ENTRANO NEL COMMIT · ${b.modifiche}</span>
           <ul class="file">${b.file.map((f) => `<li><code>${esc(f.stato)}</code> ${esc(f.percorso)}</li>`).join('')}${altri}</ul>
         </label>
@@ -1594,7 +2638,7 @@
       const noElimina = corrente ? 'Sei su questo branch: passa a un altro prima di eliminarlo'
         : r.nome === b.principale ? 'Il branch principale non si elimina da qui' : '';
       const titoloElimina = r.avanti ? `Elimina: ha ${r.avanti} commit che non sono in ${esc(b.principale)}` : 'Elimina il branch locale';
-      return `<div class="scheda branch${corrente ? ' corrente' : ''}${stato.branchAperti.has(r.nome) ? ' aperta' : ''}">
+      return `<div class="scheda branch${corrente ? ' corrente' : ''}${stato.branchAperti.has(r.nome) ? ' aperta' : ''}" data-blocco="branch" data-bid="${esc(r.nome)}">
         <div class="testa" data-azione="espandi-branch" data-nome="${esc(r.nome)}" title="Clicca per vedere i commit">
           <span class="freccia">▶</span>
           <span class="stato${corrente ? ' corrente' : ''}">${corrente ? 'attuale' : 'locale'}</span>
@@ -1633,17 +2677,182 @@
   const fasiDelPiano = (piano) => delTipo(stato.fasiPiano, piano.tipo);
   const nomeTipo = (tipo) => stato.tipiPiano.find((t) => t.id === tipo)?.nome || tipo;
 
+  // MAPPA OBBLIGATORIA
+  // Le fasi dopo la Richiesta si aprono solo con la mappa scelta e, se non è "Nessuna", generata
+  const TIPI_MAPPA = { dati: ['dati'], struttura: ['struttura'], entrambi: ['dati', 'struttura'] };
+  const mappePronte = (piano) => (TIPI_MAPPA[piano.mappa] || []).every((t) => piano.mappe.some((m) => m.tipo === t && m.esiste));
+
+  function bloccoMappa(piano) {
+    // Un piano terminato si rilegge e si corregge sempre, anche se la mappa è stata eliminata
+    if (piano.terminato) return '';
+    if (!piano.mappa) return 'Scegli prima la mappa nella Richiesta';
+    if (piano.mappa === 'nessuna') return '';
+    if (piano.generazione?.stato === 'in-corso') return 'Aspetta che la mappa sia pronta';
+    return mappePronte(piano) ? '' : 'Genera prima la mappa nella Richiesta';
+  }
+
+  // Come chiede la skill /piano: servono il Dove e lo scopo, che cambia campo in base al tipo di lavoro
+  function mancaPerGenerare(piano) {
+    const c = piano.fasi.richiesta.campi;
+    const scopo = { bug: c.atteso, minore: c.cosa, modifica: c.obiettivo || c.cambia }[piano.tipo] ?? c.obiettivo;
+    if (!String(scopo || '').trim()) return `Compila ${piano.tipo === 'bug' ? 'il Comportamento atteso' : piano.tipo === 'minore' ? 'Cosa cambiare' : 'l\'Obiettivo'} nella Richiesta`;
+    return '';
+  }
+
+  const durata = (inizio) => {
+    const secondi = Math.max(0, Math.round((Date.now() - inizio) / 1000));
+    return `${Math.floor(secondi / 60)}m ${String(secondi % 60).padStart(2, '0')}s`;
+  };
+
+  // CONSUMI DI CLAUDE
+  // Token delle ultime 5 ore per funzione, dal registro che scrivono sala, catalogo e chat: numeri veri, non stime
+  const formatoToken = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1).replace('.', ',')}M` : n >= 1000 ? `${Math.round(n / 1000)}k` : String(n));
+  const testoToken = (token, cache) => `<b class="tok-num">${formatoToken(token)}</b>${cache ? ` + <b class="tok-cache">${formatoToken(cache)}</b> da cache` : ''}`;
+  const NOMI_FUNZIONI = { mappa: 'Mappa', sintesi: 'In breve' };
+  const AIUTO_CONSUMI = 'Token di oggi, da mezzanotte (00:00) alle 23:59. Si contano solo sala, catalogo e Chattino, non le chat di Claude Code in VS Code. I token da cache pesano molto meno.';
+  const testoGiornata = () => 'oggi';
+
+  function htmlConsumi(funzione) {
+    const t = stato.consumi?.perFunzione?.[funzione];
+    const testo = t ? `${testoToken(t.token, t.cache)} · ${t.chiamate} ${t.chiamate === 1 ? 'chiamata' : 'chiamate'}` : 'nessun consumo';
+    const aperto = stato.consumiAperti?.has(funzione) ? ' open' : '';
+    return `<details class="consumo token-box" data-funzione="${funzione}" title="${esc(AIUTO_CONSUMI)}"${aperto}><summary>TOKEN</summary><div class="dati"><div><span class="tok-chi">${NOMI_FUNZIONI[funzione] || funzione}</span> · ${testoGiornata()}: ${testo}</div></div></details>`;
+  }
+
+  function htmlGenerazione(piano) {
+    const g = piano.generazione;
+    const [nota, tasto] = g?.stato === 'in-corso'
+      ? [`<span class="nota" id="stato-generazione" data-inizio="${g.inizio}">Generazione della mappa in corso… ${durata(g.inizio)} · puoi chiudere la pagina, continua lo stesso</span>`,
+        '<button class="btn primario" disabled>Generazione…</button>']
+      : g?.stato === 'errore'
+        ? [`<span class="nota errore-generazione">Generazione non riuscita: ${esc(g.errore)}</span>`,
+          '<button class="btn primario" data-azione="genera-mappa">Riprova</button>']
+        : mappePronte(piano)
+          ? ['<span class="nota">Mappa pronta: tienila aperta mentre compili le fasi dopo.</span>',
+            '<button class="btn" data-azione="genera-mappa" title="Ridisegna la mappa con il codice di adesso">Rigenera mappa</button>']
+          : ['<span class="nota">La mappa mostra com\'è il codice oggi: serve per sbloccare le fasi dopo. Ci vuole qualche minuto.</span>',
+            '<button class="btn primario" data-azione="genera-mappa">Genera mappa</button>'];
+    // Mentre si genera la mappa vecchia non si apre: sta per essere sostituita
+    return `<div class="largo piede">${nota}${htmlConsumi('mappa')}${g?.stato === 'in-corso' ? '' : htmlMappePiano(piano)}${tasto}</div>`;
+  }
+
+  // IN BREVE
+  // Il testo della Richiesta che va a Claude è anche la firma: se cambia dopo la generazione, il riassunto è vecchio
+  function testoRichiesta(piano) {
+    const fase = stato.fasiPiano.find((f) => f.id === 'richiesta');
+    const campi = delTipo(fase.campi, piano.tipo)
+      .map((c) => [c.nome, String(piano.fasi.richiesta.campi[c.id] || '').trim()])
+      .filter(([, valore]) => valore);
+    if (!campi.length) return '';
+    return [`TIPO: ${nomeTipo(piano.tipo)}`, ...campi.map(([nome, valore]) => `${nome}: ${valore}`)].join('\n');
+  }
+
+  function statoSintesi(piano) {
+    const g = piano.generazioneSintesi;
+    const vuota = !testoRichiesta(piano);
+    const vecchia = Boolean(piano.sintesi) && piano.sintesi.firma !== testoRichiesta(piano);
+    if (g?.stato === 'in-corso') return { vecchia, disattivo: 'Aspetta che finisca', nota: `<span class="nota" id="stato-sintesi" data-inizio="${g.inizio}">Sto leggendo il codice… ${durata(g.inizio)} · puoi chiudere la pagina, continua lo stesso</span>` };
+    const disattivo = vuota ? 'Scrivi qualcosa nei campi qui sopra' : '';
+    if (g?.stato === 'errore') return { vecchia, disattivo, nota: `<span class="nota errore-generazione">Non riuscito: ${esc(g.errore)}</span>` };
+    if (vecchia) return { vecchia, disattivo, nota: '<span class="nota">Hai cambiato la Richiesta dopo averlo generato: rigeneralo per aggiornarlo.</span>' };
+    if (piano.sintesi?.chiaro === false) return { vecchia, disattivo, nota: '<span class="nota errore-generazione">La Richiesta non si capisce: correggi i campi qui sopra e rigenera.</span>' };
+    return { vecchia, disattivo, nota: `<span class="nota">${piano.sintesi ?'Com\'è oggi e come deve essere dopo, in breve: il dettaglio è nella mappa.' : 'Ti riassumo in breve com\'è oggi e come deve essere dopo la modifica.'}</span>` };
+  }
+
+  function htmlTastoSintesi(piano, disattivo) {
+    const nome = piano.generazioneSintesi?.stato === 'in-corso' ? 'Generazione…' : piano.sintesi ? 'Rigenera' : 'Genera';
+    return `<button class="btn${piano.sintesi ? '' : ' primario'}" id="tasto-sintesi" data-azione="genera-sintesi"${disattivo ? ` disabled title="${esc(disattivo)}"` : ''}>${nome}</button>`;
+  }
+
+  function htmlSintesi(piano) {
+    const s = piano.sintesi;
+    const { vecchia, disattivo, nota } = statoSintesi(piano);
+    const riquadro = (titolo, valore) => `<div class="sintesi-riquadro${s && !s.chiaro ? ' non-chiaro' : ''}">
+        <h3>${s && !s.chiaro ? 'NON SI CAPISCE' : titolo}</h3>
+        <p>${valore ? esc(valore) : '<span class="vuoto">Premi Genera</span>'}</p>
+      </div>`;
+    return `<div class="largo tipo-piano sintesi${vecchia ? ' vecchia' : ''}" id="sintesi"><span>IN BREVE</span>
+        <div class="piede">${nota}${htmlConsumi('sintesi')}${htmlTastoSintesi(piano, disattivo)}</div>
+        <div class="sintesi-riquadri">${riquadro('OGGI', s?.oggi)}${riquadro('DOPO LA MODIFICA', s?.dopo)}</div>
+      </div>`;
+  }
+
+  // Mentre scrivi nei campi si aggiornano solo il tasto e la nota, non i riquadri: la pagina non si ridisegna
+  function aggiornaSintesi(piano) {
+    const sezione = $('sintesi');
+    if (!sezione) return;
+    const { vecchia, disattivo, nota } = statoSintesi(piano);
+    sezione.classList.toggle('vecchia', vecchia);
+    sezione.querySelector('.piede').innerHTML = `${nota}${htmlConsumi('sintesi')}${htmlTastoSintesi(piano, disattivo)}`;
+  }
+
+  // ATTESA MAPPA
+  // Ogni secondo si aggiorna il tempo, ogni 5 si chiede al server; la pagina si ridisegna solo alla fine, rimettendo il cursore dov'era
+  let timerGenerazione = null;
+  let battiti = 0;
+
+  // Segue insieme la mappa e il riassunto In breve: stesso giro, ognuno con il suo avviso quando finisce
+  const GENERAZIONI = [
+    { chiave: 'generazione', etichetta: 'stato-generazione', testo: 'Generazione della mappa in corso…', pronto: (p) => `Mappa pronta per "${p.titolo || 'Senza titolo'}"`, fallito: 'Mappa non generata' },
+    { chiave: 'generazioneSintesi', etichetta: 'stato-sintesi', testo: 'Sto leggendo il codice…', pronto: (p) => (p.sintesi?.chiaro === false ? 'Richiesta poco chiara: guarda i riquadri In breve' : `In breve pronto per "${p.titolo || 'Senza titolo'}"`), fallito: 'In breve non generato' },
+  ];
+  const generaInCorso = (p) => GENERAZIONI.some((g) => p[g.chiave]?.stato === 'in-corso');
+
+  function seguiGenerazione() {
+    if (timerGenerazione) return;
+    timerGenerazione = setInterval(async () => {
+      GENERAZIONI.forEach((g) => {
+        const etichetta = $(g.etichetta);
+        if (etichetta) etichetta.textContent = `${g.testo} ${durata(Number(etichetta.dataset.inizio))} · puoi chiudere la pagina, continua lo stesso`;
+      });
+      if (++battiti % 5) return;
+      const inCorso = stato.piani.filter(generaInCorso);
+      if (!inCorso.length) return void (clearInterval(timerGenerazione), timerGenerazione = null);
+      try {
+        const nuovi = (await api('/api/piani')).piani;
+        const finiti = [];
+        inCorso.forEach((p) => {
+          const n = nuovi.find((x) => x.id === p.id);
+          const chiuse = GENERAZIONI.filter((g) => p[g.chiave]?.stato === 'in-corso' && n?.[g.chiave]?.stato !== 'in-corso');
+          if (!chiuse.length) return;
+          Object.assign(p, n ? { mappe: n.mappe, sintesi: n.sintesi } : {}, ...chiuse.map((g) => ({ [g.chiave]: n?.[g.chiave] || null })));
+          chiuse.forEach((g) => finiti.push({ p, g }));
+        });
+        if (!finiti.length) return;
+        await salvaPiano();
+        stato.consumi = await api('/api/consumi').catch(() => stato.consumi);
+        const attivo = document.activeElement;
+        const dove = attivo?.dataset?.campo ? { fase: attivo.dataset.fase, campo: attivo.dataset.campo, inizio: attivo.selectionStart, fine: attivo.selectionEnd } : null;
+        disegna();
+        if (dove) {
+          const campo = document.querySelector(`[data-fase="${dove.fase}"][data-campo="${dove.campo}"]`);
+          campo?.focus();
+          campo?.setSelectionRange(dove.inizio, dove.fine);
+        }
+        finiti.forEach(({ p, g }) => {
+          const errore = p[g.chiave]?.stato === 'errore';
+          avvisa(errore ? `${g.fallito}: ${p[g.chiave].errore}` : g.pronto(p), errore || p.sintesi?.chiaro === false && g.chiave === 'generazioneSintesi');
+        });
+      } catch {}
+    }, 1000);
+  }
+
   const MAPPE_PIANO = [['dati', 'Dati'], ['struttura', 'Struttura'], ['entrambi', 'Entrambi'], ['nessuna', 'Nessuna']];
+  // Un campo con la traccia da completare conta solo se c'è del testo dopo i due punti (in tutte le righe, se `tutte`)
+  const campoScritto = (c, valore) => {
+    const testo = String(valore || '');
+    if (!c.traccia) return Boolean(testo.trim());
+    const piene = testo.split('\n').map((r) => r.replace(/^[^:]*:/, '').trim());
+    return c.tutte ? piene.length >= c.traccia.split('\n').length && piene.every(Boolean) : piene.some(Boolean);
+  };
   const faseCompleta = (piano, fase) => {
     const dati = piano.fasi[fase.id];
     if (fase.id === 'richiesta' && !piano.mappa) return false;
-    return delTipo(fase.campi, piano.tipo).every((c) => c.facoltativo || String(dati.campi[c.id] || '').trim())
-      && delTipo(fase.spunte, piano.tipo).every((s) => dati.spunte[s.id] === true);
+    return delTipo(fase.campi, piano.tipo).every((c) => c.facoltativo || campoScritto(c, dati.campi[c.id]));
   };
   const faseIniziata = (piano, fase) => {
     const dati = piano.fasi[fase.id];
-    return delTipo(fase.campi, piano.tipo).some((c) => String(dati.campi[c.id] || '').trim())
-      || delTipo(fase.spunte, piano.tipo).some((s) => dati.spunte[s.id] === true);
+    return delTipo(fase.campi, piano.tipo).some((c) => campoScritto(c, dati.campi[c.id]));
   };
   const statoFase = (piano, fase) => (faseCompleta(piano, fase) ? 'completa' : faseIniziata(piano, fase) ? 'iniziata' : '');
   const pianoAperto = () => stato.piani.find((p) => p.id === stato.pianoAperto);
@@ -1658,90 +2867,321 @@
   }
 
   function htmlElencoPiani() {
-    const righe = [...stato.piani].sort((a, b) => b.aggiornato - a.aggiornato).map((p) => {
+    // Il piano aperto porta dentro il suo editor; gli altri restano vuoti finché non li apri
+    // Il piano aperto resta in lista anche se cambi il suo stato
+    const visibili = stato.piani.filter((p) => p.id === stato.pianoAperto || passaFiltro(stato.filtroPiani, p.stato));
+    const conta = (id) => stato.piani.filter((p) => passaFiltro(id, p.stato)).length;
+    const righe = [...visibili].sort((a, b) => b.aggiornato - a.aggiornato).map((p) => {
       const attivita = stato.attivita.find((a) => a.id === p.attivita);
-      return `<div class="riga piano" data-azione="apri-piano" data-id="${p.id}" title="Apri il piano">
-        <span class="stato tipo">${esc(nomeTipo(p.tipo))}</span>
-        <div class="corpo">
-          <div class="titolo">${p.titolo ? esc(p.titolo) : '<span class="senza-titolo">Senza titolo</span>'}</div>
-          <div class="meta">${attivita ? `da attività "${esc(attivita.titolo)}" · ` : ''}${p.mappe.length ? `mappa ${p.mappe.map((m) => m.tipo).join(' e ')} · ` : ''}aggiornato ${quando(p.aggiornato)}</div>
+      const aperto = p.id === stato.pianoAperto;
+      const classeStato = { 'in-corso': ' attiva', fatto: ' fatto' }[p.stato] || '';
+      return `<div class="scheda piano${classeStato}${aperto ? ' aperta' : ''}" data-piano-id="${p.id}" data-blocco="piano" data-bid="${p.id}">
+        <div class="testa" data-azione="espandi-piano" data-id="${p.id}" title="Clicca per aprire il piano">
+          <span class="freccia">▶</span>
+          <span class="stato tipo">${esc(nomeTipo(p.tipo))}</span>
+          <div class="corpo">
+            <div class="titolo">${p.titolo ? esc(p.titolo) : '<span class="senza-titolo">Senza titolo</span>'}</div>
+            <div class="meta">${attivita ? `da attività "${esc(attivita.titolo)}" · ` : ''}${p.mappe.length ? `mappa ${p.mappe.map((m) => m.tipo).join(' e ')} · ` : ''}aggiornato ${quando(p.aggiornato)}</div>
+          </div>
+          ${htmlTacche(p)}
+          <div class="azioni">
+            <div class="stati">
+              ${STATI.map(([id, nome]) => `<button class="btn icona ${id}${id === p.stato ? ' attuale' : ''}" data-azione="sposta-piano" data-id="${p.id}" data-stato="${id}"
+                title="${id === p.stato ? `È in ${nome}` : id === 'fatto' ? 'Termina il piano (quiz di verifica)' : `Sposta in ${nome}`}">${icona(id)}</button>`).join('')}
+            </div>
+            <button class="btn icona" data-azione="copia-piano" data-id="${p.id}" title="Copia il piano da incollare in Claude Code con /piano">${icona('copia')}</button>
+            <button class="btn icona" data-azione="elimina-piano" data-id="${p.id}" title="Elimina il piano">${icona('elimina')}</button>
+          </div>
         </div>
-        ${htmlTacche(p)}
-        <div class="azioni">
-          <button class="btn icona" data-azione="copia-piano" data-id="${p.id}" title="Copia il piano da incollare in Claude Code con /piano">${icona('copia')}</button>
-          <button class="btn icona" data-azione="elimina-piano" data-id="${p.id}" title="Elimina il piano">${icona('elimina')}</button>
-        </div>
+        <div class="dettagli"><div><div class="interno">${aperto ? htmlEditorPiano(p) : ''}</div></div></div>
       </div>`;
     }).join('');
     return `<div class="barra">
-        <span class="riepilogo">Prima di scrivere codice, ragionaci qui. Poi copia il piano e fattelo rivedere.</span>
+        ${FILTRI_STATO.map(([id, nome]) => `<button class="pillola${stato.filtroPiani === id ? ' attiva' : ''}" data-filtro-piani="${id}">${nome} · ${conta(id)}</button>`).join('')}
         <span class="spazio"></span>
         <button class="btn primario" data-azione="crea-piano">+ Nuovo piano</button>
       </div>
-      <div class="lista">${righe || '<p class="vuoto">Nessun piano. Creane uno qui sopra o da un\'attività con "Pianifica".</p>'}</div>`;
+      <div class="lista">${righe || `<p class="vuoto">${stato.piani.length ? 'Nessun piano in questa lista' : 'Nessun piano. Creane uno qui sopra o da un\'attività con "Pianifica".'}</p>`}</div>`;
   }
+
+  // GUIDA ALLA SCRITTURA
+  // Ogni campo ha la sua forma (elenco puntato, passi numerati, traccia da completare), una guida su come scriverlo e dei
+  // controlli che girano mentre scrivi: sono consigli locali, non bloccano niente e non usano token.
+  const PUNTO = '• ';
+  const VAGO = /\b(sistem\w+|aggiust\w+|non va|non funziona|migliorar\w+|ottimizzar\w+|qualcosa|qualche cosa|roba|cose|ecc|etc|boh|in qualche modo|più bello|fix)\b/i;
+  const NOME_CODICE = /\.(jsx?|tsx?|json|md)\b|\b[a-z]+[A-Z]\w*|\b[A-Z][a-z]+[A-Z]\w*|\b\w+\(\)/;
+  const MIN_CARATTERI = 25;
+  const riferimentoCampo = (id) => id.split('.');
+  const testoCampo = (piano, id) => {
+    const [fase, campo] = riferimentoCampo(id);
+    return String(piano.fasi[fase]?.campi[campo] || '').trim();
+  };
+  const nomeCampo = (piano, id) => {
+    const [fase, campo] = riferimentoCampo(id);
+    return delTipo(stato.fasiPiano.find((f) => f.id === fase)?.campi || [], piano.tipo).find((c) => c.id === campo)?.nome || campo;
+  };
+
+  // Una riga per voce: con l'elenco si toglie il punto, con i passi il numero, e si ricontano
+  const righeDelTesto = (testo) => String(testo).split('\n').map((r) => r.replace(/^\s*(•\s*|[-*]\s+|\d+[.)]\s+)/, '').trimEnd()).filter((r) => r.trim());
+
+  function formattaCampo(testo, forma) {
+    const righe = righeDelTesto(testo);
+    if (forma === 'elenco') return righe.map((r) => `${PUNTO}${r}`).join('\n');
+    if (forma === 'passi') return righe.map((r, i) => `${i + 1}. ${r}`).join('\n');
+    return testo;
+  }
+
+  function controlliCampo(c, testo) {
+    const consigli = [];
+    const pieno = String(testo).trim();
+    if (!pieno || !c.controlli) return consigli;
+    if (c.controlli.includes('vago')) {
+      const parola = pieno.match(VAGO)?.[0];
+      if (parola) consigli.push(`«${parola}» è troppo generico: di' cosa succede o cosa cambia, in concreto.`);
+    }
+    if (c.controlli.includes('breve') && pieno.length < MIN_CARATTERI) consigli.push('Troppo corto: aggiungi chi, cosa e dove, così la mappa e la revisione hanno da cosa partire.');
+    if (c.controlli.includes('file')) {
+      const voci = c.forma ? righeDelTesto(pieno) : [pieno];
+      const senza = voci.map((r, i) => [r, i + 1]).filter(([r]) => !NOME_CODICE.test(r));
+      if (senza.length === voci.length) consigli.push('Non vedo nessun nome di file o di funzione: scrivilo come sta nel codice (es. AuthContext.js, login).');
+      else if (senza.length) consigli.push(`${senza.length === 1 ? 'La voce' : 'Le voci'} ${senza.map(([, n]) => n).join(', ')} ${senza.length === 1 ? 'non ha' : 'non hanno'} un nome di file o di funzione.`);
+    }
+    return consigli;
+  }
+
+  const htmlConsigli = (c, testo) => controlliCampo(c, testo).map((m) => `<span class="consiglio">&#x1F4A1; ${esc(m)}</span>`).join('');
+
+  function htmlGuidaCampo(piano, fase, c) {
+    if (!c.guida?.[0]) return '';
+    return `<details class="guida-campo"><summary>Come si scrive</summary><p>${esc(c.guida[0])}</p></details>`;
+  }
+
+  function htmlRiprendi(piano, fase, c) {
+    if (!c.riprendi || testoCampo(piano, `${fase.id}.${c.id}`) || !testoCampo(piano, c.riprendi)) return '';
+    return `<button type="button" class="btn riprendi" data-azione="riprendi-campo" data-fase="${fase.id}" data-campo="${c.id}" data-da="${c.riprendi}">&#x21A7; Parti da «${esc(nomeCampo(piano, c.riprendi))}»</button>`;
+  }
+
+  // STRUMENTI DEI CAMPI
+  // Pulsanti sotto il campo: cercano loro nel progetto, nella mappa o con Chattino, così non scrivi a memoria. I risultati restano finché la pagina è aperta
+  const strumenti = {};
+  const chiaveStrumento = (piano, faseId, campoId) => `${piano.id}.${faseId}.${campoId}`;
+  const cartellaProgetto = () => (stato.progetti.find((p) => p.nome === stato.progetto)?.cartella || '').replace(/\\/g, '/');
+  const linkVsCode = (file, riga) => `vscode://file/${encodeURI(`${cartellaProgetto()}/${file}`)}:${riga}`;
+
+  // Il nome da cercare si ricava da quello che hai già scritto: prima «(login)» tra parentesi, poi «login(», poi il nome del file
+  function nomeDaCercare(piano) {
+    const testi = ['progettare.file', 'indagare.posizione', 'indagare.aggancio', 'richiesta.dove'].map((id) => testoCampo(piano, id)).join('\n');
+    return testi.match(/\(([A-Za-z_$][\w$]*)\)/)?.[1] || testi.match(/\b([A-Za-z_$][\w$]*)\(/)?.[1] || testi.match(/\b([A-Za-z_$][\w$]*)\.(?:jsx?|tsx?)\b/)?.[1] || '';
+  }
+
+  const datiCampo = (b) => ({
+    piano: pianoAperto(),
+    fase: stato.fasiPiano.find((f) => f.id === b.dataset.fase),
+    c: stato.fasiPiano.find((f) => f.id === b.dataset.fase)?.campi.find((x) => x.id === b.dataset.campo),
+    campo: document.querySelector(`.fase-piano textarea[data-fase="${b.dataset.fase}"][data-campo="${b.dataset.campo}"]`),
+  });
+
+  function htmlPannelloCodice(piano, fase, c, s) {
+    const attr = `data-fase="${fase.id}" data-campo="${c.id}"`;
+    const cerca = `<div class="riga-cerca"><input data-cerca-nome value="${esc(s.nome)}" placeholder="nome della funzione o del file (es. login)" autocomplete="off"><button type="button" class="btn" data-azione="cerca-codice" ${attr}>Cerca</button></div>`;
+    if (s.caricamento) return `${cerca}<div>Cerco nel progetto…</div>`;
+    if (s.errore) return `${cerca}<div>${esc(s.errore)}</div>`;
+    if (!s.risultati) return `${cerca}<div>Scrivi un nome e premi Cerca: ti mostro dove compare nel progetto, con un link che apre VS Code alla riga giusta.</div>`;
+    if (!s.risultati.length) return `${cerca}<div>«${esc(s.nome)}» non compare in nessun file.</div>`;
+    const file = new Set(s.risultati.map((r) => r.file));
+    const righe = s.risultati.slice(0, 40).map((r) => `<div class="trovato"><a href="${linkVsCode(r.file, r.riga)}" title="Apri in VS Code">${esc(r.file)}:${r.riga}</a><code>${esc(r.testo)}</code></div>`).join('');
+    const riempi = c.riempi ? `<div class="azioni-pannello"><button type="button" class="btn" data-azione="riempi-campo" ${attr}>Metti questi file nel campo</button></div>` : '';
+    return `${cerca}<div><b>${s.risultati.length}${s.troncato ? '+' : ''} risultati in ${file.size} file</b> per «${esc(s.nome)}»</div>${righe}${riempi}`;
+  }
+
+  function htmlPannelloDiagramma(piano, fase, c, testo) {
+    const esistenti = (piano.mappe || []).filter((m) => m.esiste);
+    const link = (tipo, nome, hash = '') => `<a class="btn primario" href="/mappa?piano=${piano.id}&tipo=${tipo}${hash}" target="_blank" rel="noopener">${nome}</a>`;
+    const citati = [...new Set([...String(testo).matchAll(/\b([DS])(\d{1,3})\b/g)].map((m) => `${m[1]}${m[2]}`))]
+      .filter((ref) => esistenti.some((m) => m.tipo === (ref[0] === 'D' ? 'dati' : 'struttura')))
+      .map((ref) => link(ref[0] === 'D' ? 'dati' : 'struttura', `Vai a ${ref}`, `#${ref}`));
+    const mappe = esistenti.map((m) => link(m.tipo, `Apri mappa ${m.tipo}`));
+    return `<div>${citati.length ? 'Passi citati nel campo: la mappa si apre già lì.' : 'Nel campo non c\'è nessun passo (es. D4 o S2). Scrivilo, o chiedi a Chattino di citarlo, e premi di nuovo: la mappa si aprirà su quel passo.'}</div><div class="azioni-pannello">${citati.join('')}${mappe.join('')}</div>`;
+  }
+
+  const lineaScelta = (testo, titolo) => String(testo).split('\n').find((r) => r.startsWith(`${titolo}:`)) || '';
+  const sceltePresenti = (testo, titolo) => lineaScelta(testo, titolo).slice(titolo.length + 1).split(',').map((x) => x.trim()).filter(Boolean);
+
+  function htmlScelte(fase, c, testo) {
+    return c.scelte.map((s) => {
+      const presenti = sceltePresenti(testo, s.titolo);
+      return `<div class="scelta"><b>${esc(s.titolo)}</b><div class="opzioni">${s.opzioni.map((o) => `<button type="button" class="pillola${presenti.includes(o) ? ' attiva' : ''}" data-azione="scegli" data-fase="${fase.id}" data-campo="${c.id}" data-titolo="${esc(s.titolo)}" data-opzione="${esc(o)}">${esc(o)}</button>`).join('')}</div></div>`;
+    }).join('');
+  }
+
+  function htmlStrumenti(piano, fase, c) {
+    const attr = `data-fase="${fase.id}" data-campo="${c.id}"`;
+    const bottoni = [
+      c.codice ? `<button type="button" class="btn" data-azione="vedi-codice" ${attr}>VEDI NEL CODICE</button>` : '',
+      c.diagramma && (piano.mappe || []).some((m) => m.esiste) ? `<button type="button" class="btn" data-azione="vedi-diagramma" ${attr}>VEDI NEL DIAGRAMMA</button>` : '',
+      c.domanda ? `<button type="button" class="btn" data-azione="chiedi-chattino" ${attr}>CHIEDI A CHATTINO</button>` : '',
+    ].join('');
+    if (!bottoni && !c.scelte) return '';
+    const s = strumenti[chiaveStrumento(piano, fase.id, c.id)];
+    const pannello = !s ? '' : s.tipo === 'codice' ? htmlPannelloCodice(piano, fase, c, s) : htmlPannelloDiagramma(piano, fase, c, piano.fasi[fase.id]?.campi[c.id] || '');
+    return `${bottoni ? `<div class="strumenti-campo">${bottoni}</div>` : ''}
+        <div class="pannello" data-pannello="${fase.id}.${c.id}">${pannello}</div>
+        ${c.scelte ? `<div class="scelte" data-scelte="${fase.id}.${c.id}">${htmlScelte(fase, c, piano.fasi[fase.id]?.campi[c.id] || '')}</div>` : ''}`;
+  }
+
+  function aggiornaPannello(piano, fase, c, campo) {
+    const s = strumenti[chiaveStrumento(piano, fase.id, c.id)];
+    const el = document.querySelector(`[data-pannello="${fase.id}.${c.id}"]`);
+    if (el && s) el.innerHTML = s.tipo === 'codice' ? htmlPannelloCodice(piano, fase, c, s) : htmlPannelloDiagramma(piano, fase, c, campo?.value || '');
+  }
+
+  async function eseguiCerca(piano, fase, c, campo, nome) {
+    const s = strumenti[chiaveStrumento(piano, fase.id, c.id)];
+    Object.assign(s, { nome, caricamento: true, errore: '', risultati: null });
+    aggiornaPannello(piano, fase, c, campo);
+    try {
+      const { risultati, troncato } = await api('/api/codice/cerca', { testo: nome });
+      Object.assign(s, { risultati, troncato });
+    } catch (err) {
+      s.errore = err.message;
+    }
+    s.caricamento = false;
+    aggiornaPannello(piano, fase, c, campo);
+  }
+
+  // MESSAGGI BACKEND DEL PIANO
+  // Stanno solo nella Richiesta: è lì che si scrive cosa serve dal backend
+  const htmlBackendPiano = (piano) => `<details class="backend-piano" data-piano-id="${piano.id}"${stato.backendAperti.has(piano.id) ? ' open' : ''}>
+      <summary>MESSAGGI BACKEND <i>${piano.backend.length || 'facoltativo'}</i></summary>
+      ${piano.backend.map((b, i) => htmlBloccoBackend(b, i, '')).join('')}
+      <button type="button" class="aggiungi-backend" id="aggiungi-backend" data-azione="nuovo-backend" title="Aggiungi un messaggio del backend">+</button>
+      <div class="nuovo-backend" id="form-backend" hidden>
+        <textarea id="nuovo-backend" maxlength="20000" placeholder="incolla qui il messaggio del backend e salvalo"></textarea>
+        <div class="piede"><button class="btn" data-azione="annulla-backend">Annulla</button><button class="btn primario" data-azione="salva-backend">Salva messaggio</button></div>
+      </div>
+    </details>`;
 
   function htmlFase(piano, fase, numero) {
     const dati = piano.fasi[fase.id];
-    const campi = delTipo(fase.campi, piano.tipo).map((c) => `<label class="largo"><span>${esc(c.nome.toUpperCase())}${c.facoltativo ? ' <i>facoltativo</i>' : ''}</span>
-        <textarea data-fase="${fase.id}" data-campo="${c.id}" maxlength="5000" placeholder="${esc(c.aiuto || '')}">${esc(dati.campi[c.id] || '')}</textarea>
+    const campi = delTipo(fase.campi, piano.tipo).map((c) => `<label class="largo" data-blocco="campo" data-bid="${fase.id}.${c.id}"><span>${esc(c.nome.toUpperCase())}${c.facoltativo ? ' <i>facoltativo</i>' : ''}</span>
+        ${htmlGuidaCampo(piano, fase, c)}
+        <textarea data-fase="${fase.id}" data-campo="${c.id}" data-forma="${c.forma || ''}" data-traccia="${esc(c.traccia || '')}" maxlength="5000" placeholder="${esc([c.aiuto, c.esempio ? `es. ${c.esempio}` : ''].filter(Boolean).join('\n'))}">${esc(dati.campi[c.id] || '')}</textarea>
+        <span class="consigli" data-consigli="${fase.id}.${c.id}">${htmlConsigli(c, dati.campi[c.id] || '')}</span>
+        ${htmlRiprendi(piano, fase, c)}
+        ${htmlStrumenti(piano, fase, c)}
       </label>`).join('');
-    const listaSpunte = delTipo(fase.spunte, piano.tipo);
-    const spunte = listaSpunte.length ? `<div class="largo spunte">${listaSpunte.map((s) => `<label class="spunta">
-        <input type="checkbox" data-fase="${fase.id}" data-spunta="${s.id}"${dati.spunte[s.id] ? ' checked' : ''}> ${esc(s.nome)}
-      </label>`).join('')}</div>` : '';
     const daGenerare = ['dati', 'struttura', 'entrambi'].includes(piano.mappa);
     const mappa = fase.id !== 'richiesta' ? '' : `<div class="largo tipo-piano"><span>MAPPA DA GENERARE</span>
-        <div class="filtri-tipo">${MAPPE_PIANO.map(([id, nome]) => `<button class="pillola${piano.mappa === id ? ' attiva' : ''}" data-azione="mappa-piano" data-mappa="${id}">${nome}</button>`).join('')}</div>
+        <div class="filtri-tipo">${MAPPE_PIANO.map(([id, nome]) => `<button class="pillola${piano.mappa === id ? ' attiva' : ''}" data-azione="mappa-piano" data-mappa="${id}"${piano.generazione?.stato === 'in-corso' ? ' disabled title="Aspetta che finisca la generazione"' : ''}>${nome}</button>`).join('')}</div>
       </div>
-      ${daGenerare ? `<div class="largo piede"><span class="nota">La mappa mostra com'è il codice oggi: tienila aperta mentre compili le fasi dopo.</span>
-        <button class="btn primario" data-azione="copia-piano" data-id="${piano.id}">${icona('copia')} Genera mappa con /piano</button></div>` : ''}`;
-    return `<div class="modulo fase-piano">
-        <h2 class="largo">${numero}. ${esc(fase.nome)}</h2>
+      ${daGenerare ? htmlGenerazione(piano) : ''}`;
+    // Sotto le Note: c'è solo nei tipi che hanno le Note (non nella Modifica minore)
+    const conSintesi = fase.id === 'richiesta' && delTipo(fase.campi, piano.tipo).some((c) => c.id === 'note');
+    return `<div class="modulo fase-piano" data-blocco="fase" data-bid="${fase.id}">
+        <h2 class="largo${fase.id === 'richiesta' ? ' con-azione' : ''}">${numero ? `${numero}. ` : ''}${esc(fase.nome)}${fase.id === 'richiesta' ? `<button type="button" class="btn icona compila-auto" id="compila-richiesta" data-azione="compila-richiesta" title="Compila automaticamente: legge i messaggi del backend e propone il testo dei campi vuoti">${icona('compila')}</button>` : ''}</h2>
         ${campi}
-        ${mappa}
-        ${spunte}
-      </div>`;
+        ${conSintesi ? htmlSintesi(piano) : ''}
+      </div>
+      ${mappa ? `<div class="modulo fase-piano riquadro-mappa"><h2 class="largo">Mappa</h2>${mappa}</div>` : ''}`;
   }
+
+  // Gli avvisi sono le incongruenze tra mappa e codice trovate dalla sala: il dettaglio è in cima al riepilogo della mappa
+  const htmlAvvisiMappa = (m) => (m.avvisi > 0
+    ? `<span class="avvisi-mappa" title="La sala ha confrontato la mappa con il codice: apri la mappa, gli avvisi sono in cima al riepilogo">&#x26A0; ${m.avvisi} ${m.avvisi === 1 ? 'avviso' : 'avvisi'}</span>`
+    : m.avvisi === 0 ? '<span class="consumo" title="La sala ha confrontato righe, nomi e frecce della mappa con il codice">&#x2713; controllata</span>' : '');
 
   // La mappa la serve la sala: il browser non apre i file del disco da una pagina web
   const htmlMappePiano = (piano) => piano.mappe.map((m) => (m.esiste
-    ? `<a class="btn" href="/mappa?piano=${piano.id}&tipo=${m.tipo}" target="_blank" rel="noopener" title="${esc(m.file)}">Apri mappa ${m.tipo}</a>`
+    ? `${htmlAvvisiMappa(m)}<a class="btn primario" href="/mappa?piano=${piano.id}&tipo=${m.tipo}" target="_blank" rel="noopener" title="${esc(m.file)}">Apri mappa ${m.tipo}</a>`
     : `<span class="nota" title="${esc(m.file)}">mappa ${m.tipo} eliminata</span>`)).join('');
 
   function htmlEditorPiano(piano) {
     const fasi = fasiDelPiano(piano);
     const indice = Math.max(0, fasi.findIndex((f) => f.id === stato.fasePiano));
-    const attivita = stato.attivita.find((a) => a.id === piano.attivita);
     const tipi = stato.tipiPiano.map((t) => `<button class="pillola${t.id === piano.tipo ? ' attiva' : ''}" data-azione="tipo-piano" data-tipo="${t.id}">${esc(t.nome)}</button>`).join('');
-    const passi = fasi.map((f, i) => `<button class="passo ${statoFase(piano, f)}${i === indice ? ' attiva' : ''}" data-azione="vai-fase" data-fase="${f.id}">
+    const blocco = bloccoMappa(piano);
+    const chiusa = (i) => (i > 0 && blocco ? ` disabled title="${esc(blocco)}"` : '');
+    const passi = fasi.map((f, i) => `<button class="passo ${statoFase(piano, f)}${i === indice ? ' attiva' : ''}" data-azione="vai-fase" data-fase="${f.id}"${chiusa(i)}>
         <span class="numero">${faseCompleta(piano, f) ? icona('fatto') : i + 1}</span>${esc(f.nome)}
       </button>`).join('');
-    return `<div class="barra">
-        <button class="btn" data-azione="chiudi-piano">← Tutti i piani</button>
-        <span class="spazio"></span>
-        <span class="salvataggio" id="salvataggio">Salvato</span>
-        ${htmlMappePiano(piano)}
-        <button class="btn" data-azione="copia-piano" data-id="${piano.id}" title="Copia il piano da incollare in Claude Code: genera la mappa o rivede il piano">${icona('copia')} Copia per /piano</button>
-      </div>
-      <div class="modulo testa-piano">
-        <label><span>TITOLO DEL PIANO</span><input data-piano="titolo" value="${esc(piano.titolo)}" maxlength="200" placeholder="cosa vuoi risolvere, in poche parole" autocomplete="off"></label>
-        <label><span>ATTIVITÀ COLLEGATA</span><div class="collegata">${attivita ? esc(attivita.titolo) : 'nessuna'}</div></label>
+    return `<div class="modulo testa-piano">
+        <label class="largo"><span>TITOLO DEL PIANO</span><input data-piano="titolo" value="${esc(piano.titolo)}" maxlength="200" placeholder="cosa vuoi risolvere, in poche parole" autocomplete="off"></label>
         <div class="largo tipo-piano"><span>TIPO DI LAVORO</span><div class="filtri-tipo">${tipi}</div></div>
+        ${htmlBackendPiano(piano)}
       </div>
       <div class="passi" id="passi-piano">${passi}</div>
       ${htmlFase(piano, fasi[indice], indice + 1)}
       <div class="naviga-fasi">
         <button class="btn" data-azione="vai-fase" data-fase="${fasi[indice - 1]?.id || ''}" ${indice ? '' : 'disabled'}>← Fase precedente</button>
         <span class="spazio"></span>
-        <button class="btn primario" data-azione="vai-fase" data-fase="${fasi[indice + 1]?.id || ''}" ${indice < fasi.length - 1 ? '' : 'disabled'}>Fase successiva →</button>
+        ${indice < fasi.length - 1
+    ? `<button class="btn primario" data-azione="vai-fase" data-fase="${fasi[indice + 1].id}"${chiusa(indice + 1)}>Fase successiva →</button>`
+    : `<button class="btn primario" data-azione="copia-piano" data-id="${piano.id}" title="Crea il piano e lo copia: incollalo in una chat di Claude Code con /piano">Crea il piano</button>`}
       </div>`;
   }
 
-  function htmlPiani() {
-    const piano = pianoAperto();
-    return piano ? htmlEditorPiano(piano) : htmlElencoPiani();
+  // CONTESTO
+  // I passaggi salvati da /chat-termina: ogni scheda si apre per leggerli e si copia per incollarli in una chat nuova
+  const PARTI_CONTESTO = [['obiettivo', 'OBIETTIVO'], ['fatto', 'FATTO'], ['file', 'FILE TOCCATI'], ['decisioni', 'DECISIONI'], ['prossimo', 'PROSSIMO PASSO']];
+
+  function testoContesto(c) {
+    const parti = PARTI_CONTESTO.filter(([id]) => c[id]).map(([id, nome]) => `${nome}:\n${c[id]}`);
+    return [`CONTESTO: ${c.titolo} (${c.progetto || stato.progetto}, ${quando(c.data)})`, ...parti].join('\n\n');
   }
+
+  function htmlContesti() {
+    const righe = stato.contesti.map((c) => `<div class="scheda${stato.contestiAperti.has(c.id) ? ' aperta' : ''}" data-contesto="${c.id}" data-blocco="contesto" data-bid="${c.id}">
+        <div class="testa" data-azione="espandi-contesto" data-id="${c.id}">
+          <span class="freccia">▶</span>
+          <div class="corpo">
+            <div class="titolo">${esc(c.titolo)}</div>
+            <div class="meta">${quando(c.data)} · <code>${c.id.slice(0, 8)}</code></div>
+          </div>
+          <div class="azioni">
+            <button class="btn icona" data-azione="copia-contesto" data-id="${c.id}" title="Copia il contesto da incollare in una chat nuova">${icona('copia')}</button>
+            <button class="btn icona" data-azione="elimina-contesto" data-id="${c.id}" title="Elimina il contesto">${icona('elimina')}</button>
+          </div>
+        </div>
+        <div class="dettagli"><div><div class="interno"><dl>${PARTI_CONTESTO.filter(([id]) => c[id]).map(([id, nome]) => `<dt>${nome}</dt><dd>${esc(c[id])}</dd>`).join('')}</dl></div></div></div>
+      </div>`).join('');
+    return `<div class="barra">
+        <span class="riepilogo">A fine chat scrivi <code>/chat-termina</code>; nella chat nuova scrivi <code>/chat-riprendi</code>.</span>
+      </div>
+      <div class="lista">${righe || '<p class="vuoto">Nessun contesto salvato per questo progetto.</p>'}</div>`;
+  }
+
+  // LEZIONI
+  const testoLezione = (l) => [l.titolo, l.progetto, ...l.parti.flat()].join(' ').toLowerCase();
+
+  function htmlElencoLezioni() {
+    const cerca = stato.cercaLezioni.trim().toLowerCase();
+    const lista = stato.lezioni.filter((l) => !cerca || testoLezione(l).includes(cerca));
+    if (!lista.length) {
+      return `<p class="vuoto">${stato.lezioni.length ? 'Nessuna lezione con queste parole.' : 'Ancora nessuna lezione: arrivano da Chattino insegnante (quadrato «Termina lezione») e dai piani che termini, dopo il quiz.'}</p>`;
+    }
+    return lista.map((l) => `<div class="scheda lezione" data-blocco="lezione" data-bid="${esc(l.id)}">
+        <div class="testa-lezione">
+          <span class="stato tipo ${l.origine}">${l.origine}</span>
+          <div class="corpo">
+            <div class="titolo">${esc(l.titolo)}</div>
+            <div class="meta">${new Date(l.data).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}${l.progetto ? ` · ${esc(l.progetto)}` : ''}</div>
+          </div>
+          <button class="btn icona" data-azione="elimina-lezione" data-id="${esc(l.id)}" title="Elimina questa lezione">${icona('elimina')}</button>
+        </div>
+        <dl>${l.parti.map(([nome, valore]) => `<dt>${esc(nome || 'Riassunto')}</dt><dd>${esc(valore)}</dd>`).join('')}</dl>
+      </div>`).join('');
+  }
+
+  function htmlLezioni() {
+    return `<div class="barra">
+        <input id="cerca-lezioni" placeholder="cerca nelle lezioni…" value="${esc(stato.cercaLezioni)}" autocomplete="off">
+        <span class="spazio"></span>
+        <span class="riepilogo">Si aggiornano da sole anche in <code>${esc(stato.fileLezioni || '~/Lezioni.md')}</code></span>
+      </div>
+      <div class="lista" id="elenco-lezioni">${htmlElencoLezioni()}</div>`;
+  }
+
+  const htmlPiani = htmlElencoPiani;
 
   // Aggiorna numeri e colori delle fasi senza ridisegnare la pagina, così chi scrive non perde il cursore
   function aggiornaIndicatoriPiano() {
@@ -1754,6 +3194,9 @@
       if (statoFase(piano, fase)) b.classList.add(statoFase(piano, fase));
       b.querySelector('.numero').innerHTML = faseCompleta(piano, fase) ? icona('fatto') : i + 1;
     });
+    aggiornaSintesi(piano);
+    const tacche = document.querySelector(`.scheda.piano[data-piano-id="${piano.id}"] .tacche`);
+    if (tacche) tacche.outerHTML = htmlTacche(piano);
   }
 
   function testoPiano(piano) {
@@ -1761,8 +3204,7 @@
     const fasi = fasiDelPiano(piano).map((f, i) => {
       const dati = piano.fasi[f.id];
       const campi = delTipo(f.campi, piano.tipo).map((c) => `${c.nome}: ${String(dati.campi[c.id] || '').trim() || (c.facoltativo ? '(non scritto)' : '(vuoto)')}`);
-      const spunte = delTipo(f.spunte, piano.tipo).map((s) => `[${dati.spunte[s.id] ? 'x' : ' '}] ${s.nome}`);
-      return [`## ${i + 1}. ${f.nome.toUpperCase()}`, ...campi, ...spunte].join('\n');
+      return [`## ${i + 1}. ${f.nome.toUpperCase()}`, ...campi].join('\n');
     });
     const progetto = stato.progetti.find((p) => p.nome === piano.progetto);
     const mappe = piano.mappe.filter((m) => m.esiste).map((m) => `${m.tipo} ${m.file}`);
@@ -1777,6 +3219,7 @@
       `MAPPE GIÀ FATTE: ${mappe.length ? mappe.join(' · ') : 'nessuna'}`,
       '',
       fasi.join('\n\n'),
+      ...(piano.backend.length ? ['', '## MESSAGGI BACKEND', ...piano.backend.map((b, i) => `### Messaggio ${i + 1}\n${b.testo}`)] : []),
     ].join('\n');
   }
 
@@ -1785,15 +3228,17 @@
   function htmlModulo(a, azione) {
     const controllo = (c) => {
       const valore = a[c.id] || '';
-      if (c.tipo === 'textarea') return `<textarea name="${c.id}" maxlength="5000" placeholder="${esc(c.aiuto)}">${esc(valore)}</textarea>`;
+      if (c.tipo === 'textarea') return `<textarea name="${c.id}" maxlength="${c.max || 5000}" placeholder="${esc(c.aiuto)}">${esc(valore)}</textarea>`;
       if (c.tipo === 'select') return `<select name="${c.id}">${['', ...c.valori].map((v) => `<option value="${v}"${v === valore ? ' selected' : ''}>${v || '—'}</option>`).join('')}</select>`;
       return `<input name="${c.id}" value="${esc(valore)}" maxlength="${c.id === 'titolo' ? 200 : 1000}" placeholder="${esc(c.aiuto)}" autocomplete="off">`;
     };
     const campi = CAMPI_SCHEDA.map((c) =>
       `<label class="${c.largo ? 'largo' : ''}"><span>${c.nome}${c.obbligatorio ? ' <b>*</b>' : ''}</span>${controllo(c)}</label>`).join('');
     return `<div class="modulo" data-scheda="${a.id || 'nuova'}">
+        <button class="btn chiudi-modulo" data-azione="annulla" title="Annulla">&#x2715;</button>
         ${campi}
         <label><span>BRANCH</span><select name="branch">${opzioniBranch(a.branch)}</select></label>
+        ${a.id ? htmlBackendAttivita(a, true) : ''}
         <div class="piede">
           <button class="btn" data-azione="annulla">Annulla</button>
           <button class="btn primario" data-azione="${azione}" data-id="${a.id || ''}">${azione === 'salva' ? 'Salva' : 'Aggiungi'}</button>
@@ -1801,10 +3246,43 @@
       </div>`;
   }
 
+  // MESSAGGI BACKEND DELL'ATTIVITÀ
+  // Come nei piani: ogni messaggio è un blocco a sé, si aggiunge e si elimina da solo
+  const htmlBloccoBackend = (b, i, dati, soloCopia = false) => `<div class="blocco-backend">
+      <div class="testa-blocco"><b>${i + 1}</b><span>${quando(b.data)}</span><span class="spazio"></span>
+        <button class="btn icona" data-azione="copia-backend" data-blocco="${b.id}" ${dati} title="Copia questo messaggio">${icona('copia')}</button>
+        ${soloCopia ? '' : `<button class="btn icona" data-azione="elimina-backend" data-blocco="${b.id}" ${dati} title="Elimina questo messaggio">${icona('elimina')}</button>`}
+      </div>
+      <pre>${esc(b.testo)}</pre>
+    </div>`;
+
+  // Si scrive e si elimina solo mentre modifichi l'attività; altrimenti i messaggi si leggono e si copiano, ridotti come nei piani
+  function htmlBackendAttivita(a, modifica) {
+    if (modifica) {
+      return `<div class="backend-attivita" data-attivita-backend="${a.id}">
+        <div class="titolo-sezione">MESSAGGI BACKEND <i>${a.backend.length || 'facoltativo'}</i></div>
+        ${a.backend.map((b, i) => htmlBloccoBackend(b, i, `data-attivita="${a.id}"`)).join('')}
+        <textarea maxlength="20000" placeholder="incolla qui un messaggio del backend e salvalo: ne puoi aggiungere quanti vuoi"></textarea>
+        <div class="piede"><button class="btn primario" data-azione="salva-backend" data-attivita="${a.id}">Salva messaggio</button></div>
+      </div>`;
+    }
+    if (!a.backend.length) return '';
+    const n = a.backend.length;
+    return `<details class="backend-espandi" data-attivita-id="${a.id}"${stato.backendAperti.has(`a-${a.id}`) ? ' open' : ''}><summary>${n} ${n === 1 ? 'messaggio' : 'messaggi'} · clicca per espandere</summary>${a.backend.map((b, i) => htmlBloccoBackend(b, i, `data-attivita="${a.id}"`, true).replace(/\n\s*/g, '')).join('')}</details>`;
+  }
+
+  // Durante la modifica si ridisegna solo la sezione dei messaggi: i campi che stai scrivendo non si perdono
+  function aggiornaBackendAttivita(a) {
+    const sezione = document.querySelector(`[data-attivita-backend="${a.id}"]`);
+    if (!sezione) return disegna();
+    sezione.outerHTML = htmlBackendAttivita(a, true);
+  }
+
   function htmlScheda(a) {
     const voci = CAMPI_SCHEDA.filter((c) => c.id !== 'titolo' && a[c.id])
       .map((c) => `<dt>${c.nome}</dt><dd>${esc(a[c.id])}</dd>`).join('');
-    return `<div class="scheda${a.stato === 'in-corso' ? ' attiva' : ''}${stato.aperte.has(a.id) ? ' aperta' : ''}" data-id="${a.id}">
+    const classeStato = { 'in-corso': ' attiva', fatto: ' fatto' }[a.stato] || '';
+    return `<div class="scheda${classeStato}${stato.aperte.has(a.id) ? ' aperta' : ''}" data-id="${a.id}" data-blocco="attivita" data-bid="${a.id}">
       <div class="testa" data-azione="espandi" data-id="${a.id}">
         <span class="maniglia" title="Trascina per spostare l'attività">${icona('maniglia')}</span>
         <span class="freccia">▶</span>
@@ -1821,7 +3299,7 @@
         <button class="btn icona" data-azione="elimina-attivita" data-id="${a.id}" title="Elimina l'attività">${icona('elimina')}</button>
       </div>
       <div class="dettagli"><div><div class="interno">
-        ${voci ? `<dl>${voci}</dl>` : ''}
+        ${voci || a.backend.length ? `<dl>${voci}${a.backend.length ? `<dt>MESSAGGI BACKEND</dt><dd class="backend-dd">${htmlBackendAttivita(a, false)}</dd>` : ''}</dl>` : ''}
         <div class="piede">
           <span class="spazio"></span>
           <button class="btn" data-azione="pianifica" data-id="${a.id}" title="Ragiona sull'attività fase per fase prima di scrivere codice">${stato.piani.some((p) => p.attivita === a.id) ? 'Apri piano' : 'Pianifica'}</button>
@@ -1832,15 +3310,15 @@
   }
 
   function htmlAttivita() {
-    const lista = stato.attivita.filter((a) => stato.filtroAttivita === 'tutte' || a.stato === stato.filtroAttivita)
+    const lista = stato.attivita.filter((a) => passaFiltro(stato.filtroAttivita, a.stato))
       .sort(perOrdine);
-    const conta = (id) => stato.attivita.filter((a) => a.stato === id).length;
+    const conta = (id) => stato.attivita.filter((a) => passaFiltro(id, a.stato)).length;
     return `<div class="barra">
-        ${[['tutte', 'Tutte'], ...STATI].map(([id, nome]) => `<button class="pillola${stato.filtroAttivita === id ? ' attiva' : ''}" data-filtro-attivita="${id}">${nome} · ${id === 'tutte' ? stato.attivita.length : conta(id)}</button>`).join('')}
+        ${FILTRI_STATO.map(([id, nome]) => `<button class="pillola${stato.filtroAttivita === id ? ' attiva' : ''}" data-filtro-attivita="${id}">${nome} · ${conta(id)}</button>`).join('')}
         <span class="spazio"></span>
         ${stato.nuova ? '' : '<button class="btn primario" data-azione="nuova">+ Nuova attività</button>'}
       </div>
-      ${stato.nuova ? htmlModulo({}, 'aggiungi') : ''}
+      ${stato.nuova ? htmlModulo(stato.bozza || {}, 'aggiungi') : ''}
       <div class="lista">${lista.map((a) => (stato.modifica === a.id ? htmlModulo(a, 'salva') : htmlScheda(a))).join('') || '<p class="vuoto">Nessuna attività in questa lista</p>'}</div>`;
   }
 
@@ -1868,6 +3346,41 @@
 
   const campi = (contenitore) => Object.fromEntries([...contenitore.querySelectorAll('[name]')].map((c) => [c.name, c.value]));
 
+  // RIDUZIONE SCHEDE
+  // Attività e branch si aprono una alla volta: aprirne una riduce le altre
+  function riduciSchede() {
+    document.querySelectorAll('.scheda:not(.piano).aperta').forEach((s) => s.classList.remove('aperta'));
+    stato.aperte.clear();
+    stato.branchAperti.clear();
+  }
+
+  // RIDUZIONE PIANO
+  // Il piano aperto si salva e si riduce; se è nuovo e non hai scritto nulla viene eliminato
+  async function riduciPiano() {
+    const id = stato.pianoAperto;
+    if (!id) return;
+    const scheda = document.querySelector(`.scheda.piano[data-piano-id="${id}"]`);
+    const scartato = pianoNuovo === id;
+    if (scartato) {
+      clearTimeout(timerPiano);
+      modifichePiano = null;
+      await api('/api/piani/elimina', { id });
+      stato.piani = stato.piani.filter((p) => p.id !== id);
+      pianoNuovo = null;
+      $('conta-piani').textContent = stato.piani.length;
+      avvisa('Piano vuoto non salvato');
+    } else {
+      await salvaPiano();
+    }
+    stato.pianoAperto = null;
+    if (!scheda?.isConnected) return;
+    scheda.classList.remove('aperta');
+    setTimeout(() => {
+      if (scartato) scheda.remove();
+      else if (!scheda.classList.contains('aperta')) scheda.querySelector('.interno').innerHTML = '';
+    }, 350);
+  }
+
   // AZIONI
   const AZIONI = {
     async chiudi(b) {
@@ -1891,11 +3404,9 @@
     async 'espandi-branch'(b) {
       const nome = b.dataset.nome;
       const scheda = b.closest('.scheda');
-      if (stato.branchAperti.has(nome)) {
-        stato.branchAperti.delete(nome);
-        scheda.classList.remove('aperta');
-        return;
-      }
+      const chiudi = stato.branchAperti.has(nome);
+      riduciSchede();
+      if (chiudi) return;
       stato.branchAperti.add(nome);
       scheda.classList.add('aperta');
       if (stato.commit[nome]) return;
@@ -1927,27 +3438,238 @@
     },
     // Il piano nasce vuoto e si apre con il cursore sul titolo
     async 'crea-piano'() {
-      apriPiano(await api('/api/piani/crea', {}));
+      await riduciPiano();
+      const piano = await api('/api/piani/crea', {});
+      pianoNuovo = piano.id;
+      apriPiano(piano);
       document.querySelector('[data-piano="titolo"]').focus();
     },
     async pianifica(b) {
       const esistente = stato.piani.find((p) => p.attivita === b.dataset.id);
-      apriPiano(esistente || await api('/api/piani/crea', { attivita: b.dataset.id }));
+      const piano = esistente || await api('/api/piani/crea', { attivita: b.dataset.id });
+      if (!esistente) pianoNuovo = piano.id;
+      apriPiano(piano);
     },
-    'apri-piano'(b) {
-      apriPiano(stato.piani.find((p) => p.id === b.dataset.id));
+    // APERTURA PIANO
+    // Si apre uno alla volta: quello aperto prima si salva e si riduce. L'editor si scrive nella scheda
+    // prima di aggiungere la classe, così la transizione di altezza parte da chiuso
+    async 'espandi-piano'(b) {
+      if (String(window.getSelection())) return;
+      const id = b.dataset.id;
+      const apri = stato.pianoAperto !== id;
+      await riduciPiano();
+      if (!apri) return;
+      const piano = stato.piani.find((p) => p.id === id);
+      const scheda = document.querySelector(`.scheda.piano[data-piano-id="${id}"]`);
+      if (!piano || !scheda) return;
+      stato.pianoAperto = id;
+      stato.fasePiano = stato.fasiPiano[0]?.id || '';
+      scheda.querySelector('.interno').innerHTML = htmlEditorPiano(piano);
+      scheda.querySelectorAll('.fase-piano textarea, .backend-piano textarea').forEach(adattaAltezza);
+      void scheda.offsetHeight;
+      scheda.classList.add('aperta');
     },
-    async 'chiudi-piano'() {
+    async 'copia-backend'(b) {
+      const lista = b.dataset.attivita ? stato.attivita.find((a) => a.id === b.dataset.attivita)?.backend : pianoAperto()?.backend;
+      const testo = lista?.find((x) => x.id === b.dataset.blocco)?.testo;
+      if (!testo?.trim()) return avvisa('Non ci sono messaggi del backend da copiare', true);
+      await navigator.clipboard.writeText(testo);
+      avvisa('Messaggio del backend copiato');
+    },
+    // Il riquadro + apre il campo per scrivere un messaggio nuovo; Annulla lo richiude
+    // COMPILA LA RICHIESTA
+    // Claude legge i messaggi del backend e propone i campi; si scrivono solo quelli vuoti, il resto resta com'è
+    async 'compila-richiesta'(b) {
+      const piano = pianoAperto();
+      if (!piano) return;
+      if (!piano.backend.length) return avvisa('Aggiungi prima un messaggio del backend (sotto Tipo di lavoro)', true);
       await salvaPiano();
-      stato.pianoAperto = null;
+      b.disabled = true;
+      b.classList.add('attivo');
+      avvisa('Sto leggendo i messaggi del backend… può volerci un minuto');
+      try {
+        const { campi } = await api('/api/piani/compila', { id: piano.id });
+        const scritti = [];
+        const saltati = [];
+        for (const [id, testoProposto] of Object.entries(campi)) {
+          const campo = document.querySelector(`.fase-piano textarea[data-fase="richiesta"][data-campo="${id}"]`);
+          if (!campo) continue;
+          if (campo.value.trim()) {
+            saltati.push(id);
+            continue;
+          }
+          scriviCampo(campo, campo.dataset.forma ? formattaCampo(testoProposto, campo.dataset.forma) : testoProposto);
+          scritti.push(id);
+        }
+        avvisa(scritti.length ? `Compilati ${scritti.length} campi${saltati.length ? `; ${saltati.length} già scritti non toccati` : ''}. Controllali e correggi.` : saltati.length ? 'I campi proposti erano già compilati: non ho toccato niente' : 'I messaggi non dicono abbastanza per compilare i campi', !scritti.length && !saltati.length);
+      } finally {
+        b.disabled = false;
+        b.classList.remove('attivo');
+      }
+    },
+    'nuovo-backend'() {
+      $('aggiungi-backend').hidden = true;
+      $('form-backend').hidden = false;
+      $('nuovo-backend').focus();
+    },
+    'annulla-backend'() {
+      $('nuovo-backend').value = '';
+      $('form-backend').hidden = true;
+      $('aggiungi-backend').hidden = false;
+    },
+    // Il blocco nuovo si salva sul server e il campo si svuota per il prossimo
+    async 'salva-backend'(b) {
+      const idAttivita = b.dataset.attivita;
+      const campo = idAttivita ? b.closest('.backend-attivita').querySelector('textarea') : $('nuovo-backend');
+      if (!campo.value.trim()) return avvisa('Incolla prima il messaggio', true);
+      if (idAttivita) {
+        const attivita = stato.attivita.find((a) => a.id === idAttivita);
+        attivita.backend = (await api('/api/attivita/backend/aggiungi', { id: idAttivita, testo: campo.value })).backend;
+        aggiornaBackendAttivita(attivita);
+        return;
+      }
+      const piano = pianoAperto();
+      piano.backend = (await api('/api/piani/backend/aggiungi', { id: piano.id, testo: campo.value })).backend;
+      pianoNuovo = null;
       disegna();
+      $('nuovo-backend')?.focus();
+    },
+    async 'elimina-backend'(b) {
+      if (!confermato(b)) return;
+      if (b.dataset.attivita) {
+        const attivita = stato.attivita.find((a) => a.id === b.dataset.attivita);
+        attivita.backend = (await api('/api/attivita/backend/elimina', { id: b.dataset.attivita, blocco: b.dataset.blocco })).backend;
+        return aggiornaBackendAttivita(attivita);
+      }
+      const piano = pianoAperto();
+      piano.backend = (await api('/api/piani/backend/elimina', { id: piano.id, blocco: b.dataset.blocco })).backend;
+      disegna();
+    },
+    // La ✓ sta sulla riga di ogni piano: apre il quiz per terminarlo; gli altri stati lo riaprono
+    async 'sposta-piano'(b) {
+      const piano = stato.piani.find((p) => p.id === b.dataset.id);
+      if (!piano || piano.stato === b.dataset.stato) return;
+      if (piano.id === stato.pianoAperto) await salvaPiano();
+      if (b.dataset.stato === 'fatto') {
+        document.dispatchEvent(new CustomEvent('quiz-avvia', { detail: { origine: 'piano', piano: piano.id } }));
+        return;
+      }
+      const aggiornato = await api('/api/piani/aggiorna', { id: piano.id, stato: b.dataset.stato });
+      Object.assign(piano, { stato: aggiornato.stato, terminato: aggiornato.terminato, terminatoIl: aggiornato.terminatoIl });
+      pianoNuovo = null;
+      disegna();
+    },
+    'espandi-contesto'(b) {
+      if (String(window.getSelection())) return;
+      const chiudi = stato.contestiAperti.has(b.dataset.id);
+      document.querySelectorAll('.scheda[data-contesto].aperta').forEach((s) => s.classList.remove('aperta'));
+      stato.contestiAperti.clear();
+      if (chiudi) return;
+      b.closest('.scheda').classList.add('aperta');
+      stato.contestiAperti.add(b.dataset.id);
+    },
+    async 'copia-contesto'(b) {
+      await navigator.clipboard.writeText(testoContesto(stato.contesti.find((c) => c.id === b.dataset.id)));
+      avvisa('Contesto copiato: incollalo in una chat nuova');
+    },
+    async 'elimina-contesto'(b) {
+      if (!confermato(b)) return;
+      await api('/api/contesti/elimina', { id: b.dataset.id });
+      await carica();
+    },
+    async 'elimina-lezione'(b) {
+      if (!confermato(b)) return;
+      await api('/api/lezioni/elimina', { id: b.dataset.id });
+      avvisa('Lezione eliminata');
+      await carica();
+    },
+    async 'genera-mappa'() {
+      const piano = pianoAperto();
+      const manca = mancaPerGenerare(piano);
+      if (manca) return avvisa(manca, true);
+      await salvaPiano();
+      const { generazione } = await api('/api/piani/genera-mappa', { id: piano.id, testo: testoPiano(piano) });
+      piano.generazione = generazione;
+      pianoNuovo = null;
+      disegna();
+      seguiGenerazione();
+    },
+    'riprendi-campo'(b) {
+      const piano = pianoAperto();
+      const campo = document.querySelector(`.fase-piano textarea[data-fase="${b.dataset.fase}"][data-campo="${b.dataset.campo}"]`);
+      if (!piano || !campo) return;
+      const testo = testoCampo(piano, b.dataset.da);
+      scriviCampo(campo, campo.dataset.forma ? formattaCampo(testo, campo.dataset.forma) : testo);
+      campo.focus();
+    },
+    // STRUMENTI DEI CAMPI
+    async 'vedi-codice'(b) {
+      const { piano, fase, c, campo } = datiCampo(b);
+      if (!piano || !fase || !c) return;
+      const nome = nomeDaCercare(piano);
+      strumenti[chiaveStrumento(piano, fase.id, c.id)] = { tipo: 'codice', nome, risultati: null };
+      aggiornaPannello(piano, fase, c, campo);
+      if (nome) await eseguiCerca(piano, fase, c, campo, nome);
+    },
+    async 'cerca-codice'(b) {
+      const { piano, fase, c, campo } = datiCampo(b);
+      const nome = b.closest('.pannello')?.querySelector('[data-cerca-nome]')?.value.trim();
+      if (!piano || !nome) return avvisa('Scrivi il nome da cercare', true);
+      await eseguiCerca(piano, fase, c, campo, nome);
+    },
+    'riempi-campo'(b) {
+      const { piano, fase, c, campo } = datiCampo(b);
+      const s = strumenti[chiaveStrumento(piano, fase.id, c.id)];
+      if (!campo || !s?.risultati?.length) return;
+      const perFile = new Map();
+      s.risultati.forEach((r) => perFile.set(r.file, [...(perFile.get(r.file) || []), r.riga]));
+      const righe = [...perFile].map(([file, numeri]) => `- ${file} (riga ${numeri.slice(0, 5).join(', ')})`).join('\n');
+      scriviCampo(campo, campo.dataset.forma ? formattaCampo(righe, campo.dataset.forma) : righe);
+      campo.focus();
+    },
+    'vedi-diagramma'(b) {
+      const { piano, fase, c, campo } = datiCampo(b);
+      if (!piano || !fase || !c) return;
+      strumenti[chiaveStrumento(piano, fase.id, c.id)] = { tipo: 'diagramma' };
+      aggiornaPannello(piano, fase, c, campo);
+    },
+    'chiedi-chattino'(b) {
+      const { piano, c } = datiCampo(b);
+      if (piano && c?.domanda) document.dispatchEvent(new CustomEvent('chattino-chiedi', { detail: { piano: piano.id, domanda: c.domanda } }));
+    },
+    'scegli'(b) {
+      const { fase, c, campo } = datiCampo(b);
+      if (!campo || !c) return;
+      const righe = (campo.value.trim() ? campo.value : c.traccia || '').split('\n');
+      const prefisso = `${b.dataset.titolo}:`;
+      let i = righe.findIndex((r) => r.startsWith(prefisso));
+      if (i < 0) i = righe.push(`${prefisso} `) - 1;
+      const attuali = sceltePresenti(righe.join('\n'), b.dataset.titolo);
+      const nuovi = attuali.includes(b.dataset.opzione) ? attuali.filter((x) => x !== b.dataset.opzione) : [...attuali, b.dataset.opzione];
+      righe[i] = `${prefisso} ${nuovi.join(', ')}`;
+      scriviCampo(campo, righe.join('\n'));
+      document.querySelector(`[data-scelte="${fase.id}.${c.id}"]`).innerHTML = htmlScelte(fase, c, campo.value);
+    },
+    async 'genera-sintesi'() {
+      const piano = pianoAperto();
+      const testo = testoRichiesta(piano);
+      if (!testo) return avvisa('Scrivi qualcosa nei campi della Richiesta', true);
+      await salvaPiano();
+      const { generazioneSintesi } = await api('/api/piani/genera-sintesi', { id: piano.id, testo, firma: testo });
+      piano.generazioneSintesi = generazioneSintesi;
+      pianoNuovo = null;
+      disegna();
+      seguiGenerazione();
     },
     async 'vai-fase'(b) {
       if (!b.dataset.fase) return;
+      const piano = pianoAperto();
+      const blocco = bloccoMappa(piano);
+      if (blocco && fasiDelPiano(piano).findIndex((f) => f.id === b.dataset.fase) > 0) return avvisa(blocco, true);
       await salvaPiano();
       stato.fasePiano = b.dataset.fase;
       disegna();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      document.querySelector('.scheda.piano.aperta')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
     // Cambiando tipo si resta sulla stessa fase se esiste anche nel tipo nuovo, altrimenti si torna alla prima
     async 'tipo-piano'(b) {
@@ -1956,14 +3678,16 @@
       await salvaPiano();
       piano.tipo = b.dataset.tipo;
       if (!fasiDelPiano(piano).some((f) => f.id === stato.fasePiano)) stato.fasePiano = fasiDelPiano(piano)[0].id;
+      pianoNuovo = null;
       await api('/api/piani/aggiorna', { id: piano.id, tipo: piano.tipo });
       disegna();
     },
     async 'mappa-piano'(b) {
       const piano = pianoAperto();
-      if (piano.mappa === b.dataset.mappa) return;
+      if (piano.mappa === b.dataset.mappa || piano.generazione?.stato === 'in-corso') return;
       await salvaPiano();
       piano.mappa = b.dataset.mappa;
+      pianoNuovo = null;
       await api('/api/piani/aggiorna', { id: piano.id, mappa: piano.mappa });
       disegna();
     },
@@ -1975,6 +3699,11 @@
     async 'elimina-piano'(b) {
       if (!confermato(b)) return;
       await api('/api/piani/elimina', { id: b.dataset.id });
+      if (stato.pianoAperto === b.dataset.id) {
+        clearTimeout(timerPiano);
+        modifichePiano = null;
+        stato.pianoAperto = null;
+      }
       await carica();
     },
     async passa(b) {
@@ -1991,6 +3720,36 @@
       avvisa(`Branch ${b.dataset.nome} eliminato`);
       await carica();
     },
+    // La richiesta resta aperta finché non chiudi la finestra di Windows
+    async 'scegli-progetto'(b) {
+      b.disabled = true;
+      avvisa('Scegli la cartella nella finestra di Windows (se non la vedi, è nella barra delle applicazioni)');
+      try {
+        const scelta = await api('/api/progetti/scegli');
+        if (scelta.annullato) return;
+        if (scelta.esiste) return apriProgetto(scelta.nome);
+        stato.nuovoProgetto = scelta;
+        stato.progetto ? disegna() : disegnaSenzaProgetti();
+      } finally {
+        b.disabled = false;
+      }
+    },
+    async 'conferma-progetto'() {
+      const nuovo = await api('/api/progetti/aggiungi', { cartella: stato.nuovoProgetto.cartella });
+      stato.nuovoProgetto = null;
+      avvisa(`Progetto ${nuovo.nome} aggiunto`);
+      await apriProgetto(nuovo.nome);
+    },
+    'annulla-progetto'() {
+      stato.nuovoProgetto = null;
+      stato.progetto ? disegna() : disegnaSenzaProgetti();
+    },
+    async 'rimuovi-progetto'(b) {
+      if (!confermato(b, 'Togliere? Clicca di nuovo')) return;
+      await api('/api/progetti/rimuovi', { nome: b.dataset.nome });
+      avvisa(`${b.dataset.nome} tolto dalla sala: cartella, attività e piani restano dove sono`);
+      await apriProgetto(stato.progetto === b.dataset.nome ? '' : stato.progetto);
+    },
     async 'crea-branch'() {
       const nome = $('nuovo-branch').value.trim();
       if (!nome) return avvisa('Scrivi il nome del branch', true);
@@ -2000,6 +3759,7 @@
     },
     nuova() {
       stato.nuova = true;
+      stato.bozza = null;
       disegna();
       document.querySelector('[data-scheda="nuova"] [name="titolo"]')?.focus();
     },
@@ -2008,7 +3768,8 @@
       if (!dati.titolo.trim()) return avvisa('Il TITOLO è obbligatorio', true);
       await api('/api/attivita/crea', dati);
       stato.nuova = false;
-      stato.filtroAttivita = 'tutte';
+      stato.bozza = null;
+      stato.filtroAttivita = 'aperti';
       avvisa('Attività aggiunta in Da fare');
       await carica();
     },
@@ -2016,9 +3777,11 @@
     espandi(b) {
       if (String(window.getSelection())) return;
       const scheda = b.closest('.scheda');
-      scheda.classList.toggle('aperta');
-      if (scheda.classList.contains('aperta')) stato.aperte.add(b.dataset.id);
-      else stato.aperte.delete(b.dataset.id);
+      const chiudi = stato.aperte.has(b.dataset.id);
+      riduciSchede();
+      if (chiudi) return;
+      scheda.classList.add('aperta');
+      stato.aperte.add(b.dataset.id);
     },
     async sposta(b) {
       if (b.classList.contains('attuale')) return;
@@ -2033,6 +3796,7 @@
     annulla() {
       stato.modifica = null;
       stato.nuova = false;
+      stato.bozza = null;
       disegna();
     },
     async salva(b) {
@@ -2050,7 +3814,7 @@
   document.addEventListener('click', async (e) => {
     // La maniglia serve solo a trascinare: il clic lì non apre l'attività
     if (e.target.closest('.maniglia')) return;
-    const el = e.target.closest('[data-progetto], [data-sezione], [data-filtro], [data-filtro-attivita], [data-azione], #ricarica');
+    const el = e.target.closest('[data-progetto], [data-sezione], [data-filtro], [data-filtro-attivita], [data-filtro-piani], [data-azione], #ricarica');
     if (!el) return;
     try {
       if (el.id === 'ricarica') return await carica();
@@ -2058,7 +3822,12 @@
         stato.filtroAttivita = el.dataset.filtroAttivita;
         return disegna();
       }
+      if (el.dataset.filtroPiani) {
+        stato.filtroPiani = el.dataset.filtroPiani;
+        return disegna();
+      }
       if (el.dataset.progetto) {
+        await riduciPiano();
         stato.progetto = el.dataset.progetto;
         stato.modifica = null;
         stato.nuova = false;
@@ -2068,8 +3837,11 @@
         return await carica();
       }
       if (el.dataset.sezione) {
-        // Entrando in Attività si parte sempre da Tutte
-        if (el.dataset.sezione === 'attivita' && stato.sezione !== 'attivita') stato.filtroAttivita = 'tutte';
+        // Lasciando i Piani, quello aperto si salva e si riduce
+        await riduciPiano();
+        // Entrando in Attività o in Piani si parte sempre da Aperti
+        if (el.dataset.sezione === 'attivita' && stato.sezione !== 'attivita') stato.filtroAttivita = 'aperti';
+        if (el.dataset.sezione === 'piani' && stato.sezione !== 'piani') stato.filtroPiani = 'aperti';
         stato.sezione = el.dataset.sezione;
         memoria.scrivi('sala.sezione', stato.sezione);
         return disegna();
@@ -2097,22 +3869,20 @@
     stato.fasePiano = stato.fasiPiano[0]?.id || '';
     memoria.scrivi('sala.sezione', stato.sezione);
     disegna();
-    window.scrollTo({ top: 0 });
+    document.querySelector('.scheda.piano.aperta')?.scrollIntoView({ block: 'start' });
   }
+
+  let pianoNuovo = null;
 
   async function salvaPiano() {
     clearTimeout(timerPiano);
     if (!modifichePiano) return;
     const dati = modifichePiano;
     modifichePiano = null;
-    const etichetta = $('salvataggio');
-    if (etichetta) etichetta.textContent = 'Salvataggio…';
     try {
       const piano = await api('/api/piani/aggiorna', dati);
       Object.assign(stato.piani.find((p) => p.id === piano.id), { aggiornato: piano.aggiornato });
-      if ($('salvataggio')) $('salvataggio').textContent = 'Salvato';
     } catch (err) {
-      if ($('salvataggio')) $('salvataggio').textContent = 'Non salvato';
       avvisa(err.message, true);
     }
   }
@@ -2123,6 +3893,7 @@
     if (!piano || !el.closest('#contenuto')) return;
     const { fase, campo, spunta } = el.dataset;
     if (!el.dataset.piano && !campo && !spunta) return;
+    pianoNuovo = null;
     modifichePiano ??= { id: piano.id };
     if (el.dataset.piano) {
       piano[el.dataset.piano] = el.value;
@@ -2136,17 +3907,163 @@
       modifichePiano.fasi[fase][chiave] ??= {};
       modifichePiano.fasi[fase][chiave][campo || spunta] = valore;
     }
-    if ($('salvataggio')) $('salvataggio').textContent = 'Modifiche da salvare…';
     aggiornaIndicatoriPiano();
     clearTimeout(timerPiano);
     timerPiano = setTimeout(salvaPiano, spunta ? 0 : 700);
   }
 
   document.addEventListener('input', modificaPiano);
+  // MESSAGGI BACKEND APERTI
+  // Chiusi di partenza; aperti o chiusi restano così cambiando fase o sezione (toggle non risale: si ascolta in cattura)
+  document.addEventListener('toggle', (e) => {
+    if (!e.target.matches?.('.backend-piano, .backend-espandi')) return;
+    const chiave = e.target.dataset.pianoId || `a-${e.target.dataset.attivitaId}`;
+    if (e.target.open) stato.backendAperti.add(chiave);
+    else stato.backendAperti.delete(chiave);
+  }, true);
+  document.addEventListener('input', (e) => {
+    if (e.target.id !== 'cerca-lezioni') return;
+    stato.cercaLezioni = e.target.value;
+    $('elenco-lezioni').innerHTML = htmlElencoLezioni();
+  });
+  document.addEventListener('input', (e) => {
+    if (e.target.matches('.fase-piano textarea, .backend-piano textarea')) adattaAltezza(e.target);
+  });
   document.addEventListener('change', (e) => {
     if (e.target.type === 'checkbox') modificaPiano(e);
   });
   window.addEventListener('beforeunload', () => salvaPiano());
+
+  // CAMPI GUIDATI
+  // Il valore cambiato da codice non genera "input": si lancia a mano, così il piano si salva e i consigli si aggiornano
+  const campoDelPiano = (el) => stato.fasiPiano.find((f) => f.id === el.dataset.fase)?.campi.find((c) => c.id === el.dataset.campo);
+  const scriviCampo = (el, valore) => {
+    if (el.value === valore) return;
+    el.value = valore;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  // PUNTI FISSI
+  // Ogni riga di un campo a elenco o a passi comincia sempre con il suo punto o numero: non si può cancellare né scrivere prima.
+  // Qualsiasi modifica (tasti, taglia, incolla, seleziona tutto) viene riparata subito dopo, con il cursore al suo posto
+  const INIZIO_VOCE = /^(•|\d+\.) /;
+  const marcatoreDi = (forma, indice) => (forma === 'passi' ? `${indice + 1}. ` : PUNTO);
+  const MARCATORE_ALTRUI = { elenco: /^\s*(•\s*|[-*]\s+)/, passi: /^\s*(\d+[.)]\s+|•\s*|[-*]\s+)/ };
+  const lunghezzaMarcatore = (riga) => (riga.match(INIZIO_VOCE) || [''])[0].length;
+  const campoConPunti = (el) => (el?.matches?.('.fase-piano textarea[data-forma]') && el.dataset.forma ? el.dataset.forma : '');
+  const SOLO_MARCATORE = /^(•|\d+\.)\s*$/;
+
+  function datiRiga(el) {
+    const testo = el.value;
+    const posizione = el.selectionStart;
+    const inizioRiga = posizione ? testo.lastIndexOf('\n', posizione - 1) + 1 : 0;
+    const prossimo = testo.indexOf('\n', posizione);
+    const fineRiga = prossimo === -1 ? testo.length : prossimo;
+    return { posizione, inizioRiga, fineRiga, riga: testo.slice(inizioRiga, fineRiga), indice: testo.slice(0, inizioRiga).split('\n').length - 1 };
+  }
+
+  function sistemaPunti(el) {
+    const forma = campoConPunti(el);
+    if (!forma) return;
+    const { posizione, inizioRiga, riga, indice } = datiRiga(el);
+    const togli = (r) => r.replace(MARCATORE_ALTRUI[forma], '');
+    const righe = el.value.split('\n').map(togli);
+    const nuovo = righe.map((r, i) => marcatoreDi(forma, i) + r).join('\n');
+    if (nuovo === el.value) return;
+    const prima = righe.slice(0, indice).reduce((t, r, i) => t + marcatoreDi(forma, i).length + r.length + 1, 0);
+    const colonna = Math.max(0, posizione - inizioRiga - (riga.match(MARCATORE_ALTRUI[forma]) || [''])[0].length);
+    const nuova = prima + marcatoreDi(forma, indice).length + colonna;
+    el.value = nuovo;
+    el.setSelectionRange(nuova, nuova);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  // Il cursore non può stare dentro il punto: né con il mouse né con le frecce o Home
+  function tieniDopoIlPunto(el) {
+    if (!campoConPunti(el) || el.selectionStart !== el.selectionEnd) return;
+    const { posizione, inizioRiga, riga } = datiRiga(el);
+    const dopo = inizioRiga + lunghezzaMarcatore(riga);
+    if (posizione < dopo) el.setSelectionRange(dopo, dopo);
+  }
+  document.addEventListener('selectionchange', () => tieniDopoIlPunto(document.activeElement));
+  document.addEventListener('beforeinput', (e) => tieniDopoIlPunto(e.target));
+  document.addEventListener('keyup', (e) => tieniDopoIlPunto(e.target));
+  document.addEventListener('click', (e) => tieniDopoIlPunto(e.target));
+
+  // Entrando in un campo compare il primo punto (o la traccia da completare, nei campi che ce l'hanno)
+  document.addEventListener('focusin', (e) => {
+    const el = e.target;
+    if (!el.matches?.('.fase-piano textarea[data-campo]')) return;
+    if (campoConPunti(el)) return sistemaPunti(el);
+    const { traccia } = el.dataset;
+    if (!traccia || el.value.trim()) return;
+    scriviCampo(el, traccia);
+    el.setSelectionRange(traccia.indexOf('\n'), traccia.indexOf('\n'));
+  });
+
+  // Rimuove la riga che contiene il cursore (con il suo a capo), lasciando il cursore alla fine di quella prima o dopo
+  function togliRiga(el, { inizioRiga, fineRiga }) {
+    const daInizio = inizioRiga ? inizioRiga - 1 : 0;
+    const aFine = inizioRiga ? fineRiga : Math.min(el.value.length, fineRiga + 1);
+    el.setRangeText('', daInizio, aFine, 'end');
+  }
+
+  // Invio aggiunge una voce. Backspace e Canc non toccano mai il punto: su una voce vuota Backspace e Invio la tolgono (se non è l'unica)
+  document.addEventListener('keydown', (e) => {
+    const el = e.target;
+    const forma = campoConPunti(el);
+    if (!forma || e.isComposing || el.selectionStart !== el.selectionEnd) return;
+    const dati = datiRiga(el);
+    const { posizione, inizioRiga, fineRiga, riga } = dati;
+    const lungPunto = lunghezzaMarcatore(riga);
+    const vuota = SOLO_MARCATORE.test(riga);
+    const altreRighe = el.value.includes('\n');
+    let cambiato = false;
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!vuota) {
+        el.setRangeText(`\n${marcatoreDi(forma, dati.indice + 1)}`, posizione, posizione, 'end');
+        cambiato = true;
+      } else if (altreRighe) {
+        togliRiga(el, dati);
+        cambiato = true;
+      }
+    } else if (e.key === 'Backspace' && posizione - inizioRiga <= lungPunto) {
+      e.preventDefault();
+      if (vuota && altreRighe) {
+        togliRiga(el, dati);
+        cambiato = true;
+      }
+    } else if (e.key === 'Delete') {
+      if (posizione - inizioRiga < lungPunto) e.preventDefault();
+      else if (posizione === fineRiga && fineRiga < el.value.length) {
+        e.preventDefault();
+        el.setRangeText('', fineRiga, fineRiga + 1 + lunghezzaMarcatore(el.value.slice(fineRiga + 1).split('\n')[0]), 'end');
+        cambiato = true;
+      }
+    }
+    if (cambiato) el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+
+  // Uscendo dal campo: le voci vuote spariscono e un campo toccato e lasciato vuoto si svuota del tutto (senza il punto conta come non scritto)
+  document.addEventListener('focusout', (e) => {
+    const el = e.target;
+    if (!el.matches?.('.fase-piano textarea[data-campo]')) return;
+    const { forma, traccia } = el.dataset;
+    if (traccia && el.value.trim() === traccia.trim()) return scriviCampo(el, '');
+    if (forma) scriviCampo(el, formattaCampo(el.value, forma));
+  });
+
+  // Mentre scrivi: i punti si riparano e i consigli si aggiornano, senza ridisegnare la pagina
+  document.addEventListener('input', (e) => {
+    const el = e.target;
+    if (!el.matches?.('.fase-piano textarea[data-campo]')) return;
+    if (!e.isComposing && document.activeElement === el) sistemaPunti(el);
+    const c = campoDelPiano(el);
+    const consigli = document.querySelector(`[data-consigli="${el.dataset.fase}.${el.dataset.campo}"]`);
+    if (c && consigli) consigli.innerHTML = htmlConsigli(c, el.value);
+    el.closest('label')?.querySelector('.riprendi')?.remove();
+  });
 
   // TRASCINAMENTO ATTIVITÀ
   // Durante il trascinamento la scheda si sposta davvero nella pagina; al rilascio si salva il nuovo ordine
@@ -2214,9 +4131,159 @@
   // AGGIORNAMENTO AUTOMATICO
   // Si ferma mentre scrivi o modifichi, altrimenti il ridisegno cancellerebbe il testo
   setInterval(() => {
-    const scrivendo = document.activeElement?.matches('input, textarea, select') || stato.modifica || stato.nuova || stato.trascinata || stato.commitAperto || stato.pianoAperto || daConfermare;
+    const scrivendo = ['codice', 'funzionalita'].includes(stato.sezione) ||document.activeElement?.matches('input, textarea, select') || stato.modifica || stato.nuova || stato.trascinata || stato.commitAperto || stato.pianoAperto || daConfermare;
     if (!document.hidden && !scrivendo) carica().catch(() => {});
   }, AGGIORNA_MS);
+
+  // QUIZ DI FINE LEZIONE
+  // Parte da Chattino insegnante o dal ✓ di un piano; domande, verifica e lezione le fa il server (quiz-lezione.js).
+  // La lezione si salva solo quando tutte le domande sono giuste; il piano si termina nello stesso momento
+  (() => {
+    const $ = (id) => document.getElementById(id);
+    const MIN_APERTA = 15;
+    const NOMI_TIPO = { scelta: 'Risposta multipla', aperta: 'Risposta aperta' };
+    let quiz = null;
+    let schermata = 'chiuso';
+    let messaggio = '';
+    let lezione = null;
+    let timer = null;
+    let numeroRichiesta = 0;
+    let ultimaChiamata = null;
+
+    function ferma() {
+      clearInterval(timer);
+      timer = null;
+    }
+
+    function chiudi() {
+      numeroRichiesta++;
+      ferma();
+      schermata = 'chiuso';
+      $('quiz').hidden = true;
+    }
+
+    // ATTESA
+    // Generare le domande o valutare le risposte richiede claude: si mostra il tempo trascorso
+    function attendi(testo) {
+      ferma();
+      schermata = 'attesa';
+      const inizio = Date.now();
+      const scrivi = () => { messaggio = `${testo} ${Math.round((Date.now() - inizio) / 1000)} s`; const el = $('quiz-corpo').querySelector('.quiz-messaggio'); if (el) el.textContent = messaggio; };
+      scrivi();
+      timer = setInterval(scrivi, 1000);
+      mostra();
+    }
+
+    // ESECUZIONE
+    // Una risposta che arriva dopo la chiusura della finestra non la ridisegna, ma una lezione già salvata va comunque segnalata
+    async function esegui(testo, percorso, dati) {
+      const mio = ++numeroRichiesta;
+      $('quiz').hidden = false;
+      attendi(testo);
+      try {
+        const risultato = await api(percorso, dati);
+        if (risultato.lezione) await carica();
+        if (mio !== numeroRichiesta) {
+          if (risultato.lezione) avvisa(`Lezione salvata: ${risultato.lezione.titolo}`);
+          return;
+        }
+        ferma();
+        quiz = risultato;
+        lezione = risultato.lezione || null;
+        schermata = lezione ? 'fatto' : 'domande';
+      } catch (err) {
+        if (mio !== numeroRichiesta) return;
+        ferma();
+        messaggio = err.message;
+        schermata = 'errore';
+        ultimaChiamata = () => esegui(testo, percorso, dati);
+      }
+      mostra();
+    }
+
+    // DOMANDE
+    function htmlVoce(v) {
+      const chiusa = Boolean(v.esito);
+      const corpo = v.tipo === 'scelta'
+        ? v.opzioni.map((o, i) => `<label class="quiz-opzione${chiusa ? (i === v.corretta ? ' giusta' : i === v.risposta ? ' sbagliata' : '') : ''}">
+            <input type="radio" name="${v.id}" value="${i}"${chiusa ? ' disabled' : ''}${v.risposta === i ? ' checked' : ''}><span>${esc(o)}</span></label>`).join('')
+        : `<textarea data-voce="${v.id}" rows="4"${chiusa ? ' disabled' : ''} placeholder="Rispondi con parole tue, in 2-4 frasi">${esc(v.risposta || '')}</textarea>`;
+      const esito = chiusa ? `<div class="quiz-esito"><b>${v.esito === 'ok' ? '✓ Giusta' : '✗ Sbagliata'}</b>${v.feedback ? ` · ${esc(v.feedback)}` : ''}</div>` : '';
+      return `<div class="quiz-domanda${v.esito ? ` ${v.esito}` : ''}"><span class="tipo-domanda">${NOMI_TIPO[v.tipo]}</span><p>${esc(v.testo)}</p>${corpo}${esito}</div>`;
+    }
+
+    function mostra() {
+      const corpo = $('quiz-corpo');
+      const piede = $('quiz-piede');
+      $('quiz-titolo').textContent = quiz?.titolo || 'Quiz di fine lezione';
+      const chiudiBtn = '<button type="button" class="btn" data-quiz="chiudi">Chiudi</button>';
+      if (schermata === 'attesa') {
+        $('quiz-sotto').textContent = '';
+        corpo.innerHTML = `<div class="quiz-messaggio">${esc(messaggio)}</div>`;
+        piede.innerHTML = '';
+      } else if (schermata === 'errore') {
+        $('quiz-sotto').textContent = '';
+        corpo.innerHTML = `<div class="quiz-messaggio errore">${esc(messaggio)}</div>`;
+        piede.innerHTML = `${chiudiBtn}<button type="button" class="btn primario" data-quiz="riprova">Riprova</button>`;
+      } else if (schermata === 'fatto') {
+        $('quiz-sotto').textContent = 'Quiz superato';
+        corpo.innerHTML = `<div class="quiz-messaggio">✓ Lezione generata e salvata: <b>${esc(lezione.titolo)}</b></div>${quiz.voci.map(htmlVoce).join('')}`;
+        piede.innerHTML = `${chiudiBtn}<button type="button" class="btn primario" data-quiz="lezioni">Apri le Lezioni</button>`;
+      } else {
+        const aperte = quiz.voci.filter((v) => !v.esito).length;
+        $('quiz-sotto').textContent = `${quiz.voci.filter((v) => v.esito === 'ok').length} giuste · ${aperte} da fare: devi rispondere bene a tutte per generare la lezione`;
+        corpo.innerHTML = quiz.voci.map(htmlVoce).join('');
+        piede.innerHTML = `${chiudiBtn}<button type="button" class="btn primario" data-quiz="verifica">Verifica le risposte</button>`;
+      }
+    }
+
+    // RISPOSTE
+    function leggiRisposte() {
+      const risposte = {};
+      for (const v of quiz.voci.filter((x) => !x.esito)) {
+        if (v.tipo === 'scelta') {
+          const scelta = document.querySelector(`#quiz-corpo input[name="${v.id}"]:checked`);
+          if (!scelta) return avvisa('Rispondi a tutte le domande', true);
+          risposte[v.id] = Number(scelta.value);
+        } else {
+          const t = document.querySelector(`#quiz-corpo textarea[data-voce="${v.id}"]`).value.trim();
+          if (t.length < MIN_APERTA) return avvisa(`Le risposte aperte vanno scritte con parole tue (almeno ${MIN_APERTA} caratteri)`, true);
+          risposte[v.id] = t;
+        }
+      }
+      return risposte;
+    }
+
+    const AZIONI_QUIZ = {
+      chiudi,
+      riprova: () => ultimaChiamata?.(),
+      verifica() {
+        const risposte = leggiRisposte();
+        if (risposte) esegui('Verifico le risposte…', '/api/quiz/rispondi', { id: quiz.id, risposte });
+      },
+      lezioni() {
+        chiudi();
+        Object.assign(stato, { sezione: 'lezioni' });
+        memoria.scrivi('sala.sezione', stato.sezione);
+        disegna();
+      },
+    };
+
+    $('quiz').addEventListener('click', (e) => {
+      const azione = e.target.closest('[data-quiz]')?.dataset.quiz;
+      if (azione) return AZIONI_QUIZ[azione]();
+      if (e.target.id === 'quiz-chiudi') chiudi();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && schermata !== 'chiuso') chiudi();
+    });
+    document.addEventListener('quiz-avvia', (e) => {
+      if (schermata === 'attesa') return;
+      quiz = null;
+      lezione = null;
+      esegui('Preparo le domande…', '/api/quiz/avvia', e.detail);
+    });
+  })();
 
   // CHATTINO
   // Le domande vanno al server della chat delle mappe (~/.claude/shared/chat-mappa-server.js), che le passa a claude -p in sola lettura
@@ -2225,7 +4292,8 @@
     const SERVER = 'http://127.0.0.1:4517';
     const AVVIO = 'node "$HOME/.claude/shared/chat-mappa-server.js" --sfondo';
     const MAX_STORIA = 10;
-    const NOMI_SEZIONI = { sessioni: 'Sessioni Claude', branch: 'Branch', attivita: 'Attività', piani: 'Piani' };
+    const MAX_QUIZ_STORIA = 8;
+    const NOMI_SEZIONI = { sessioni: 'Sessioni Claude', branch: 'Branch', attivita: 'Attività', piani: 'Piani', contesto: 'Contesto', lezioni: 'Lezioni', funzionalita: 'Funzionalità', codice: 'Lettura codice' };
     const storia = [];
     const $ = (id) => document.getElementById(id);
     let inAttesa = false;
@@ -2237,35 +4305,256 @@
 
     // FORMATTAZIONE RISPOSTA
     // Markdown essenziale: blocchi di codice, `codice`, **grassetto**, elenchi puntati, paragrafi.
+    // TABELLE
+    // Righe "| a | b |" con sotto la riga dei trattini "|---|---|"; il testo arriva già escapato
+    const rigaTabella = (r) => /^\s*\|.*\|\s*$/.test(r);
+    const separatoreTabella = (r) => /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(r);
+    const celleTabella = (r) => r.trim().replace(/^\||\|$/g, '').split('|').map((c) => inline(c.trim()));
+
+    function htmlTabella([testa, , ...corpo]) {
+      const riga = (celle, tag) => `<tr>${celle.map((c) => `<${tag}>${c}</${tag}>`).join('')}</tr>`;
+      return `<table><thead>${riga(celleTabella(testa), 'th')}</thead><tbody>${corpo.map((r) => riga(celleTabella(r), 'td')).join('')}</tbody></table>`;
+    }
+
+    // RIGHE DEL TESTO
+    // Titoli "## " e "### ", linea "---", citazione "> " (riquadro nota), elenchi puntati, numerati e checklist "- [ ]" / "- [x]".
+    // Il testo arriva già escapato: ">" è diventato "&gt;"
     function paragrafo(testo) {
       let html = '';
       let lista = [];
+      let tipoLista = 'ul';
+      let citazione = [];
+      let dopoTesto = false;
       const chiudiLista = () => {
-        if (lista.length) html += `<ul>${lista.join('')}</ul>`;
+        if (lista.length) html += `<${tipoLista}>${lista.join('')}</${tipoLista}>`;
         lista = [];
       };
-      testo.split('\n').forEach((riga) => {
-        const punto = riga.match(/^\s*[-*] (.*)/);
-        if (punto) return lista.push(`<li>${inline(punto[1])}</li>`);
+      const chiudiCitazione = () => {
+        if (citazione.length) html += `<blockquote>${citazione.join('<br>')}</blockquote>`;
+        citazione = [];
+      };
+      const chiudi = () => {
         chiudiLista();
-        html += `${html && !html.endsWith('</ul>') ? '<br>' : ''}${inline(riga)}`;
-      });
-      chiudiLista();
+        chiudiCitazione();
+      };
+      const blocco = (h) => {
+        chiudi();
+        html += h;
+        dopoTesto = false;
+      };
+      const voce = (tipo, contenuto) => {
+        chiudiCitazione();
+        if (tipoLista !== tipo) chiudiLista();
+        tipoLista = tipo;
+        lista.push(contenuto);
+        dopoTesto = false;
+      };
+      const righe = testo.split('\n');
+      for (let i = 0; i < righe.length; i++) {
+        const riga = righe[i];
+        if (rigaTabella(riga) && separatoreTabella(righe[i + 1] || '')) {
+          let fine = i + 2;
+          while (fine < righe.length && rigaTabella(righe[fine])) fine++;
+          blocco(htmlTabella(righe.slice(i, fine)));
+          i = fine - 1;
+          continue;
+        }
+        const titolo = riga.match(/^(#{2,3})\s+(.+)$/);
+        if (titolo) {
+          blocco(`<div class="t${titolo[1].length - 1}">${inline(titolo[2])}</div>`);
+          continue;
+        }
+        if (/^\s*(-{3,}|\*{3,})\s*$/.test(riga)) {
+          blocco('<hr>');
+          continue;
+        }
+        const cita = riga.match(/^&gt;\s?(.*)$/);
+        if (cita) {
+          chiudiLista();
+          citazione.push(inline(cita[1]));
+          dopoTesto = false;
+          continue;
+        }
+        // value: con una riga vuota tra le voci ognuna diventa una lista a sé e ripartirebbe da 1
+        const numero = riga.match(/^\s*(\d+)[.)]\s+(.*)/);
+        if (numero) {
+          voce('ol', `<li value="${numero[1]}">${inline(numero[2])}</li>`);
+          continue;
+        }
+        const punto = riga.match(/^\s*[-*]\s+(.*)/);
+        if (punto) {
+          const spunta = punto[1].match(/^\[( |x|X)\]\s+(.*)/);
+          voce('ul', spunta ? `<li class="spunta${spunta[1] === ' ' ? '' : ' fatta'}">${inline(spunta[2])}</li>` : `<li>${inline(punto[1])}</li>`);
+          continue;
+        }
+        chiudi();
+        html += `${dopoTesto ? '<br>' : ''}${inline(riga)}`;
+        dopoTesto = true;
+      }
+      chiudi();
       return `<div class="par">${html}</div>`;
     }
 
-    const markdown = (testo) => esc(testo)
-      .split(/```[\w-]*\n?([\s\S]*?)```/)
-      .map((parte, i) => (i % 2
-        ? `<pre><code>${parte.replace(/\n$/, '')}</code></pre>`
-        : parte.split(/\n{2,}/).filter((p) => p.trim()).map(paragrafo).join('')))
-      .join('');
+    const testoHtml = (testo) => esc(testo).split(/\n{2,}/).filter((p) => p.trim()).map(paragrafo).join('');
+
+    // BLOCCHI VISIVI
+    // Chattino li scrive in blocchi con un nome (flusso, esempio, nota, attenzione) e la pagina li disegna: da Claude non arriva mai HTML o SVG
+    const RIQUADRI = { esempio: 'Esempio', nota: 'Da ricordare', attenzione: 'Attenzione' };
+    const BLOCCO_CODICE = /```([\w-]*)[ \t]*\n?([\s\S]*?)```/g;
+
+    function htmlRiquadro(tipo, corpo) {
+      const titolo = corpo.match(/^\s*titolo:[ \t]*(.+)\n?/);
+      const resto = titolo ? corpo.slice(titolo[0].length) : corpo;
+      return `<div class="riquadro ${tipo}"><div class="riquadro-testa">${esc(RIQUADRI[tipo])}${titolo ? ` · ${esc(titolo[1].trim())}` : ''}</div><div class="riquadro-corpo">${testoHtml(resto)}</div></div>`;
+    }
+
+    // FLUSSO
+    // Righe "id: testo" = riquadro, "id -> id: etichetta" = freccia. Un blocco incomprensibile resta un blocco di codice
+    function leggiFlusso(corpo) {
+      const nodi = [];
+      const archi = [];
+      let titolo = '';
+      for (const riga of corpo.split('\n')) {
+        const r = riga.trim();
+        const arco = r.match(/^([\w-]{1,20})\s*->\s*([\w-]{1,20})\s*(?::\s*(.{0,60}))?$/);
+        if (arco) {
+          archi.push({ da: arco[1], a: arco[2], etichetta: (arco[3] || '').trim() });
+          continue;
+        }
+        const nodo = r.match(/^([\w-]{1,20})\s*:\s*(.{1,140})$/);
+        if (!nodo) continue;
+        if (nodo[1] === 'titolo') titolo = nodo[2].trim();
+        else if (!nodi.some((n) => n.id === nodo[1])) nodi.push({ id: nodo[1], testo: nodo[2].trim() });
+      }
+      const ids = new Set(nodi.map((n) => n.id));
+      const validi = archi.filter((a) => ids.has(a.da) && ids.has(a.a) && a.da !== a.a).slice(0, 30);
+      return nodi.length >= 2 && nodi.length <= 14 && validi.length ? { titolo, nodi, archi: validi } : null;
+    }
+
+    // RIGHE DEL FLUSSO
+    // Ogni riquadro sta una riga sotto quelli che lo precedono; le frecce che tornano indietro (cicli) non contano per le righe
+    function righeFlusso({ nodi, archi }) {
+      const figli = new Map(nodi.map((n) => [n.id, []]));
+      archi.forEach((a) => figli.get(a.da).push(a.a));
+      const entranti = new Set(archi.map((a) => a.a));
+      const stato = new Map();
+      const avanti = [];
+      const visita = (id) => {
+        stato.set(id, 1);
+        for (const f of figli.get(id)) {
+          if (stato.get(f) === 1) continue;
+          avanti.push([id, f]);
+          if (!stato.has(f)) visita(f);
+        }
+        stato.set(id, 2);
+      };
+      [...nodi.filter((n) => !entranti.has(n.id)), ...nodi].forEach((n) => { if (!stato.has(n.id)) visita(n.id); });
+      const riga = new Map(nodi.map((n) => [n.id, 0]));
+      for (let giro = 0; giro < nodi.length; giro++) {
+        let cambiato = false;
+        for (const [da, a] of avanti) {
+          if (riga.get(a) <= riga.get(da)) {
+            riga.set(a, riga.get(da) + 1);
+            cambiato = true;
+          }
+        }
+        if (!cambiato) break;
+      }
+      return riga;
+    }
+
+    function htmlFlusso(corpo) {
+      const flusso = leggiFlusso(corpo);
+      if (!flusso) return null;
+      const riga = righeFlusso(flusso);
+      const righe = [];
+      const conUscita = new Set(flusso.archi.map((a) => a.da));
+      const conIngresso = new Set(flusso.archi.map((a) => a.a));
+      flusso.nodi.forEach((n, i) => {
+        const classe = `nodo${conIngresso.has(n.id) ? '' : ' inizio'}${conUscita.has(n.id) ? '' : ' fine'}`;
+        (righe[riga.get(n.id)] ||= []).push(`<div class="${classe}" data-id="${esc(n.id)}"><span class="nodo-n">${i + 1}</span>${esc(n.testo)}</div>`);
+      });
+      return `<div class="flusso">${flusso.titolo ? `<div class="flusso-titolo">${esc(flusso.titolo)}</div>` : ''}
+        <div class="flusso-area" data-archi="${esc(JSON.stringify(flusso.archi))}">${righe.filter(Boolean).map((r) => `<div class="flusso-riga">${r.join('')}</div>`).join('')}<div class="flusso-frecce"></div></div></div>`;
+    }
+
+    // FRECCE
+    // Si disegnano a pagina visibile, misurando i riquadri; il ResizeObserver le rifà quando la chat cambia dimensione
+    const bordo = (r, centro, verso) => {
+      const dx = verso.x - centro.x;
+      const dy = verso.y - centro.y;
+      const t = 1 / Math.max(Math.abs(dx) / (r.w / 2), Math.abs(dy) / (r.h / 2), 1e-6);
+      return { x: centro.x + dx * t, y: centro.y + dy * t };
+    };
+    let contaFrecce = 0;
+
+    function tracciaFlusso(area) {
+      const sopra = area.querySelector('.flusso-frecce');
+      const base = area.getBoundingClientRect();
+      if (!base.width) return;
+      const rettangoli = {};
+      area.querySelectorAll('.nodo').forEach((el) => {
+        const r = el.getBoundingClientRect();
+        rettangoli[el.dataset.id] = { x: r.left - base.left, y: r.top - base.top, w: r.width, h: r.height };
+      });
+      const punta = `punta-${++contaFrecce}`;
+      let linee = '';
+      let etichette = '';
+      for (const a of JSON.parse(area.dataset.archi)) {
+        const da = rettangoli[a.da];
+        const verso = rettangoli[a.a];
+        if (!da || !verso) continue;
+        const c1 = { x: da.x + da.w / 2, y: da.y + da.h / 2 };
+        const c2 = { x: verso.x + verso.w / 2, y: verso.y + verso.h / 2 };
+        const p1 = bordo(da, c1, c2);
+        const p2 = bordo(verso, c2, c1);
+        linee += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" marker-end="url(#${punta})"/>`;
+        if (a.etichetta) etichette += `<span class="freccia-etichetta" style="left:${(p1.x + p2.x) / 2}px;top:${(p1.y + p2.y) / 2}px">${esc(a.etichetta)}</span>`;
+      }
+      sopra.innerHTML = `<svg width="${base.width}" height="${base.height}"><defs><marker id="${punta}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>${linee}</svg>${etichette}`;
+    }
+
+    const osservaFlussi = new ResizeObserver((voci) => voci.forEach((v) => tracciaFlusso(v.target)));
+
+    // SCELTA
+    // Righe "N: testo" = un bottone; il clic invia da solo la scelta (vedi il listener sotto). Con meno di 2 voci resta un blocco di codice
+    function htmlScelta(corpo) {
+      const titolo = corpo.match(/^\s*titolo:[ \t]*(.+)$/m);
+      const voci = [...corpo.matchAll(/^\s*(\d{1,2})[ \t]*:[ \t]*(.+)$/gm)].slice(0, 6);
+      if (voci.length < 2) return null;
+      const bottoni = voci.map((v) => `<button type="button" class="scelta-voce" data-scelta="${esc(v[1])}" data-testo="${esc(v[2].trim())}"><span class="scelta-num">${esc(v[1])}</span><span>${esc(v[2].trim())}</span></button>`).join('');
+      return `<div class="scelta"><div class="scelta-testa">${esc(titolo ? titolo[1].trim() : 'Scegli un’ipotesi')}</div><div class="scelta-voci">${bottoni}</div></div>`;
+    }
+
+    function bloccoHtml(lingua, corpo) {
+      if (lingua === 'flusso') {
+        const html = htmlFlusso(corpo);
+        if (html) return html;
+      }
+      if (lingua === 'scelta') {
+        const html = htmlScelta(corpo);
+        if (html) return html;
+      }
+      if (Object.hasOwn(RIQUADRI, lingua)) return htmlRiquadro(lingua, corpo);
+      return `<div class="codice">${lingua ? `<span class="lingua">${esc(lingua)}</span>` : ''}<pre><code>${esc(corpo.replace(/\n$/, ''))}</code></pre></div>`;
+    }
+
+    function markdown(testo) {
+      let html = '';
+      let ultimo = 0;
+      for (const m of testo.matchAll(BLOCCO_CODICE)) {
+        html += testoHtml(testo.slice(ultimo, m.index)) + bloccoHtml(m[1], m[2]);
+        ultimo = m.index + m[0].length;
+      }
+      return html + testoHtml(testo.slice(ultimo));
+    }
 
     function aggiungi(classe, html, contesto) {
       const msg = document.createElement('div');
       msg.className = `msg ${classe}`;
       msg.innerHTML = (contesto ? `<span class="ctx">su ${esc(contesto)}</span>` : '') + html;
       $('chat-log').appendChild(msg);
+      msg.querySelectorAll('.flusso-area').forEach((area) => osservaFlussi.observe(area));
       $('chat-log').scrollTop = $('chat-log').scrollHeight;
       return msg;
     }
@@ -2276,6 +4565,17 @@
         await navigator.clipboard.writeText(AVVIO);
         avvisa('Comando copiato: incollalo in un terminale e riprova');
       });
+    }
+
+    // CONSUMO CHATTINO
+    let consumoGiornata = null;
+    let consumoRisposta = null;
+    function mostraConsumo() {
+      const t = consumoGiornata?.perFunzione?.chattino;
+      const riga = (nome, html) => `<div><span class="tok-chi">${nome}</span>: ${html}</div>`;
+      $('chat-consumo-dati').innerHTML = riga('Ultima risposta', consumoRisposta ? testoToken(consumoRisposta.token, consumoRisposta.cache) : 'nessuna ancora')
+        + riga(testoGiornata(), t ? `${testoToken(t.token, t.cache)} · ${t.chiamate} ${t.chiamate === 1 ? 'chiamata' : 'chiamate'}` : 'nessun consumo');
+      $('chat-consumo').title = AIUTO_CONSUMI;
     }
 
     // STATO SERVER
@@ -2291,25 +4591,287 @@
 
     // CONTESTO
     // Al Claude della chat arriva quello che vedi: progetto, sezione aperta e i dati della sala, senza percorsi dei file delle chat
-    function selezione() {
-      const aperte = stato.attivita.filter((a) => stato.aperte.has(a.id)).map((a) => `"${a.titolo}"`);
-      const piano = stato.sezione === 'piani' && stato.piani.find((p) => p.id === stato.pianoAperto);
-      const fase = piano && stato.fasiPiano.find((f) => f.id === stato.fasePiano);
-      return `${NOMI_SEZIONI[stato.sezione]} di ${stato.progetto}${stato.sezione === 'attivita' && aperte.length ? `, attività aperte: ${aperte.join(', ')}` : ''}${piano ? `, piano "${piano.titolo}"${fase ? `, fase ${fase.nome}` : ''}` : ''}`;
+    // Di default Chattino non riceve nulla: il contesto è solo il blocco scelto con Alt + clic, senza percorsi dei file delle chat
+    const BLOCCHI = {
+      attivita: { nome: 'Attività', trova: (id) => stato.attivita.find((a) => String(a.id) === id), titolo: (a) => a.titolo, dati: ({ id, progetto, ...a }) => a },
+      piano: { nome: 'Piano', trova: (id) => stato.piani.find((p) => String(p.id) === id), titolo: (p) => p.titolo, dati: ({ id, progetto, ...p }) => p },
+      sessione: {
+        nome: 'Sessione',
+        trova: (id) => stato.sessioni.find((s) => String(s.id) === id),
+        titolo: (s) => s.titolo,
+        dati: ({ titolo, stato: s, token, finestra, compattazioni, modificata }) => ({ titolo, stato: s, token, finestra, compattazioni, modificata: new Date(modificata).toISOString() }),
+      },
+      branch: { nome: 'Branch', trova: (id) => stato.branch?.branch?.find((b) => b.nome === id), titolo: (b) => b.nome, dati: (b) => b },
+      contesto: { nome: 'Contesto', trova: (id) => stato.contesti.find((c) => String(c.id) === id), titolo: (c) => c.titolo, dati: ({ id, progetto, ...c }) => c },
+      lezione: { nome: 'Lezione', trova: (id) => stato.lezioni.find((l) => String(l.id) === id), titolo: (l) => l.titolo, dati: ({ id, ...l }) => l },
+      campo: { nome: 'Campo del piano', trova: (id) => sezionePiano(id, true), titolo: (o) => o.etichetta, dati: (o) => o.dati },
+      fase: { nome: 'Fase del piano', trova: (id) => sezionePiano(id, false), titolo: (o) => o.etichetta, dati: (o) => o.dati },
+    };
+
+    // SEZIONE DEL PIANO
+    // Un campo ("rischi.rompe") o una fase intera ("rischi") del piano aperto: a Chattino arriva solo quel testo, non tutto il piano
+    function sezionePiano(id, perCampo) {
+      const piano = pianoAperto();
+      const [faseId, campoId] = id.split('.');
+      const fase = stato.fasiPiano.find((f) => f.id === faseId);
+      if (!piano || !fase) return null;
+      const intestazione = { piano: piano.titolo, tipo: nomeTipo(piano.tipo), fase: fase.nome };
+      if (perCampo) {
+        const c = fase.campi.find((x) => x.id === campoId);
+        if (!c) return null;
+        return { etichetta: `${fase.nome} › ${c.nome}`, dati: { ...intestazione, campo: c.nome, testo: String(piano.fasi[fase.id]?.campi[c.id] || '').trim() || '(vuoto)' } };
+      }
+      const campi = Object.fromEntries(delTipo(fase.campi, piano.tipo).map((c) => [c.nome, String(piano.fasi[fase.id]?.campi[c.id] || '').trim() || '(vuoto)']));
+      return { etichetta: `fase ${fase.nome}`, dati: { ...intestazione, campi } };
     }
 
-    const datiSala = () => ({
-      progetto: stato.progetto,
-      sezione: NOMI_SEZIONI[stato.sezione],
-      sessioni: stato.sessioni.map(({ titolo, stato: s, token, finestra, compattazioni, modificata }) => ({ titolo, stato: s, token, finestra, compattazioni, modificata: new Date(modificata).toISOString() })),
-      branch: stato.branch,
-      attivita: stato.attivita.map(({ id, progetto, ...a }) => a),
-      piani: stato.piani.map(({ id, progetto, ...piano }) => piano),
-    });
+    // BLOCCO SCELTO
+    // Resta agganciato alle domande finché non lo togli con la X; i dati si rileggono a ogni domanda, con l'ultima copia come ripiego
+    let bloccoScelto = null;
+
+    function leggiBlocco(el) {
+      const def = BLOCCHI[el.dataset.blocco];
+      const oggetto = def?.trova(el.dataset.bid);
+      return oggetto ? { tipo: el.dataset.blocco, id: el.dataset.bid, etichetta: `${def.nome} "${def.titolo(oggetto)}"`, dati: def.dati(oggetto) } : null;
+    }
+
+    function datiBlocco() {
+      const def = BLOCCHI[bloccoScelto.tipo];
+      const oggetto = def.trova(bloccoScelto.id);
+      return oggetto ? def.dati(oggetto) : bloccoScelto.dati;
+    }
+
+    const senzaContesto = () => !bloccoScelto;
+    const selezione = () => (bloccoScelto ? `${bloccoScelto.etichetta} di ${stato.progetto}` : null);
+    const datiSala = () => ({ progetto: stato.progetto, [bloccoScelto.tipo]: datiBlocco() });
 
     function aggiornaContesto() {
-      $('chat-ctx').innerHTML = stato.progetto ? `Domanda su <b>${esc(selezione())}</b>` : '';
+      $('chat-ctx').innerHTML = bloccoScelto
+        ? `Domanda su <b>${esc(bloccoScelto.etichetta)}</b><button type="button" id="chat-ctx-togli" title="Togli il contesto">&#x2715;</button>`
+        : 'Nessun contesto · tieni premuto <b>Alt</b> e clicca un blocco';
     }
+
+    $('chat-ctx').addEventListener('click', (e) => {
+      if (e.target.id !== 'chat-ctx-togli') return;
+      bloccoScelto = null;
+      aggiornaContesto();
+    });
+
+    // RIQUADRI TOKEN APERTI
+    // Il ridisegno periodico ricrea i piè di pagina: ricordo quali riquadri hai aperto
+    stato.consumiAperti = new Set();
+    document.addEventListener('toggle', (e) => {
+      const f = e.target.dataset?.funzione;
+      if (f) e.target.open ? stato.consumiAperti.add(f) : stato.consumiAperti.delete(f);
+      if (e.target.matches?.('.token-box')) posizionaToken();
+    }, true);
+
+    // POSIZIONE FINESTRA TOKEN
+    // La finestra è fixed (i contenitori con overflow non la tagliano): sotto il riquadro, sopra se sotto non c'è spazio o se è quello della chat
+    function posizionaToken() {
+      document.querySelectorAll('.token-box[open]').forEach((box) => {
+        const dati = box.querySelector('.dati');
+        const r = box.querySelector('summary').getBoundingClientRect();
+        const sopra = box.id === 'chat-consumo' || r.bottom + dati.offsetHeight + 14 > window.innerHeight;
+        dati.style.top = `${Math.max(8, sopra ? r.top - dati.offsetHeight - 6 : r.bottom + 6)}px`;
+        dati.style.left = `${Math.max(8, Math.min(r.left, window.innerWidth - dati.offsetWidth - 8))}px`;
+      });
+    }
+    window.addEventListener('scroll', posizionaToken, true);
+    window.addEventListener('resize', posizionaToken);
+    let attesaPosizione = 0;
+    new MutationObserver(() => {
+      cancelAnimationFrame(attesaPosizione);
+      attesaPosizione = requestAnimationFrame(posizionaToken);
+    }).observe($('contenuto'), { childList: true, subtree: true });
+
+    // DOMANDA DAI CAMPI
+    // CHIEDI A CHATTINO apre la chat con il piano come contesto e la domanda già scritta: l'invio resta a te
+    document.addEventListener('chattino-chiedi', (e) => {
+      const blocco = leggiBlocco({ dataset: { blocco: 'piano', bid: String(e.detail.piano) } });
+      if (!blocco) return;
+      bloccoScelto = blocco;
+      if ($('chat').hidden) $('chat-open').click();
+      aggiornaContesto();
+      $('chat-input').value = e.detail.domanda;
+      adattaInput();
+      $('chat-input').focus();
+    });
+
+    // MODALITÀ PUNTATORE
+    // Con Alt premuto un mini Chattino segue il mouse e il blocco sotto il cursore si illumina; il clic lo sceglie
+    let puntatore = false;
+    let evidenziato = null;
+    let ultimoMouse = { x: 0, y: 0 };
+    const mini = document.createElement('div');
+    mini.id = 'chat-mini';
+    mini.hidden = true;
+    mini.innerHTML = '<i class="dot"></i>Chattino';
+    document.body.appendChild(mini);
+
+    const bloccoSotto = (el) => el?.closest?.('#contenuto [data-blocco]') || null;
+
+    function evidenzia(el) {
+      if (el === evidenziato) return;
+      evidenziato?.classList.remove('blocco-puntato');
+      evidenziato = el;
+      evidenziato?.classList.add('blocco-puntato');
+    }
+
+    function muoviMini() {
+      mini.style.transform = `translate(${ultimoMouse.x + 14}px, ${ultimoMouse.y + 14}px)`;
+    }
+
+    function attivaPuntatore(acceso) {
+      if (acceso === puntatore) return;
+      puntatore = acceso;
+      mini.hidden = !acceso;
+      document.body.classList.toggle('puntatore', acceso);
+      if (acceso) {
+        muoviMini();
+        evidenzia(bloccoSotto(document.elementFromPoint(ultimoMouse.x, ultimoMouse.y)));
+      } else {
+        evidenzia(null);
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Alt') return;
+      e.preventDefault();
+      attivaPuntatore(true);
+    });
+    document.addEventListener('keyup', (e) => {
+      if (e.key !== 'Alt') return;
+      e.preventDefault();
+      attivaPuntatore(false);
+    });
+    window.addEventListener('blur', () => attivaPuntatore(false));
+    document.addEventListener('mousemove', (e) => {
+      ultimoMouse = { x: e.clientX, y: e.clientY };
+      if (!puntatore) return;
+      muoviMini();
+      evidenzia(bloccoSotto(e.target));
+    });
+    document.addEventListener('click', (e) => {
+      if (!puntatore) return;
+      const el = bloccoSotto(e.target);
+      if (!el) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const blocco = leggiBlocco(el);
+      if (!blocco) return avvisa('Questo blocco non si può usare come contesto', true);
+      bloccoScelto = blocco;
+      aggiornaContesto();
+      avvisa(`Contesto di Chattino: ${blocco.etichetta}`);
+    }, true);
+
+    // ALTEZZA INPUT
+    // Prima si azzera, altrimenti scrollHeight non cala quando cancelli righe
+    function adattaInput() {
+      const input = $('chat-input');
+      input.style.height = 'auto';
+      input.style.height = `${input.scrollHeight + input.offsetHeight - input.clientHeight}px`;
+    }
+
+    // PROPOSTE DI ATTIVITÀ
+    // Chattino può solo leggere: propone l'attività in un blocco ```attivita e la crea la sala quando clicchi Aggiungi
+    const BLOCCO_ATTIVITA = /```attivita[ \t]*\n([\s\S]*?)```/g;
+    const MAPPE_ATTIVITA = ['dati', 'struttura', 'entrambi'];
+    const LIMITI_ATTIVITA = { titolo: 200, obiettivo: 5000, problema: 5000, dove: 1000, note: 5000 };
+
+    // Un JSON malformato o senza titolo resta un blocco di codice normale
+    function leggiProposta(testo) {
+      try {
+        const dati = JSON.parse(testo);
+        if (!dati || typeof dati !== 'object' || Array.isArray(dati)) return null;
+        const proposta = Object.fromEntries(Object.entries(LIMITI_ATTIVITA).map(([c, max]) => [c, String(dati[c] ?? '').trim().slice(0, max)]));
+        proposta.mappa = MAPPE_ATTIVITA.includes(dati.mappa) ? dati.mappa : '';
+        return proposta.titolo ? proposta : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function htmlProposta(p, i) {
+      const voci = [['OBIETTIVO', p.obiettivo], ['PROBLEMA', p.problema], ['DOVE', p.dove], ['MAPPA', p.mappa], ['NOTE', p.note]]
+        .filter(([, v]) => v).map(([nome, v]) => `<dt>${nome}</dt><dd>${esc(v)}</dd>`).join('');
+      return `<div class="proposta" data-indice="${i}">
+        <span class="tipo-proposta">Nuova attività</span>
+        <b>${esc(p.titolo)}</b>
+        ${voci ? `<dl>${voci}</dl>` : ''}
+        <div class="piede-proposta">
+          <button type="button" data-proposta="aggiungi">Aggiungi</button>
+          <button type="button" data-proposta="modifica">Modifica prima</button>
+        </div>
+      </div>`;
+    }
+
+    // Il progetto resta quello della domanda, anche se nel frattempo cambi progetto nella sala
+    function rispostaClaude(testo) {
+      const proposte = [];
+      const resto = testo.replace(BLOCCO_ATTIVITA, (blocco, json) => {
+        const proposta = leggiProposta(json);
+        if (!proposta) return blocco;
+        proposte.push(proposta);
+        return '';
+      });
+      const termina = $('chat-modo').value === 'insegnante'
+        ? '<label class="termina-lezione" title="Ti faccio delle domande: se rispondi bene la lezione si salva nelle Lezioni"><input type="checkbox" data-termina-lezione>Termina lezione</label>'
+        : '';
+      const msg = aggiungi('claude', markdown(resto) + proposte.map(htmlProposta).join('') + termina);
+      msg.proposte = proposte;
+      msg.progetto = stato.progetto;
+    }
+
+    // TERMINA LEZIONE
+    // Il quadrato è un pulsante: si rispegne subito e apre il quiz sulla conversazione
+    $('chat-log').addEventListener('change', (e) => {
+      if (!e.target.matches('[data-termina-lezione]')) return;
+      e.target.checked = false;
+      const conversazione = storia.slice(-MAX_QUIZ_STORIA).map((m) => ({ ruolo: m.ruolo, testo: m.testo.slice(0, 4000) }));
+      document.dispatchEvent(new CustomEvent('quiz-avvia', { detail: { origine: 'chattino', storia: conversazione } }));
+    });
+
+    $('chat-log').addEventListener('click', async (e) => {
+      const bottone = e.target.closest('[data-proposta]');
+      if (!bottone) return;
+      const scheda = bottone.closest('.proposta');
+      const msg = bottone.closest('.msg');
+      const proposta = msg.proposte[scheda.dataset.indice];
+      if (bottone.dataset.proposta === 'modifica') {
+        if (msg.progetto !== stato.progetto) return avvisa(`Questa attività è per ${msg.progetto}: torna su quel progetto per modificarla`, true);
+        Object.assign(stato, { sezione: 'attivita', filtroAttivita: 'tutte', modifica: null, nuova: true, bozza: proposta });
+        memoria.scrivi('sala.sezione', stato.sezione);
+        disegna();
+        document.querySelector('[data-scheda="nuova"] [name="titolo"]')?.focus();
+        return;
+      }
+      bottone.disabled = true;
+      try {
+        await api('/api/attivita/crea', { ...proposta, progetto: msg.progetto });
+        scheda.querySelector('.piede-proposta').innerHTML = `<span class="fatta">Aggiunta in Da fare di ${esc(msg.progetto)} ✓</span>`;
+        avvisa('Attività aggiunta in Da fare');
+        await carica();
+      } catch (err) {
+        bottone.disabled = false;
+        avvisa(err.message, true);
+      }
+    });
+
+    // CLIC SU SCELTA
+    // La voce scelta resta evidenziata, le altre si spengono; poi parte il messaggio come se lo avessi scritto tu
+    $('chat-log').addEventListener('click', (e) => {
+      const voce = e.target.closest('[data-scelta]');
+      if (!voce || inAttesa) return;
+      const scelta = voce.closest('.scelta');
+      scelta.classList.add('scelta-fatta');
+      scelta.querySelectorAll('.scelta-voce').forEach((b) => {
+        b.disabled = true;
+        b.classList.toggle('scelta-presa', b === voce);
+      });
+      $('chat-input').value = `Scelgo l'ipotesi ${voce.dataset.scelta}: ${voce.dataset.testo}`;
+      $('chat-form').requestSubmit();
+    });
 
     // INVIO DOMANDA
     async function invia(e) {
@@ -2323,9 +4885,11 @@
         return;
       }
 
-      const contesto = selezione();
+      const vuoto = senzaContesto();
+      const contesto = vuoto ? null : selezione();
       aggiungi('utente', paragrafo(esc(domanda)), contesto);
       $('chat-input').value = '';
+      adattaInput();
       inAttesa = true;
       $('chat-send').disabled = true;
       $('chat-open').classList.add('pensa');
@@ -2344,8 +4908,9 @@
             project: cartella,
             tipo: 'sala',
             titolo: `Sala di controllo · ${stato.progetto}`,
-            mappa: JSON.stringify(datiSala()),
+            mappa: vuoto ? '' : JSON.stringify(datiSala()),
             selezione: contesto,
+            senzaContesto: vuoto,
             storia: storia.slice(-MAX_STORIA),
             domanda,
             modalita: $('chat-modo').value,
@@ -2353,8 +4918,11 @@
         });
         const corpo = await res.json();
         if (!res.ok) throw new Error(corpo.errore || `errore ${res.status}`);
-        storia.push({ ruolo: 'utente', testo: `[su ${contesto}] ${domanda}` }, { ruolo: 'claude', testo: corpo.risposta });
-        aggiungi('claude', markdown(corpo.risposta));
+        storia.push({ ruolo: 'utente', testo: contesto ? `[su ${contesto}] ${domanda}` : domanda }, { ruolo: 'claude', testo: corpo.risposta });
+        rispostaClaude(corpo.risposta);
+        if (corpo.consumo) consumoRisposta = { token: corpo.consumo.input + corpo.consumo.scritti + corpo.consumo.output, cache: corpo.consumo.cache };
+        if (corpo.giornata) consumoGiornata = corpo.giornata;
+        mostraConsumo();
         if ($('chat').hidden) document.querySelector('#chat-open .dot').classList.add('pronta');
       } catch (err) {
         if (err instanceof TypeError) serverSpento();
@@ -2398,14 +4966,18 @@
     ];
     const paura = `<g class="paura">${PAURA.map(([x, y, c]) => pixel(x, y, c)).join('')}</g>`;
     const occhio = (x0) => `<g class="eye">${[3, 4, 5].flatMap((y) => [x0, x0 + 1].map((x) => pixel(x, y, SPRITE[y][x]))).join('')}</g>`;
-    const spirale = (cx, cy) => {
-      const punti = Array.from({ length: 61 }, (_, i) => {
-        const angolo = (i / 60) * 4 * Math.PI;
-        const raggio = 0.08 + (1.05 * i) / 60;
-        return `${(cx + raggio * Math.cos(angolo)).toFixed(2)},${(cy + raggio * Math.sin(angolo)).toFixed(2)}`;
-      });
-      return `<g class="ipno"><circle cx="${cx}" cy="${cy}" r="1.3" fill="${PIXEL.W}"/><polyline class="spirale" style="transform-origin: ${cx}px ${cy}px" points="${punti.join(' ')}" fill="none" stroke="${PIXEL.K}" stroke-width=".3" stroke-linecap="round"/></g>`;
-    };
+    // SPIRALE A PIXEL
+    // Spirale 7×7 a mezzi pixel (3,5×3,5 pixel) centrata sul centro dell'occhio normale (x 5 e 9, y 4,5), così gira sul posto; ogni fotogramma la ruota di 90° in senso orario
+    const SPIRALE = ['KKKKKKK', 'WWWWWWK', 'KKKKKWK', 'KWWWKWK', 'KWKKKWK', 'KWWWWWK', 'KKKKKKK'];
+    const ruota = (x, y, volte) => (volte ? ruota(SPIRALE.length - 1 - y, x, volte - 1) : [x, y]);
+    const mezzo = (x, y) => `<rect x="${x}" y="${y}" width=".5" height=".5" fill="${PIXEL.K}"/>`;
+    const fondo = (x0, y0) => `<rect x="${x0}" y="${y0}" width="3.5" height="3.5" fill="${PIXEL.W}"/>`;
+    const fotogramma = (x0, y0, volte) => SPIRALE.flatMap((riga, y) => [...riga].map((c, x) => {
+      if (c !== 'K') return '';
+      const [rx, ry] = ruota(x, y, volte);
+      return mezzo(x0 + rx / 2, y0 + ry / 2);
+    })).join('');
+    const ipno = (centro) => { const x0 = centro - 1.75; const y0 = 2.75; return `<g class="ipno">${fondo(x0, y0)}${[0, 1, 2, 3].map((volte) => `<g class="giro" style="animation-delay: ${volte * 0.15}s">${fotogramma(x0, y0, volte)}</g>`).join('')}</g>`; };
     // DECORAZIONI DELLE MODALITÀ
     // Pixel fuori dal corpo (la tela va da -2 a 15 in orizzontale e da -4 a 11 in verticale): ognuna si vede solo nella sua modalità
     const COLORI_ACCESSORI = { o: '#141312', g: '#9b968a', A: '#a7afb8', a: '#5f6670', L: '#3d6fb6', P: '#f4f2ec', N: '#22252b', n: '#454b55', Y: '#f2c14e', K: '#2b130b', C: '#4b5563', T: '#2bb3a3', t: '#8fe3d8', S: '#111111', s: '#6b7280', M: '#f4f2ec', m: '#c9c4b8', B: '#6b3e26', V: '#e6e6e6' };
@@ -2424,7 +4996,7 @@
     // Stelline che compaiono intorno quando cambi modalità
     const stellina = (x, y) => punti('Y', [[x, y], [x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]);
     const SCINTILLE = `<g class="scintille">${stellina(-1, -2)}${stellina(14, -1)}${stellina(-1, 9)}${stellina(15, 6)}</g>`;
-    $('chat-open').insertAdjacentHTML('afterbegin', `<svg class="sprite" viewBox="-2 -4 18 16" aria-hidden="true">${corpo}${occhio(4)}${occhio(8)}${bocca}${spirale(5, 4.5)}${spirale(9, 4.5)}${paura}${ACCESSORI}${SCINTILLE}</svg>`);
+    $('chat-open').insertAdjacentHTML('afterbegin', `<svg class="sprite" viewBox="-2 -4 18 16" aria-hidden="true">${corpo}${occhio(4)}${occhio(8)}${bocca}${ipno(5)}${ipno(9)}${paura}${ACCESSORI}${SCINTILLE}</svg>`);
 
     // TRASCINAMENTO
     // Chat e mascotte sono incollate: la chat sta sempre sopra la mascotte e chi viene spostato si porta dietro l'altro
@@ -2447,7 +5019,7 @@
     // La chat si mette sopra la mascotte; se sopra non c'è spazio scendono insieme
     function chatSopraMascotte() {
       const chat = $('chat');
-      if (chat.hidden) return;
+      if (chat.hidden || chat.classList.contains('schermo-intero')) return;
       const omino = $('chat-open').getBoundingClientRect();
       const left = Math.min(Math.max(omino.left, MARGINE), window.innerWidth - chat.offsetWidth - MARGINE);
       const top = Math.max(MARGINE, omino.top - chat.offsetHeight - STACCO);
@@ -2458,7 +5030,7 @@
     // La mascotte si mette sotto la chat; se sotto non c'è spazio salgono insieme
     function mascotteSottoChat() {
       const chat = $('chat');
-      if (chat.hidden || !chat.style.top) return;
+      if (chat.hidden || !chat.style.top || chat.classList.contains('schermo-intero')) return;
       const box = chat.getBoundingClientRect();
       const omino = $('chat-open');
       const sfora = box.bottom + STACCO + omino.offsetHeight - (window.innerHeight - MARGINE);
@@ -2470,7 +5042,7 @@
     function rendiTrascinabile(el, maniglia, { mentreSposti, quandoLasci }) {
       maniglia.addEventListener('pointerdown', (e) => {
         const bottone = e.target.closest('button');
-        if (e.button !== 0 || (bottone && bottone !== maniglia) || e.target.closest('select')) return;
+        if (e.button !== 0 || (bottone && bottone !== maniglia) || e.target.closest('select') || el.classList.contains('schermo-intero')) return;
         const box = el.getBoundingClientRect();
         const dx = e.clientX - box.left;
         const dy = e.clientY - box.top;
@@ -2513,8 +5085,6 @@
     rendiTrascinabile($('chat'), $('chat').querySelector('.chat-head'), { mentreSposti: mascotteSottoChat });
     $('chat').querySelector('.chat-head').addEventListener('dblclick', (e) => {
       if (e.target.closest('button')) return;
-      $('chat').classList.remove('big');
-      $('chat-big').setAttribute('aria-pressed', false);
       Object.assign($('chat').style, { width: '', height: '' });
       chatSopraMascotte();
     });
@@ -2536,21 +5106,41 @@
       chatSopraMascotte();
       aggiornaContesto();
       controllaServer();
+      consumoGiornata = stato.consumi || null;
+      mostraConsumo();
+      api('/api/consumi').then((c) => {
+        consumoGiornata = c;
+        mostraConsumo();
+      }).catch(() => {});
       $('chat-input').focus();
     });
     $('chat-close').addEventListener('click', () => {
       $('chat').hidden = true;
     });
-    $('chat-big').addEventListener('click', (e) => {
-      Object.assign($('chat').style, { width: '', height: '' });
-      e.currentTarget.setAttribute('aria-pressed', $('chat').classList.toggle('big'));
-      mascotteSottoChat();
-    });
+
+    // SCHERMO INTERO
+    // Il tasto resta nell'intestazione; chat-open (la mascotte) non si tocca, quindi rimane nel punto in cui l'hai messa
+    function schermoIntero(acceso) {
+      $('chat').classList.toggle('schermo-intero', acceso);
+      $('chat-schermo').setAttribute('aria-pressed', String(acceso));
+      $('chat-schermo').textContent = acceso ? '⤡' : '⤢';
+      $('chat-schermo').title = acceso ? 'Torna alla finestra (Esc)' : 'Schermo intero';
+      try {
+        localStorage.setItem('chattino.schermo', acceso ? '1' : '0');
+      } catch {}
+      chatSopraMascotte();
+      $('chat-log').scrollTop = $('chat-log').scrollHeight;
+    }
+    $('chat-schermo').addEventListener('click', () => schermoIntero(!$('chat').classList.contains('schermo-intero')));
+    try {
+      if (localStorage.getItem('chattino.schermo') === '1') schermoIntero(true);
+    } catch {}
     $('chat-clear').addEventListener('click', () => {
       storia.length = 0;
       $('chat-log').innerHTML = '';
     });
     $('chat-form').addEventListener('submit', invia);
+    $('chat-input').addEventListener('input', adattaInput);
     // La modalità scelta resta anche nelle prossime pagine
     try {
       $('chat-modo').value = localStorage.getItem('chattino.modo') || 'normale';
@@ -2580,7 +5170,10 @@
     // I tasti scritti nella chat non devono arrivare alle scorciatoie della pagina
     $('chat').addEventListener('keydown', (e) => {
       e.stopPropagation();
-      if (e.key === 'Escape') $('chat').hidden = true;
+      if (e.key === 'Escape') {
+        if ($('chat').classList.contains('schermo-intero')) schermoIntero(false);
+        else $('chat').hidden = true;
+      }
       if (e.key === 'Enter' && !e.shiftKey && e.target.id === 'chat-input') invia(e);
     });
     document.addEventListener('click', aggiornaContesto);
