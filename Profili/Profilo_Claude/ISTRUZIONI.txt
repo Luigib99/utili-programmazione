@@ -9,6 +9,7 @@ La struttura della cartella rispecchia quella di ~/.claude:
                   - piano: mappa e revisione dei piani scritti nella sala di controllo
                   - revisione: revisione del codice (anche "prova io")
                   - lezione: spiegazione di un argomento
+                  - chat-riprendi / chat-termina: riprendere e chiudere una chat di lavoro
                   Dopo l'aggiornamento cancellare da ~/.claude/skills le vecchie
                   modifica-maggiore, modifica-minore e sala-controllo, se ci sono.
 - shared/         file usati dalle skill:
@@ -18,6 +19,7 @@ La struttura della cartella rispecchia quella di ~/.claude:
                     nelle mappe; serve Node.js, il gettone si crea da solo in
                     ~/.claude/chat-mappa-token e NON va copiato nella repo)
                   - scheda-richiesta.md (tutte le skill)
+                  - consumi-claude.js, diagramma-*-json.md (consumi e mappe)
                   NECESSARIO: senza questa cartella le skill non funzionano
 - sala-controllo/ pagina locale per gestire sessioni di Claude, branch, attività e piani
                   dei progetti (serve Node.js 22.5+ per leggere le chat archiviate).
