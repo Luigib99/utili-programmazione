@@ -1037,6 +1037,7 @@ const eseguiGenerazione = (prog, id, tipi, testo) => avviaClaude(prog, [
   '--tools', 'Read,Grep,Glob,Write',
   '--add-dir', path.join(CARTELLA_CLAUDE, 'shared'), path.join(CARTELLA_CLAUDE, 'skills', 'piano'), CARTELLA_MAPPE,
   '--allowedTools', 'Write(~/flussi/**/*.json)', 'Edit(~/flussi/**/*.json)',
+  '--model', 'opus', '--effort', 'high',
 ], promptGenerazione(prog, tipi, testo), TIMEOUT_GENERAZIONE_MS, 'mappa').then((risultato) => collegaGenerate(prog, id, tipi, risultato));
 
 // AVVIO CLAUDE

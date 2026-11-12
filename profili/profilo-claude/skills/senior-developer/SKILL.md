@@ -3,6 +3,8 @@ name: senior-developer
 description: Guida in 4 fasi per capire e implementare correttamente un'attività, con la stessa logica della modalità Senior Developer di Chattino.
 argument-hint: "<attività o richiesta da implementare>"
 disable-model-invocation: true
+model: opus
+effort: high
 ---
 
 # SENIOR DEVELOPER

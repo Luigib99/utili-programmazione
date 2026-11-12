@@ -3,6 +3,8 @@ name: piano
 description: Mappa e revisione di un piano di lavoro scritto dall'utente nella sala di controllo, poi codice scritto da lui o seguendo il suo piano
 argument-hint: "<il testo copiato dalla sala di controllo con «Copia per /piano»>"
 disable-model-invocation: true
+model: opus
+effort: high
 ---
 
 # PIANO

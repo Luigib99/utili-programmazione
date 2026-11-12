@@ -3,6 +3,8 @@ name: revisione
 description: Revisione di codice nel progetto con problemi classificati per gravità
 argument-hint: "<vuoto per lo schema, testo libero o TITOLO: / COSA REVISIONARE: / COSA DOVREBBE FARE: / FOCUS: / MODALITÀ: / MAPPA: dati, struttura o entrambi>"
 disable-model-invocation: true
+model: opus
+effort: high
 ---
 
 # REVISIONE DI CODICE

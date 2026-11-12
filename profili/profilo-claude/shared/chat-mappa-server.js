@@ -77,7 +77,7 @@ REGOLE:
 const testoModalita = (modalita) => (Object.hasOwn(MODALITA, modalita) ? MODALITA[modalita] : MODALITA.insegnante);
 
 // MODELLO
-// Risposte brevi o semplici vanno bene con Sonnet; lezioni e consigli da senior restano sul modello predefinito (Opus)
+// Risposte brevi o semplici vanno bene con Sonnet; lezioni e consigli da senior usano Opus con effort alto
 const MODELLI_LEGGERI = { normale: 'sonnet', traduttore: 'sonnet' };
 
 // GETTONE
@@ -211,7 +211,7 @@ function chiediClaude(progetto, dati) {
       '-p', '--output-format', 'json', '--no-session-persistence',
       '--restricted', '--strict-mcp-config', '--tools', 'Read,Grep,Glob',
       '--permission-mode', 'dontAsk', '--system-prompt-file', fileSistema,
-      ...(modello ? ['--model', modello] : []),
+      ...(modello ? ['--model', modello] : ['--model', 'opus', '--effort', 'high']),
     ];
     // Senza chiavi API nell'ambiente claude può usare solo il login dell'abbonamento, mai la fatturazione a consumo
     const { ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, ...ambiente } = process.env;
