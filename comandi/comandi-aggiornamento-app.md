@@ -1,7 +1,7 @@
 # COMANDI AGGIORNAMENTO APP
 
 > Solo i comandi per cambiare versione e creare i file da caricare sugli store.
-> I passaggi su Play Console e App Store Connect sono in **Istruzioni/Store mobile**.
+> I passaggi su Play Console e App Store Connect sono in **istruzioni/store-mobile**.
 > I comandi si lanciano dalla **cartella principale del progetto** (dove c'è `package.json`).
 > `gradlew`: su Windows `.\gradlew` · su Mac `./gradlew`
 

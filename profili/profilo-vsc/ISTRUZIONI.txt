@@ -19,7 +19,7 @@ ESTENSIONI NECESSARIE (da installare a parte)
 - Restore Terminals   (EthanSK.restore-terminals)
 
 DIPENDENZE
-- I terminali npx / npm / git / api usano le funzioni del Profilo_Terminale: caricare anche quello.
+- I terminali npx / npm / git / api usano le funzioni del profilo-terminale: caricare anche quello.
 - Il terminale api usa la cartella ~/api-requests: caricare anche il Profilo_API del progetto
   (in Privato/<Progetto>/Profilo_API).
 
