@@ -1,15 +1,4 @@
 {
-  "enabledPlugins": {
-    "scheda-form@utili-programmazione": true
-  },
-  "extraKnownMarketplaces": {
-    "utili-programmazione": {
-      "source": {
-        "source": "github",
-        "repo": "Luigib99/utili-programmazione"
-      }
-    }
-  },
   "autoMemoryEnabled": true,
   "model": "sonnet"
 }

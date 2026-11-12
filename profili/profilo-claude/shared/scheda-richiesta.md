@@ -21,7 +21,7 @@ Vale per ogni messaggio delle skill che richiamano questo file, in tutte le fasi
 
 Presenti in tutte le skill; lo SKILL.md dice se sono obbligatori.
 
-- `TITOLO`: nome breve della richiesta. La mod `scheda-form` lo usa come titolo della sessione; tu lo usi, in kebab-case, come nome dei file dei diagrammi.
+- `TITOLO`: nome breve della richiesta. Tu lo usi, in kebab-case, come nome dei file dei diagrammi.
 - `MAPPA`: quale diagramma serve: `dati`, `struttura` o `entrambi`. La sceglie **sempre l'utente**: non dedurla. Se è obbligatoria e manca, chiedila con le tre opzioni; se è facoltativa e manca, niente diagramma.
   - `dati`: regole in `~/.claude/shared/diagramma-flusso.md`, riferimenti **D1, D2…**.
   - `struttura`: regole in `~/.claude/shared/diagramma-pagina.md`, riferimenti **S1, S2…**.
