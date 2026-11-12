@@ -1592,12 +1592,15 @@
     flex-direction: column;
     width: min(400px, calc(100vw - 40px));
     height: min(480px, calc(100vh - 110px));
+    /* Tinte più scure solo dentro la chat: i riquadri e i messaggi le ereditano */
+    --bg: #121110;
+    --surface: #181715;
+    --surface-2: #211f1d;
+    --border: #2f2d2a;
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 2px solid var(--accent);
     border-radius: 12px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, .6);
-    /* Maniglia di ridimensionamento nell'angolo in basso a destra */
-    resize: both;
     overflow: hidden;
     min-width: 300px;
     min-height: 260px;
@@ -1608,6 +1611,34 @@
   #chat[hidden] {
     display: none;
   }
+
+  /* RIDIMENSIONAMENTO: maniglie invisibili su tutti i lati e gli angoli */
+  #chat .chat-bordo { position: absolute; z-index: 3; }
+  #chat .chat-bordo.n { top: 0; left: 12px; right: 12px; height: 5px; cursor: ns-resize; }
+  #chat .chat-bordo.s { bottom: 0; left: 12px; right: 12px; height: 5px; cursor: ns-resize; }
+  #chat .chat-bordo.e { right: 0; top: 12px; bottom: 12px; width: 5px; cursor: ew-resize; }
+  #chat .chat-bordo.w { left: 0; top: 12px; bottom: 12px; width: 5px; cursor: ew-resize; }
+  #chat .chat-bordo.ne { top: 0; right: 0; width: 12px; height: 12px; cursor: nesw-resize; }
+  #chat .chat-bordo.sw { bottom: 0; left: 0; width: 12px; height: 12px; cursor: nesw-resize; }
+  #chat .chat-bordo.nw { top: 0; left: 0; width: 12px; height: 12px; cursor: nwse-resize; }
+  #chat .chat-bordo.se { bottom: 0; right: 0; width: 12px; height: 12px; cursor: nwse-resize; }
+  #chat.schermo-intero .chat-bordo { display: none; }
+
+  /* BARRA DI SCORRIMENTO: sottile, a pillola, si accende al passaggio */
+  #chat-log, #chat-log * { scrollbar-width: auto; scrollbar-color: auto; }
+  #chat-log::-webkit-scrollbar, #chat-log *::-webkit-scrollbar { width: 12px; height: 12px; }
+  #chat-log::-webkit-scrollbar-track, #chat-log *::-webkit-scrollbar-track { background: transparent; }
+  #chat-log::-webkit-scrollbar-corner, #chat-log *::-webkit-scrollbar-corner { background: transparent; }
+  #chat-log::-webkit-scrollbar-thumb, #chat-log *::-webkit-scrollbar-thumb {
+    min-height: 36px;
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background: var(--border-forte);
+    background-clip: padding-box;
+    transition: background-color .15s;
+  }
+  #chat-log::-webkit-scrollbar-thumb:hover, #chat-log *::-webkit-scrollbar-thumb:hover { background: var(--accent); background-clip: padding-box; }
+  #chat-log::-webkit-scrollbar-thumb:active, #chat-log *::-webkit-scrollbar-thumb:active { background: var(--accent-chiaro); background-clip: padding-box; }
 
   #chat .chat-head {
     display: flex;
@@ -5088,6 +5119,47 @@
       Object.assign($('chat').style, { width: '', height: '' });
       chatSopraMascotte();
     });
+    // RIDIMENSIONAMENTO
+    // Otto maniglie (4 lati e 4 angoli): trascinando il lato sinistro o alto cambia anche la posizione, così il lato opposto resta fermo
+    for (const lato of ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw']) {
+      const maniglia = document.createElement('div');
+      maniglia.className = `chat-bordo ${lato}`;
+      $('chat').appendChild(maniglia);
+      maniglia.addEventListener('pointerdown', (e) => {
+        const chat = $('chat');
+        if (e.button !== 0 || chat.classList.contains('schermo-intero')) return;
+        e.preventDefault();
+        const partenza = chat.getBoundingClientRect();
+        const stile = getComputedStyle(chat);
+        const minL = parseFloat(stile.minWidth);
+        const minA = parseFloat(stile.minHeight);
+        const sotto = $('chat-open').offsetHeight + STACCO;
+        maniglia.setPointerCapture(e.pointerId);
+
+        const muovi = (ev) => {
+          const dx = ev.clientX - e.clientX;
+          const dy = ev.clientY - e.clientY;
+          let { left, top, width, height } = partenza;
+          if (lato.includes('e')) width = Math.min(Math.max(partenza.width + dx, minL), window.innerWidth - MARGINE - partenza.left);
+          if (lato.includes('w')) {
+            width = Math.min(Math.max(partenza.width - dx, minL), partenza.right - MARGINE);
+            left = partenza.right - width;
+          }
+          if (lato.includes('s')) height = Math.min(Math.max(partenza.height + dy, minA), window.innerHeight - MARGINE - sotto - partenza.top);
+          if (lato.includes('n')) {
+            height = Math.min(Math.max(partenza.height - dy, minA), partenza.bottom - MARGINE);
+            top = partenza.bottom - height;
+          }
+          Object.assign(chat.style, { width: `${width}px`, height: `${height}px` });
+          sposta(chat, left, top);
+        };
+        const lascia = () => maniglia.removeEventListener('pointermove', muovi);
+        maniglia.addEventListener('pointermove', muovi);
+        maniglia.addEventListener('pointerup', lascia, { once: true });
+        maniglia.addEventListener('pointercancel', lascia, { once: true });
+      });
+    }
+
     new ResizeObserver(mascotteSottoChat).observe($('chat'));
     window.addEventListener('resize', () => {
       tieniDentro($('chat-open'));
@@ -5167,9 +5239,9 @@
       } catch {}
       cambiaDecorazioni($('chat-modo').value);
     });
-    // I tasti scritti nella chat non devono arrivare alle scorciatoie della pagina
+    // I tasti scritti nella chat non devono arrivare alle scorciatoie della pagina, tranne Alt (modalità puntatore)
     $('chat').addEventListener('keydown', (e) => {
-      e.stopPropagation();
+      if (e.key !== 'Alt') e.stopPropagation();
       if (e.key === 'Escape') {
         if ($('chat').classList.contains('schermo-intero')) schermoIntero(false);
         else $('chat').hidden = true;
