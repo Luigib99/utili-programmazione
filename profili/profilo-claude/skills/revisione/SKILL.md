@@ -74,17 +74,15 @@ In qualsiasi fase:
   - perché è sbagliato e lo scenario concreto in cui si manifesta.
   - come lo correggeresti, a parole e senza codice.
 - se non trovi problemi, dillo in modo esplicito senza inventarne.
-- chiudi con `## DOMANDA` (preceduta da `---`): "Quali problemi correggo?", poi fermati e attendi.
+- chiudi con `## RICHIESTA` (preceduta da `---`): "Per correggerli lancia /implementazione indicando i numeri dei problemi.", poi fermati e attendi.
 
 ## CORREZIONE
 
-- se l'utente scrive "procedi", correggi tutti i problemi segnalati.
-- se l'utente indica dei numeri, correggi solo quelli.
+- questa skill è in sola lettura: non modificare mai nessun file, nemmeno se l'utente scrive "procedi" o indica dei numeri.
+- se l'utente chiede di correggere, rispondi con la sola sezione `## RICHIESTA`: "Lancia /implementazione indicando i numeri dei problemi da correggere."
 - se l'utente contesta un problema, valuta la sua obiezione: se è valida ritira la segnalazione, se non lo è spiega perché.
-- non modificare nulla al di fuori dei problemi da correggere.
 
 ## RIEPILOGO
 
-- mostra le correzioni in `## MODIFICHE ESEGUITE`: per ogni problema corretto il numero, `📄` + nomeFile in grassetto, cosa hai cambiato in una riga e i riquadri PRIMA / DOPO del codice.
-- indica i problemi non corretti, così l'utente sa cosa resta aperto.
+- indica quali problemi restano aperti e quali l'utente ha contestato, con l'esito.
 - fai il "Controllo finale" della scheda.

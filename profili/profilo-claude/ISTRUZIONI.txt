@@ -6,8 +6,10 @@ La struttura della cartella rispecchia quella di ~/.claude:
 - CLAUDE.md       istruzioni globali di Claude Code
 - settings.json   impostazioni globali di Claude Code
 - skills/         skill personali:
-                  - piano: mappa e revisione dei piani scritti nella sala di controllo
-                  - revisione: revisione del codice (anche "prova io")
+                  - piano: mappa e revisione dei piani scritti nella sala di controllo (può implementare)
+                  - implementazione: analisi, modifiche proposte e rischi; scrive i file solo dopo "procedi"
+                  - revisione: revisione del codice in sola lettura (anche "prova io"); per correggere si usa implementazione
+                  REGOLA: solo piano e implementazione possono modificare file, tutte le altre skill sono in sola lettura
                   - insegnante / senior-developer / traduttore: le tre modalità di Chattino come skill
                     (insegnante: lezione guidata; senior-developer: guida in 4 fasi; traduttore: testo in parole semplici)
                   - chat-riprendi / chat-termina: riprendere e chiudere una chat di lavoro
