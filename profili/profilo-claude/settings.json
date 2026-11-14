@@ -1,17 +1,29 @@
 {
   "autoMemoryEnabled": true,
   "model": "sonnet",
+  "cleanupPeriodDays": 14,
   "permissions": {
     "deny": [
       "Read(**/.env)",
       "Read(**/.env.*)",
       "Read(**/*.keystore)",
       "Read(**/*.jks)",
+      "Read(**/*.p12)",
+      "Read(**/*.pfx)",
+      "Read(**/*.pem)",
       "Read(**/google-services.json)",
       "Read(**/local.properties)",
       "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.npmrc)",
+      "Read(~/.git-credentials)",
+      "Read(~/.claude.json)",
+      "Read(~/.claude/.credentials.json)",
       "Read(~/.claude/sala-controllo/dati/**)",
       "Read(~/.claude/chat-mappa-token)",
+      "Read(~/.gradle/gradle.properties)",
+      "Read(~/.android/**)",
+      "Read(~/AppData/Roaming/GitHub CLI/**)",
       "Bash(cat *.env*)",
       "Bash(cat *.keystore)",
       "Bash(cat *.jks)",
@@ -19,13 +31,49 @@
       "Bash(cat ~/.ssh/*)",
       "Bash(cat ~/.claude/chat-mappa-token)",
       "Bash(git push --force*)",
-      "Bash(git push -f*)"
+      "Bash(git push -f*)",
+      "Bash(git commit --no-verify*)"
+    ],
+    "allow": [
+      "Bash(node --check:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(ls:*)",
+      "Bash(pwd)",
+      "Bash(wc:*)"
     ],
     "ask": [
       "Bash(git push:*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean*)",
       "Bash(rm:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(npm install:*)",
+      "Bash(npx:*)",
+      "Bash(adb install:*)",
       "Bash(adb uninstall:*)",
-      "Bash(npm install:*)"
+      "PowerShell(Remove-Item:*)",
+      "PowerShell(Invoke-WebRequest:*)",
+      "PowerShell(Invoke-RestMethod:*)",
+      "PowerShell(iwr:*)",
+      "PowerShell(irm:*)",
+      "WebFetch"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.claude/shared/blocca-segreti.js\""
+          }
+        ]
+      }
     ]
   }
 }

@@ -11,6 +11,9 @@ const consumi = require('./consumi-claude');
 
 const PORTA = 4517;
 const HOST = '127.0.0.1';
+const HOST_AMMESSI = [`${HOST}:${PORTA}`, `localhost:${PORTA}`];
+const ORIGINI_AMMESSE = ['null', 'http://127.0.0.1:4518', 'http://localhost:4518'];
+const FILE_PROGETTI = path.join(os.homedir(), '.claude', 'sala-controllo', 'dati', 'progetti.json');
 const FILE_GETTONE = path.join(os.homedir(), '.claude', 'chat-mappa-token');
 const CARTELLA_MAPPE = path.join(os.homedir(), 'flussi');
 const MAX_BODY = 2 * 1024 * 1024;
@@ -267,15 +270,36 @@ function apriCartella(file) {
   else spawn('xdg-open', [path.dirname(file)], opzioni).unref();
 }
 
+// CORS solo per le origini ammesse (res.origineCors è impostata all'inizio di ogni richiesta)
 function rispondi(res, status, corpo) {
-  res.writeHead(status, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Private-Network': 'true',
-  });
+  const intestazioni = { 'Content-Type': 'application/json; charset=utf-8' };
+  if (res.origineCors) {
+    Object.assign(intestazioni, {
+      'Access-Control-Allow-Origin': res.origineCors,
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Private-Network': 'true',
+      Vary: 'Origin',
+    });
+  }
+  res.writeHead(status, intestazioni);
   res.end(JSON.stringify(corpo));
+}
+
+// PROGETTI AMMESSI
+// Claude parte solo in cartelle registrate nella sala di controllo (o al loro interno)
+function progettoAmmesso(cartella) {
+  try {
+    const elenco = JSON.parse(fs.readFileSync(FILE_PROGETTI, 'utf8'));
+    const reale = fs.realpathSync(cartella);
+    return elenco.some((p) => {
+      if (!p || typeof p.cartella !== 'string' || !fs.existsSync(p.cartella)) return false;
+      const relativo = path.relative(fs.realpathSync(p.cartella), reale);
+      return !relativo.startsWith('..') && !path.isAbsolute(relativo);
+    });
+  } catch {
+    return false;
+  }
 }
 
 function leggiCorpo(req) {
@@ -304,6 +328,11 @@ function avvia() {
   let occupato = false;
 
   const server = http.createServer(async (req, res) => {
+    // Host (anti DNS rebinding) e origine: le mappe aperte da file o dentro la sala hanno origine "null"
+    const origine = req.headers.origin;
+    if (!HOST_AMMESSI.includes(req.headers.host)) return rispondi(res, 403, { errore: 'host non ammesso' });
+    if (origine !== undefined && !ORIGINI_AMMESSE.includes(origine)) return rispondi(res, 403, { errore: 'origine non ammessa' });
+    res.origineCors = origine;
     if (req.method === 'OPTIONS') return rispondi(res, 204, {});
     if (req.method === 'GET' && req.url === '/stato') return rispondi(res, 200, { attivo: true });
     if (req.method !== 'POST' || !['/chiedi', '/ferma', '/cartella', '/elimina'].includes(req.url)) return rispondi(res, 404, { errore: 'non trovato' });
@@ -335,6 +364,9 @@ function avvia() {
     const progetto = String(dati.project || '');
     if (!path.isAbsolute(progetto) || !fs.existsSync(progetto) || !fs.statSync(progetto).isDirectory()) {
       return rispondi(res, 400, { errore: `cartella del progetto non trovata: ${progetto}` });
+    }
+    if (!progettoAmmesso(progetto)) {
+      return rispondi(res, 403, { errore: 'progetto non registrato nella sala di controllo: aggiungilo dalla sala' });
     }
     if (!String(dati.domanda || '').trim()) return rispondi(res, 400, { errore: 'domanda vuota' });
     if (occupato) return rispondi(res, 429, { errore: 'sto già rispondendo a un\'altra domanda: aspetta la risposta' });

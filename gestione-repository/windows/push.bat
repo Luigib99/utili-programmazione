@@ -25,7 +25,7 @@ echo ===================================
 set "ORA=%TIME:~0,5%"
 set "ORA=%ORA: =0%"
 
-:: FILE E RIGHE SOSPETTE (controllati solo sulla repo pubblica)
+:: FILE E RIGHE SOSPETTE (repo pubblica: blocco; repo private: solo avviso)
 set FILE_SOSPETTI="*.env" "*.env.*" "*.keystore" "*.jks" "*.pem" "*.p12" "*.key" "*id_rsa*" "*.session.json" "*credentials*"
 set "RIGHE_SOSPETTE=([Pp]assword|PASSWORD|[Pp]asswd|[Ss]ecret|SECRET|[Aa]pi_?[Kk]ey|API_?KEY|[Tt]oken|TOKEN)[^[:space:]]{0,2}[[:space:]]*[:=][[:space:]]*[^[:space:]]{6,}|-----BEGIN [A-Z ]*PRIVATE KEY-----"
 
@@ -65,10 +65,11 @@ if errorlevel 1 (
   exit /b 1
 )
 
-if "%~2"=="pubblica" (
-  call :controllo
-  if errorlevel 1 exit /b 1
-)
+echo    File che verranno salvati:
+git diff --cached --name-status
+
+call :controllo "%~2"
+if errorlevel 1 exit /b 1
 
 echo 2. Creazione del commit
 git diff --cached --quiet
@@ -115,13 +116,13 @@ for /f "delims=" %%f in ('git diff --cached --name-only --diff-filter=AM "-G%RIG
   set "SOSPETTI=1"
 )
 if not defined SOSPETTI exit /b 0
-echo %GIALLO%   Questa repo e' PUBBLICA: i file sospetti vanno in Privato\ o nel .gitignore%RESET%
-choice /c SN /n /m "   Inviare comunque? [S/N] "
-if errorlevel 2 (
-  set "MSG=Invio annullato: sposta i file sospetti in Privato\ e rilancia"
-  exit /b 1
+if not "%~1"=="pubblica" (
+  echo %GIALLO%   Repo privata: solo avviso, controlla che sia voluto%RESET%
+  exit /b 0
 )
-exit /b 0
+git reset -q
+set "MSG=Invio bloccato: sposta i file sospetti in Privato\ o nel .gitignore e rilancia"
+exit /b 1
 
 :errore
 echo.

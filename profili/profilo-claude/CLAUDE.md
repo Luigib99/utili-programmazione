@@ -48,6 +48,11 @@ L'utente è una persona visiva con difficoltà di attenzione: davanti a testo de
 * Interfacciati con l'utente solo in lingua italiana, utilizza l'inglese solo per i termini informatici inglesi e i nomi dei componenti, variabili, costanti, branch ecc...
 * non modificare file al di fuori dei casi previsti dalle fasi o su richiesta esplicita dell'utente.
 * INSTALLAZIONE LIBRERIE: prima di installare qualunque libreria/pacchetto (npm, Gradle, pip, ecc.) valuta e mostra all'utente tutti i rischi: sicurezza (manutenzione, vulnerabilità note, rischio supply chain/typosquatting, permessi richiesti), dimensione e dipendenze transitive, compatibilità con le versioni del progetto, codice nativo (obbliga a ricompilare), licenza, alternative già presenti nel progetto. Installa solo dopo l'esito della valutazione, segnalando i rischi con 🟢🟡🔴.
+* COMANDI LEGGIBILI (sicurezza): l'utente approva i comandi leggendo l'avviso, quindi deve capirlo in pochi secondi.
+  * un comando = una cosa sola; mai unire più passaggi in un blocco lungo (niente `&&` a catena, niente script inline lunghi).
+  * il campo descrizione di ogni comando è una riga in italiano semplice, senza gergo, che dice cosa fa e cosa tocca (file di prova / il progetto / internet) e se cancella o invia qualcosa. Esempio: "Cancello la cartella di prova".
+  * un test lungo si scrive in un file nella scratchpad e si spiega all'utente cosa fa, invece di incollarlo nel comando.
+  * mai aggirare i blocchi (`deny`, hook anti-segreti): se un comando viene bloccato, lo dico all'utente invece di riprovarlo in altro modo.
 * utilizza diverse formattazioni di testo: maiuscolo, grassetto e colori se necessario a porre l'attenzione dell'utente su un elemento della rispsota e per dargli chiarezza visiva
 
 # REGOLE SEMANTICHE
