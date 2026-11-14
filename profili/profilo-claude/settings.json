@@ -1,4 +1,31 @@
 {
   "autoMemoryEnabled": true,
-  "model": "sonnet"
+  "model": "sonnet",
+  "permissions": {
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/*.keystore)",
+      "Read(**/*.jks)",
+      "Read(**/google-services.json)",
+      "Read(**/local.properties)",
+      "Read(~/.ssh/**)",
+      "Read(~/.claude/sala-controllo/dati/**)",
+      "Read(~/.claude/chat-mappa-token)",
+      "Bash(cat *.env*)",
+      "Bash(cat *.keystore)",
+      "Bash(cat *.jks)",
+      "Bash(cat *local.properties)",
+      "Bash(cat ~/.ssh/*)",
+      "Bash(cat ~/.claude/chat-mappa-token)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(rm:*)",
+      "Bash(adb uninstall:*)",
+      "Bash(npm install:*)"
+    ]
+  }
 }

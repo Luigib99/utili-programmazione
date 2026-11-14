@@ -10,3 +10,12 @@ Privato/
 
 # Dati privati della sala di controllo (gettone, progetti, attività)
 profili/profilo-claude/sala-controllo/dati/
+
+# Segreti e credenziali
+.env
+.env.*
+*.keystore
+*.jks
+local.properties
+google-services.json
+chat-mappa-token
