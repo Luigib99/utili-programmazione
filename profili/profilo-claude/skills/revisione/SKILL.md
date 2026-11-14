@@ -1,7 +1,7 @@
 ---
 name: revisione
 description: Revisione di codice nel progetto con problemi classificati per gravità
-argument-hint: "<vuoto per lo schema, testo libero o TITOLO: / COSA REVISIONARE: / COSA DOVREBBE FARE: / FOCUS: / MODALITÀ: / MAPPA: dati, struttura o entrambi>"
+argument-hint: "<vuoto per lo schema, testo libero o TITOLO: / COSA REVISIONARE: / COSA DOVREBBE FARE: / FOCUS: / MODALITÀ: / MAPPA: dati, struttura, entrambi o nessuna / CONFERMA: no>"
 disable-model-invocation: true
 model: opus
 effort: high
@@ -36,12 +36,14 @@ In qualsiasi fase:
   - `COSA DOVREBBE FARE`\*: il comportamento che il codice deve avere, secondo l'utente; è il riferimento per giudicare la correttezza.
   - `FOCUS`: tutto (predefinito) oppure solo alcuni aspetti (logica, sicurezza, prestazioni, convenzioni del progetto).
   - `MODALITÀ`: normale (predefinita) oppure "prova io".
-  - `MAPPA`\*: vedi "Campi comuni".
+  - `MAPPA`\*: vedi "Campi comuni"; in questa skill ha anche il valore `nessuna` (nessun diagramma). Quando la chiedi con le opzioni a scelta, aggiungi `nessuna` alle tre solite.
+  - `CONFERMA`: predefinita sì. Se l'utente scrive "senza conferma" (o `CONFERMA: no`), la scheda NON va confermata: mostrala in breve e passa subito alla fase successiva, senza `## DOMANDA` e senza fermarti.
 - `COSA REVISIONARE` si può dedurre con l'ordine indicato sopra ("In qualsiasi fase"); `COSA DOVREBBE FARE` si può dedurre dal codice solo se è evidente, altrimenti chiedilo.
 - se `FOCUS` è limitato, segnala comunque i problemi 🔴 Gravi trovati fuori dal focus.
 
 ## DIAGRAMMA
 
+- se `MAPPA` è `nessuna`, salta questa fase: niente diagramma e nessun riferimento D/S nelle fasi successive (indica i problemi solo con nomeFile:riga).
 - genera il diagramma scelto in `MAPPA` (vedi "Campi comuni"): qui non c'è una spiegazione a passi, quindi il diagramma precede direttamente la fase successiva.
 - il diagramma rappresenta la parte dell'app in cui si inserisce il codice revisionato (se è un branch, quella toccata dalle modifiche), non solo le righe richieste.
 - se `MODALITÀ` è "prova io", il diagramma deve essere **neutro**: non usare `incoming: "lost"`; né `action`, né `payloadName`, né i testi (`physical`, `simple`, `does`, `purpose`, `receives`, `returns`, `explanation`), né `fields`, `badges` o `label` devono mettere in risalto i punti problematici.
@@ -69,7 +71,7 @@ In qualsiasi fase:
 - numera i problemi in modo progressivo tra tutti i gruppi.
 - per ogni problema indica:
   - nomeFile:riga in grassetto, con sotto il codice reale del punto in un riquadro.
-  - il punto del diagramma in cui si trova (es. "D4 (`getAllUsers`)" o "S3 (`footerContainer`)").
+  - il punto del diagramma in cui si trova (es. "D4 (`getAllUsers`)" o "S3 (`footerContainer`)"); omettilo se `MAPPA` è `nessuna`.
   - cosa è sbagliato.
   - perché è sbagliato e lo scenario concreto in cui si manifesta.
   - come lo correggeresti, a parole e senza codice.

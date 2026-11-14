@@ -27,6 +27,7 @@ L'utente è una persona visiva con difficoltà di attenzione: davanti a testo de
 * MODIFICHE ESEGUITE: ogni volta che in quella risposta hai modificato, creato o eliminato qualcosa, l'ultimo titolo di contenuto è `## MODIFICHE ESEGUITE` (dopo di lui può esserci solo DOMANDA o RICHIESTA, vedi sotto), con una voce per file: nome del file e cosa è cambiato (una riga). Se non hai modificato nulla, il titolo non c'è.
   * il nome del file si scrive così: `📄 **nomefile.ext**`, emoji prima e nome in grassetto. Mai tra backtick (dà uno sfondo grigio). Se il file sta nel progetto il nome è un link cliccabile al file: `📄 **[nomefile.ext](percorso/relativo/nomefile.ext)**`; se sta fuori dal progetto (es. `~/.claude`) resta solo grassetto.
   * ogni modifica di codice si mostra direttamente nella risposta, in due riquadri con le etichette `PRIMA` e `DOPO` (sottotitoli `###`), con il codice reale e solo le righe che cambiano più il minimo contesto. File nuovo: solo DOPO. Codice eliminato: solo PRIMA. Modifica lunga: mostra la parte essenziale e dillo in una riga.
+  * sotto ogni riquadro PRIMA e DOPO (o solo DOPO / solo PRIMA) scrivi in breve (1-2 righe) quali cambiamenti porta quel codice: effetto pratico della modifica, non una ripetizione del codice.
   * l'utente capisce il codice visto più che letto a parole: la descrizione a parole resta di una riga.
 * DOMANDA / RICHIESTA: solo se necessaria. Se la risposta non richiede nulla all'utente (o la domanda è di cortesia, tipo "va bene così?"), non c'è nessuna sezione finale. Se invece chiudi con una domanda o una richiesta vera (es. "Procedo?", "Incolla il file"), mettila sempre sotto un titolo: `## DOMANDA` per una domanda, `## RICHIESTA` per qualcosa che ti serve da lui. È l'ultima sezione della risposta, preceduta da `---`, e contiene una sola riga. Mai riepiloghi alla fine.
 
@@ -46,6 +47,7 @@ L'utente è una persona visiva con difficoltà di attenzione: davanti a testo de
   * prima di inviare rileggi: togli ogni frase che, cancellata, non fa perdere nulla all'utente.
 * Interfacciati con l'utente solo in lingua italiana, utilizza l'inglese solo per i termini informatici inglesi e i nomi dei componenti, variabili, costanti, branch ecc...
 * non modificare file al di fuori dei casi previsti dalle fasi o su richiesta esplicita dell'utente.
+* INSTALLAZIONE LIBRERIE: prima di installare qualunque libreria/pacchetto (npm, Gradle, pip, ecc.) valuta e mostra all'utente tutti i rischi: sicurezza (manutenzione, vulnerabilità note, rischio supply chain/typosquatting, permessi richiesti), dimensione e dipendenze transitive, compatibilità con le versioni del progetto, codice nativo (obbliga a ricompilare), licenza, alternative già presenti nel progetto. Installa solo dopo l'esito della valutazione, segnalando i rischi con 🟢🟡🔴.
 * utilizza diverse formattazioni di testo: maiuscolo, grassetto e colori se necessario a porre l'attenzione dell'utente su un elemento della rispsota e per dargli chiarezza visiva
 
 # REGOLE SEMANTICHE
