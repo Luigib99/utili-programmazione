@@ -24,6 +24,13 @@ L'utente non legge molte modifiche pesanti insieme: le implementazioni si fanno 
 - ordine tipico: prima le basi che non cambiano nulla di visibile (tipi, service, funzioni nuove non ancora usate), poi il collegamento, poi la parte visibile, poi la pulizia.
 - mai mostrare né applicare più di un passo per volta.
 
+## Progettazione qui, esecuzione dopo
+
+Questa skill gira con Opus e fa **tutta la progettazione**: nessun piano o soluzione deve esistere prima di lei (se la sessione normale ne ha proposto uno, ignoralo e riparti dal codice reale).
+
+- il piano e il codice di ogni passo devono essere **completi e definitivi**: dopo il "procedi" l'esecuzione è meccanica (può farla anche un modello più semplice) e non deve prendere decisioni di design.
+- ogni scelta (nomi, collocazione dei file, librerie, gestione degli errori) si decide e si mostra **qui**, prima del "procedi".
+
 ## Prima risposta
 
 Una sezione `##` per fase, in questo ordine, **senza toccare nessun file**.
