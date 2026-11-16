@@ -1093,6 +1093,8 @@
     scrollbar-color: var(--border) transparent;
   }
 
+  .fase-piano h2 i { margin-left: 8px; color: var(--muted); font: 400 12px/1 system-ui, sans-serif; letter-spacing: 0; }
+
   .errore-generazione { color: var(--danger-text); }
 
   /* GUIDA ALLA SCRITTURA: come si scrive il campo, consigli mentre scrivi, tasto per partire da un altro campo */
@@ -1145,9 +1147,96 @@
   .pannello .trovato code { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pannello .azioni-pannello { display: flex; flex-wrap: wrap; gap: 6px; }
   .scelte { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .scelte[hidden] { display: none; }
+
+  /* NON È UN BUG: la casella in cima alla fase Bug oscura e blocca i campi sotto */
+  .modulo label.non-bug {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--border-forte);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0;
+    cursor: pointer;
+  }
+  .modulo label.non-bug.attiva { border-color: var(--accent); color: var(--accent-chiaro); }
+  .campi-bug { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; transition: opacity .15s; }
+  .campi-bug[inert] { opacity: .35; filter: grayscale(1); }
+  .fase-piano label > .pillola { align-self: flex-start; }
   .scelta { display: flex; flex-direction: column; gap: 4px; font-weight: 400; letter-spacing: 0; text-transform: none; }
   .modulo .scelta b { color: var(--text); font-size: 12.5px; }
   .scelta .opzioni { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  /* CHIAMATE AL BACKEND: un riquadro per chiamata, con metodo e rotta, parametri e cosa fa */
+  .campo-strutturato {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    color: var(--muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+  }
+  .fase-piano .campo-strutturato > span:first-child { color: var(--accent); }
+  .chiamate { display: flex; flex-direction: column; gap: 10px; }
+  .chiamate .aggiungi-backend { margin-top: 0; }
+  .chiamata {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-forte);
+    border-radius: 10px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .voce-file {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-forte);
+    border-radius: 10px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .elenco-file { display: flex; flex-direction: column; gap: 10px; }
+  .elenco-file .aggiungi-backend { margin-top: 0; }
+  .voce-file .lati { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .lato-file { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .lato-file > b { color: var(--muted); font-size: 11.5px; letter-spacing: .06em; }
+  @media (max-width: 720px) { .voce-file .lati { grid-template-columns: 1fr; } }
+  .funzioni-file { display: flex; flex-direction: column; gap: 8px; padding-left: 12px; border-left: 2px solid var(--border-forte); }
+  .funzione-file { display: flex; flex-direction: column; gap: 6px; }
+  .riga-funzione { display: flex; gap: 6px; }
+  .riga-funzione input { flex: 1; min-width: 0; }
+  .funzione-file textarea { min-height: 44px; }
+  .voce-file :is(input, textarea) { color: var(--text); font-size: 14px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+  .voce-file textarea { min-height: 60px; }
+  .voce-file .testa-chiamata { display: flex; align-items: center; justify-content: space-between; color: var(--accent-chiaro); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; }
+  .voce-file .titolo-cosa { color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: .06em; }
+  .chiamata :is(input, textarea) { color: var(--text); font-size: 14px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+  .chiamata input[hidden] { display: none; }
+  .chiamata textarea { min-height: 60px; }
+  .chiamata .testa-chiamata { display: flex; align-items: center; justify-content: space-between; color: var(--accent-chiaro); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; }
+  .chiamata .lati { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .chiamata .rotta { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .chiamata .rotta > b { color: var(--muted); font-size: 11.5px; letter-spacing: .06em; }
+  .chiamata .riga-rotta, .chiamata .parametri { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .chiamata .riga-rotta input { flex: 1; min-width: 140px; }
+  .chiamata .titolo-cosa { color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: .06em; }
+  .scelta-chiamata { display: flex; gap: 6px; }
+  .scelta-chiamata[hidden] { display: none; }
+  @media (max-width: 720px) { .chiamata .lati { grid-template-columns: 1fr; } }
 
   .riprendi { align-self: flex-start; font-size: 12.5px; font-weight: 500; letter-spacing: 0; }
   .avvisi-mappa { align-self: center; color: #e3b341; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
@@ -2395,7 +2484,6 @@
     contestiAperti: new Set(),
     cercaLezioni: '',
     fasiPiano: [],
-    tipiPiano: [],
     pianoAperto: null,
     fasePiano: '',
     branchAperti: new Set(),
@@ -2449,7 +2537,7 @@
     if (consumiClaude.status === 'fulfilled') stato.consumi = consumiClaude.value;
     stato.contesti = contesti.status === 'fulfilled' ? contesti.value : [];
     if (lezioni.status === 'fulfilled') Object.assign(stato, { lezioni: lezioni.value.lezioni, fileLezioni: lezioni.value.file });
-    if (piani.status === 'fulfilled') Object.assign(stato, { piani: piani.value.piani, fasiPiano: piani.value.fasi, tipiPiano: piani.value.tipi });
+    if (piani.status === 'fulfilled') Object.assign(stato, { piani: piani.value.piani, fasiPiano: piani.value.fasi });
     stato.sessioni = sessioni.status === 'fulfilled' ? sessioni.value : [];
     stato.branch = branch.status === 'fulfilled' ? branch.value : { errore: branch.reason.message };
     // Un server non riavviato manda ancora il vecchio testo unico: senza questo la scheda non si disegna
@@ -2704,29 +2792,15 @@
 
   // PIANI
   // Il ragionamento lo scrivi tu: la pagina dà solo la struttura delle fasi, adattata al tipo di lavoro, e tiene il conto di cosa manca
-  const delTipo = (elementi, tipo) => elementi.filter((e) => !e.tipi || e.tipi.includes(tipo));
-  const fasiDelPiano = (piano) => delTipo(stato.fasiPiano, piano.tipo);
-  const nomeTipo = (tipo) => stato.tipiPiano.find((t) => t.id === tipo)?.nome || tipo;
 
-  // MAPPA OBBLIGATORIA
-  // Le fasi dopo la Richiesta si aprono solo con la mappa scelta e, se non è "Nessuna", generata
+  // MAPPA FACOLTATIVA
+  // Si va avanti anche senza: se la mappa non è scelta o non è generata, il piano risulta con la mappa saltata
   const TIPI_MAPPA = { dati: ['dati'], struttura: ['struttura'], entrambi: ['dati', 'struttura'] };
   const mappePronte = (piano) => (TIPI_MAPPA[piano.mappa] || []).every((t) => piano.mappe.some((m) => m.tipo === t && m.esiste));
 
-  function bloccoMappa(piano) {
-    // Un piano terminato si rilegge e si corregge sempre, anche se la mappa è stata eliminata
-    if (piano.terminato) return '';
-    if (!piano.mappa) return 'Scegli prima la mappa nella Richiesta';
-    if (piano.mappa === 'nessuna') return '';
-    if (piano.generazione?.stato === 'in-corso') return 'Aspetta che la mappa sia pronta';
-    return mappePronte(piano) ? '' : 'Genera prima la mappa nella Richiesta';
-  }
-
-  // Come chiede la skill /piano: servono il Dove e lo scopo, che cambia campo in base al tipo di lavoro
+  // Come chiede la skill /piano: serve almeno l'Obiettivo
   function mancaPerGenerare(piano) {
-    const c = piano.fasi.richiesta.campi;
-    const scopo = { bug: c.atteso, minore: c.cosa, modifica: c.obiettivo || c.cambia }[piano.tipo] ?? c.obiettivo;
-    if (!String(scopo || '').trim()) return `Compila ${piano.tipo === 'bug' ? 'il Comportamento atteso' : piano.tipo === 'minore' ? 'Cosa cambiare' : 'l\'Obiettivo'} nella Richiesta`;
+    if (!String(piano.fasi.richiesta.campi.obiettivo || '').trim()) return 'Compila l\'Obiettivo nella Richiesta';
     return '';
   }
 
@@ -2771,11 +2845,11 @@
   // Il testo della Richiesta che va a Claude è anche la firma: se cambia dopo la generazione, il riassunto è vecchio
   function testoRichiesta(piano) {
     const fase = stato.fasiPiano.find((f) => f.id === 'richiesta');
-    const campi = delTipo(fase.campi, piano.tipo)
+    const campi = fase.campi
       .map((c) => [c.nome, String(piano.fasi.richiesta.campi[c.id] || '').trim()])
       .filter(([, valore]) => valore);
     if (!campi.length) return '';
-    return [`TIPO: ${nomeTipo(piano.tipo)}`, ...campi.map(([nome, valore]) => `${nome}: ${valore}`)].join('\n');
+    return campi.map(([nome, valore]) => `${nome}: ${valore}`).join('\n');
   }
 
   function statoSintesi(piano) {
@@ -2868,7 +2942,7 @@
     }, 1000);
   }
 
-  const MAPPE_PIANO = [['dati', 'Dati'], ['struttura', 'Struttura'], ['entrambi', 'Entrambi'], ['nessuna', 'Nessuna']];
+  const MAPPE_PIANO = [['dati', 'Dati'], ['struttura', 'Struttura'], ['entrambi', 'Entrambi']];
   // Un campo con la traccia da completare conta solo se c'è del testo dopo i due punti (in tutte le righe, se `tutte`)
   const campoScritto = (c, valore) => {
     const testo = String(valore || '');
@@ -2878,18 +2952,17 @@
   };
   const faseCompleta = (piano, fase) => {
     const dati = piano.fasi[fase.id];
-    if (fase.id === 'richiesta' && !piano.mappa) return false;
-    return delTipo(fase.campi, piano.tipo).every((c) => c.facoltativo || campoScritto(c, dati.campi[c.id]));
+    return fase.campi.every((c) => c.facoltativo || campoScritto(c, dati.campi[c.id]));
   };
   const faseIniziata = (piano, fase) => {
     const dati = piano.fasi[fase.id];
-    return delTipo(fase.campi, piano.tipo).some((c) => campoScritto(c, dati.campi[c.id]));
+    return fase.campi.some((c) => campoScritto(c, dati.campi[c.id]));
   };
   const statoFase = (piano, fase) => (faseCompleta(piano, fase) ? 'completa' : faseIniziata(piano, fase) ? 'iniziata' : '');
   const pianoAperto = () => stato.piani.find((p) => p.id === stato.pianoAperto);
 
   function htmlTacche(piano) {
-    const fasi = fasiDelPiano(piano);
+    const fasi = stato.fasiPiano;
     const fatte = fasi.filter((f) => faseCompleta(piano, f)).length;
     return `<div class="tacche" title="${fatte} fasi complete su ${fasi.length}">
         ${fasi.map((f) => `<span class="${statoFase(piano, f)}"></span>`).join('')}
@@ -2909,7 +2982,6 @@
       return `<div class="scheda piano${classeStato}${aperto ? ' aperta' : ''}" data-piano-id="${p.id}" data-blocco="piano" data-bid="${p.id}">
         <div class="testa" data-azione="espandi-piano" data-id="${p.id}" title="Clicca per aprire il piano">
           <span class="freccia">▶</span>
-          <span class="stato tipo">${esc(nomeTipo(p.tipo))}</span>
           <div class="corpo">
             <div class="titolo">${p.titolo ? esc(p.titolo) : '<span class="senza-titolo">Senza titolo</span>'}</div>
             <div class="meta">${attivita ? `da attività "${esc(attivita.titolo)}" · ` : ''}${p.mappe.length ? `mappa ${p.mappe.map((m) => m.tipo).join(' e ')} · ` : ''}aggiornato ${quando(p.aggiornato)}</div>
@@ -2949,7 +3021,7 @@
   };
   const nomeCampo = (piano, id) => {
     const [fase, campo] = riferimentoCampo(id);
-    return delTipo(stato.fasiPiano.find((f) => f.id === fase)?.campi || [], piano.tipo).find((c) => c.id === campo)?.nome || campo;
+    return (stato.fasiPiano.find((f) => f.id === fase)?.campi || []).find((c) => c.id === campo)?.nome || campo;
   };
 
   // Una riga per voce: con l'elenco si toglie il punto, con i passi il numero, e si ricontano
@@ -3001,7 +3073,7 @@
 
   // Il nome da cercare si ricava da quello che hai già scritto: prima «(login)» tra parentesi, poi «login(», poi il nome del file
   function nomeDaCercare(piano) {
-    const testi = ['progettare.file', 'indagare.posizione', 'indagare.aggancio', 'richiesta.dove'].map((id) => testoCampo(piano, id)).join('\n');
+    const testi = ['codice.file', 'indagare.zone', 'bug.dove'].map((id) => testoCampo(piano, id)).join('\n');
     return testi.match(/\(([A-Za-z_$][\w$]*)\)/)?.[1] || testi.match(/\b([A-Za-z_$][\w$]*)\(/)?.[1] || testi.match(/\b([A-Za-z_$][\w$]*)\.(?:jsx?|tsx?)\b/)?.[1] || '';
   }
 
@@ -3057,7 +3129,7 @@
     const pannello = !s ? '' : s.tipo === 'codice' ? htmlPannelloCodice(piano, fase, c, s) : htmlPannelloDiagramma(piano, fase, c, piano.fasi[fase.id]?.campi[c.id] || '');
     return `${bottoni ? `<div class="strumenti-campo">${bottoni}</div>` : ''}
         <div class="pannello" data-pannello="${fase.id}.${c.id}">${pannello}</div>
-        ${c.scelte ? `<div class="scelte" data-scelte="${fase.id}.${c.id}">${htmlScelte(fase, c, piano.fasi[fase.id]?.campi[c.id] || '')}</div>` : ''}`;
+        ${c.scelte ? `<div class="scelte" data-scelte="${fase.id}.${c.id}"${opzioneVuotaAttiva(c, piano.fasi[fase.id]?.campi[c.id]) ? ' hidden' : ''}>${htmlScelte(fase, c, piano.fasi[fase.id]?.campi[c.id] || '')}</div>` : ''}`;
   }
 
   function aggiornaPannello(piano, fase, c, campo) {
@@ -3092,25 +3164,219 @@
       </div>
     </details>`;
 
+  // CHIAMATE AL BACKEND
+  // Il campo si compila a pulsanti ma si salva come testo (un blocco per chiamata), così il resto della pagina lo tratta come ogni altro campo.
+  // Il testo nella textarea nascosta è la fonte: la pagina lo rilegge dai pulsanti a ogni modifica
+  const METODI = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+  const METODI_CON_BODY = ['POST', 'PUT', 'PATCH'];
+  const PARAMETRI = [['body', 'Body'], ['query', 'Query params'], ['path', 'Path params']];
+  const TIPI_CHIAMATA = [['NUOVA', 'Nuova'], ['MODIFICA', 'Modifica'], ['ESISTENTE', 'Esistente']];
+  const ROTTE_DEL_TIPO = { NUOVA: ['Rotta'], ESISTENTE: ['Rotta'], MODIFICA: ['Prima', 'Dopo'] };
+  const nomeCosa = (tipo) => (tipo === 'MODIFICA' ? 'Cosa cambia' : 'Cosa fa');
+  const chiaveParametro = (nome, etichetta) => (nome === 'Rotta' ? etichetta : `${nome} ${etichetta}`);
+  const rottaVuota = () => ({ metodo: 'GET', rotta: '', body: null, query: null, path: null });
+  const nuovaChiamata = (tipo) => ({ tipo, cosa: '', rotte: ROTTE_DEL_TIPO[tipo].map(rottaVuota) });
+
+  // Le righe di un blocco sono "Chiave: valore"; le righe che cominciano con due spazi continuano il valore precedente
+  function campiDelBlocco(righe) {
+    const campi = {};
+    let ultimo = '';
+    righe.forEach((r) => {
+      const m = r.match(/^(\S[^:]*):\s?(.*)$/);
+      if (m) {
+        ultimo = m[1];
+        campi[ultimo] = m[2];
+      } else if (ultimo && r.startsWith('  ')) campi[ultimo] += `\n${r.slice(2)}`;
+    });
+    return campi;
+  }
+
+  const unaRiga = (testo) => testo.split('\n').map((x) => x.trimEnd()).filter(Boolean).join('\n  ');
+
+  function chiamateDelTesto(testo) {
+    return String(testo || '').split('\n\n').map((blocco) => {
+      const [intestazione, ...righe] = blocco.split('\n');
+      const tipo = intestazione.trim();
+      if (!ROTTE_DEL_TIPO[tipo]) return null;
+      const campi = campiDelBlocco(righe);
+      const rotte = ROTTE_DEL_TIPO[tipo].map((nome) => {
+        const [, metodo = '', rotta = ''] = String(campi[nome] ?? '').match(/^(?:(GET|POST|PUT|PATCH|DELETE)(?:\s+|$))?(.*)$/s);
+        return { metodo, rotta: rotta.trim(), ...Object.fromEntries(PARAMETRI.map(([id, etichetta]) => [id, campi[chiaveParametro(nome, etichetta)] ?? null])) };
+      });
+      return { tipo, cosa: campi[nomeCosa(tipo)] ?? '', rotte };
+    }).filter(Boolean);
+  }
+
+  const testoChiamate = (chiamate) => chiamate.map((c) => {
+    const righe = [c.tipo];
+    c.rotte.forEach((r, i) => {
+      const nome = ROTTE_DEL_TIPO[c.tipo][i];
+      righe.push(`${nome}: ${[r.metodo, r.rotta].filter(Boolean).join(' ')}`);
+      PARAMETRI.forEach(([id, etichetta]) => { if (r[id] !== null) righe.push(`${chiaveParametro(nome, etichetta)}: ${r[id]}`); });
+    });
+    righe.push(`${nomeCosa(c.tipo)}: ${unaRiga(c.cosa)}`);
+    return righe.join('\n');
+  }).join('\n\n');
+
+  function htmlRotta(nome, r) {
+    const nessuno = PARAMETRI.every(([id]) => r[id] === null);
+    const pillola = (azione, dati, nomeBottone, attiva) => `<button type="button" class="pillola${attiva ? ' attiva' : ''}" data-azione="${azione}" ${dati}>${nomeBottone}</button>`;
+    return `<div class="rotta">
+        ${nome === 'Rotta' ? '' : `<b>${nome.toUpperCase()}</b>`}
+        <div class="riga-rotta">
+          ${METODI.map((m) => pillola('chiamata-metodo', `data-metodo="${m}"`, m, r.metodo === m)).join('')}
+          <input data-k="rotta" value="${esc(r.rotta)}" placeholder="/rotta/:id" autocomplete="off">
+        </div>
+        <div class="parametri">
+          ${PARAMETRI.map(([id, etichetta]) => pillola('chiamata-param', `data-param="${id}"`, etichetta, r[id] !== null)).join('')}
+          ${pillola('chiamata-param', 'data-param="nessuno"', 'Nessuno', nessuno)}
+        </div>
+        ${PARAMETRI.map(([id, etichetta]) => `<input data-k="${id}" value="${esc(r[id] ?? '')}" placeholder="${etichetta}: i campi, separati da virgola" autocomplete="off"${r[id] === null ? ' hidden' : ''}>`).join('')}
+      </div>`;
+  }
+
+  const htmlChiamata = (c) => `<div class="chiamata" data-tipo="${c.tipo}">
+      <div class="testa-chiamata"><span>${c.tipo}</span><button type="button" class="btn icona" data-azione="chiamata-togli" title="Togli questa chiamata">${icona('elimina')}</button></div>
+      <div class="${c.rotte.length > 1 ? 'lati' : ''}">${c.rotte.map((r, i) => htmlRotta(ROTTE_DEL_TIPO[c.tipo][i], r)).join('')}</div>
+      <span class="titolo-cosa">${nomeCosa(c.tipo).toUpperCase()}?</span>
+      <textarea data-k="cosa" maxlength="1000" placeholder="${c.tipo === 'MODIFICA' ? 'Cosa cambia tra prima e dopo' : c.tipo === 'ESISTENTE' ? 'Cosa fa la rotta e perché il piano la usa' : 'Cosa fa la rotta nuova'}">${esc(c.cosa)}</textarea>
+    </div>`;
+
+  const htmlChiamate = (testo) => `<div class="chiamate">
+      ${chiamateDelTesto(testo).map(htmlChiamata).join('')}
+      <button type="button" class="aggiungi-backend" data-azione="chiamata-piu" title="Aggiungi una chiamata">+</button>
+      <div class="scelta-chiamata" hidden>${TIPI_CHIAMATA.map(([id, nome]) => `<button type="button" class="pillola" data-azione="chiamata-nuova" data-tipo="${id}">${nome}</button>`).join('')}</div>
+    </div>`;
+
+  // FILE DEL CODICE
+  // Stesso schema delle chiamate: un blocco per file (NUOVO, MODIFICA, ESISTENTE). MODIFICA ha PRIMA e DOPO affiancati e un solo "Cosa cambia?" in fondo.
+  // Ogni lato ha nome del file, cartella e le funzioni che interessano
+  const TIPI_FILE = [['NUOVO', 'Nuovo'], ['MODIFICA', 'Modifica'], ['ESISTENTE', 'Esistente']];
+  const LATI_FILE = { NUOVO: ['File'], ESISTENTE: ['File'], MODIFICA: ['Prima', 'Dopo'] };
+  const nomeCosaFile = (tipo) => (tipo === 'MODIFICA' ? 'Cosa cambia' : 'Cosa fa');
+  const chiaveLato = (nome, parte) => (nome === 'File' ? { cartella: 'Cartella', funzioni: 'Funzioni' }[parte] : `${nome} ${parte}`);
+  const nuovaFunzione = () => ({ nome: '', cosa: '' });
+  const nuovoLato = () => ({ nome: '', cartella: '', funzioni: [] });
+  const nuovoFile = (tipo) => ({ tipo, lati: LATI_FILE[tipo].map(nuovoLato), cosa: '' });
+
+  // Nel testo le funzioni sono righe "- nome: cosa fa" sotto la riga "Funzioni:" (o "Prima funzioni:", "Dopo funzioni:")
+  function fileDelTesto(testo) {
+    return String(testo || '').split('\n\n').map((blocco) => {
+      const [intestazione, ...righe] = blocco.split('\n');
+      const tipo = intestazione.trim();
+      if (!LATI_FILE[tipo]) return null;
+      const voce = nuovoFile(tipo);
+      const campi = {};
+      voce.lati.forEach((lato, i) => {
+        const nome = LATI_FILE[tipo][i];
+        campi[nome] = [lato, 'nome'];
+        campi[chiaveLato(nome, 'cartella')] = [lato, 'cartella'];
+      });
+      campi[nomeCosaFile(tipo)] = [voce, 'cosa'];
+      const intestazioniFunzioni = Object.fromEntries(voce.lati.map((lato, i) => [chiaveLato(LATI_FILE[tipo][i], 'funzioni'), lato]));
+      let latoCorrente = voce.lati[0];
+      let ultimo = null;
+      righe.forEach((r) => {
+        const funzione = r.match(/^- ([^:]*):\s?(.*)$/);
+        const campo = r.match(/^(\S[^:]*):\s?(.*)$/);
+        if (funzione) {
+          latoCorrente.funzioni.push({ nome: funzione[1].trim(), cosa: funzione[2] });
+          ultimo = [latoCorrente.funzioni.at(-1), 'cosa'];
+        } else if (campo && intestazioniFunzioni[campo[1]]) {
+          latoCorrente = intestazioniFunzioni[campo[1]];
+          ultimo = null;
+        } else if (campo) {
+          ultimo = campi[campo[1]] || null;
+          if (ultimo) ultimo[0][ultimo[1]] = campo[2];
+        } else if (ultimo && r.startsWith('  ')) ultimo[0][ultimo[1]] += `\n${r.slice(2)}`;
+      });
+      return voce;
+    }).filter(Boolean);
+  }
+
+  const testoFile = (voci) => voci.map((v) => [
+    v.tipo,
+    ...v.lati.flatMap((lato, i) => {
+      const nome = LATI_FILE[v.tipo][i];
+      return [
+        `${nome}: ${lato.nome}`,
+        `${chiaveLato(nome, 'cartella')}: ${lato.cartella}`,
+        ...(lato.funzioni.length ? [`${chiaveLato(nome, 'funzioni')}:`, ...lato.funzioni.map((f) => `- ${f.nome}: ${unaRiga(f.cosa)}`)] : []),
+      ];
+    }),
+    `${nomeCosaFile(v.tipo)}: ${unaRiga(v.cosa)}`,
+  ].join('\n')).join('\n\n');
+
+  const htmlFunzioneFile = (f) => `<div class="funzione-file">
+      <div class="riga-funzione"><input data-k="nome-funzione" value="${esc(f.nome)}" placeholder="nome della funzione" autocomplete="off"><button type="button" class="btn icona" data-azione="funzione-togli" title="Togli questa funzione">${icona('elimina')}</button></div>
+      <textarea data-k="cosa-funzione" maxlength="500" placeholder="Cosa fa la funzione">${esc(f.cosa)}</textarea>
+    </div>`;
+
+  const htmlCosaFile = (v) => `<span class="titolo-cosa">${nomeCosaFile(v.tipo).toUpperCase()}?</span>
+      <textarea data-k="cosa" maxlength="1000" placeholder="${v.tipo === 'MODIFICA' ? 'Cosa cambia tra prima e dopo' : v.tipo === 'ESISTENTE' ? 'Cosa fa il file e perché il piano lo usa' : 'Cosa fa il file nuovo'}">${esc(v.cosa)}</textarea>`;
+
+  const htmlLatoFile = (lato, nome, cosa) => `<div class="lato-file">
+      ${nome === 'File' ? '' : `<b>${nome.toUpperCase()}</b>`}
+      <span class="titolo-cosa">NOME FILE</span>
+      <input data-k="nome" value="${esc(lato.nome)}" placeholder="useTrash.js" autocomplete="off">
+      <span class="titolo-cosa">CARTELLA</span>
+      <input data-k="cartella" value="${esc(lato.cartella)}" placeholder="src/sections/files/hooks" autocomplete="off">
+      ${cosa}
+      <div class="funzioni-file">
+        <span class="titolo-cosa">FUNZIONI</span>
+        ${lato.funzioni.map(htmlFunzioneFile).join('')}
+        <button type="button" class="aggiungi-backend" data-azione="funzione-piu" title="Aggiungi una funzione">+</button>
+      </div>
+    </div>`;
+
+  const htmlVoceFile = (v) => `<div class="voce-file" data-tipo="${v.tipo}">
+      <div class="testa-chiamata"><span>${v.tipo}</span><button type="button" class="btn icona" data-azione="file-togli" title="Togli questo file">${icona('elimina')}</button></div>
+      <div class="${v.lati.length > 1 ? 'lati' : ''}">${v.lati.map((lato, i) => htmlLatoFile(lato, LATI_FILE[v.tipo][i], v.tipo === 'MODIFICA' ? '' : htmlCosaFile(v))).join('')}</div>
+      ${v.tipo === 'MODIFICA' ? htmlCosaFile(v) : ''}
+    </div>`;
+
+  const htmlElencoFile = (testo) => `<div class="elenco-file">
+      ${fileDelTesto(testo).map(htmlVoceFile).join('')}
+      <button type="button" class="aggiungi-backend" data-azione="file-piu" title="Aggiungi un file">+</button>
+      <div class="scelta-chiamata" hidden>${TIPI_FILE.map(([id, nome]) => `<button type="button" class="pillola" data-azione="file-nuovo" data-tipo="${id}">${nome}</button>`).join('')}</div>
+    </div>`;
+
+  const htmlCampoStrutturato = (piano, fase, c) => `<div class="largo campo-strutturato" data-blocco="campo" data-bid="${fase.id}.${c.id}"><span>${esc(c.nome.toUpperCase())} <i>facoltativo</i></span>
+        ${htmlGuidaCampo(piano, fase, c)}
+        <textarea hidden data-fase="${fase.id}" data-campo="${c.id}">${esc(piano.fasi[fase.id].campi[c.id] || '')}</textarea>
+        ${(c.chiamate ? htmlChiamate : htmlElencoFile)(piano.fasi[fase.id].campi[c.id] || '')}
+        ${htmlStrumenti(piano, fase, c)}
+      </div>`;
+
+  // Un campo con opzione «vuota» (es. Non salvo dati) mostra solo quel pulsante finché è attivo
+  const opzioneVuotaAttiva = (c, valore) => Boolean(c.opzioneVuoto) && String(valore || '').trim() === c.opzioneVuoto.testo;
+
   function htmlFase(piano, fase, numero) {
     const dati = piano.fasi[fase.id];
-    const campi = delTipo(fase.campi, piano.tipo).map((c) => `<label class="largo" data-blocco="campo" data-bid="${fase.id}.${c.id}"><span>${esc(c.nome.toUpperCase())}${c.facoltativo ? ' <i>facoltativo</i>' : ''}</span>
+    const campi = fase.campi.map((c) => c.chiamate || c.elencoFile ? htmlCampoStrutturato(piano, fase, c) : `<label class="largo" data-blocco="campo" data-bid="${fase.id}.${c.id}"><span>${esc(c.nome.toUpperCase())}${c.facoltativo && !fase.soloBug ? ' <i>facoltativo</i>' : ''}</span>
         ${htmlGuidaCampo(piano, fase, c)}
-        <textarea data-fase="${fase.id}" data-campo="${c.id}" data-forma="${c.forma || ''}" data-traccia="${esc(c.traccia || '')}" maxlength="5000" placeholder="${esc([c.aiuto, c.esempio ? `es. ${c.esempio}` : ''].filter(Boolean).join('\n'))}">${esc(dati.campi[c.id] || '')}</textarea>
+        ${c.opzioneVuoto ? `<button type="button" class="pillola${opzioneVuotaAttiva(c, dati.campi[c.id]) ? ' attiva' : ''}" data-azione="opzione-vuoto" data-fase="${fase.id}" data-campo="${c.id}">${esc(c.opzioneVuoto.nome)}</button>` : ''}
+        <textarea${c.soloPulsanti || opzioneVuotaAttiva(c, dati.campi[c.id]) ? ' hidden' : ''} data-fase="${fase.id}" data-campo="${c.id}" data-forma="${c.forma || ''}" data-traccia="${esc(c.traccia || '')}" maxlength="5000" placeholder="${esc([c.aiuto, c.esempio ? `es. ${c.esempio}` : ''].filter(Boolean).join('\n'))}">${esc(dati.campi[c.id] || '')}</textarea>
         <span class="consigli" data-consigli="${fase.id}.${c.id}">${htmlConsigli(c, dati.campi[c.id] || '')}</span>
         ${htmlRiprendi(piano, fase, c)}
         ${htmlStrumenti(piano, fase, c)}
       </label>`).join('');
+    // Nella fase solo bug la spunta «Non è un bug» oscura e blocca tutti i campi
+    const nonBug = fase.soloBug && piano.fasi[fase.id].spunte.nonBug === true;
+    const bloccoCampi = fase.soloBug
+      ? `<label class="largo non-bug${nonBug ? ' attiva' : ''}"><input type="checkbox" data-fase="${fase.id}" data-spunta="nonBug"${nonBug ? ' checked' : ''}> Non è un bug</label>
+        <div class="campi-bug"${nonBug ? ' inert' : ''}>${campi}</div>`
+      : campi;
     const daGenerare = ['dati', 'struttura', 'entrambi'].includes(piano.mappa);
-    const mappa = fase.id !== 'richiesta' ? '' : `<div class="largo tipo-piano"><span>MAPPA DA GENERARE</span>
+    const mappa = fase.id !== 'richiesta' ? '' : `<div class="largo tipo-piano"><span>MAPPA DA GENERARE <i>facoltativa: senza scelta la salti</i></span>
         <div class="filtri-tipo">${MAPPE_PIANO.map(([id, nome]) => `<button class="pillola${piano.mappa === id ? ' attiva' : ''}" data-azione="mappa-piano" data-mappa="${id}"${piano.generazione?.stato === 'in-corso' ? ' disabled title="Aspetta che finisca la generazione"' : ''}>${nome}</button>`).join('')}</div>
       </div>
       ${daGenerare ? htmlGenerazione(piano) : ''}`;
     // Sotto le Note: c'è solo nei tipi che hanno le Note (non nella Modifica minore)
-    const conSintesi = fase.id === 'richiesta' && delTipo(fase.campi, piano.tipo).some((c) => c.id === 'note');
+    const conSintesi = fase.id === 'richiesta' && fase.campi.some((c) => c.id === 'note');
     return `<div class="modulo fase-piano" data-blocco="fase" data-bid="${fase.id}">
-        <h2 class="largo${fase.id === 'richiesta' ? ' con-azione' : ''}">${numero ? `${numero}. ` : ''}${esc(fase.nome)}${fase.id === 'richiesta' ? `<button type="button" class="btn icona compila-auto" id="compila-richiesta" data-azione="compila-richiesta" title="Compila automaticamente: legge i messaggi del backend e propone il testo dei campi vuoti">${icona('compila')}</button>` : ''}</h2>
-        ${campi}
+        <h2 class="largo${fase.id === 'richiesta' ? ' con-azione' : ''}">${numero ? `${numero}. ` : ''}${esc(fase.nome)}${fase.soloBug ? ' <i>SOLO BUG: se non è un bug lascialo vuoto</i>' : ''}${fase.id === 'richiesta' ? `<button type="button" class="btn icona compila-auto" id="compila-richiesta" data-azione="compila-richiesta" title="Compila automaticamente: legge i messaggi del backend e propone il testo dei campi vuoti">${icona('compila')}</button>` : ''}</h2>
+        ${bloccoCampi}
         ${conSintesi ? htmlSintesi(piano) : ''}
       </div>
       ${mappa ? `<div class="modulo fase-piano riquadro-mappa"><h2 class="largo">Mappa</h2>${mappa}</div>` : ''}`;
@@ -3127,17 +3393,13 @@
     : `<span class="nota" title="${esc(m.file)}">mappa ${m.tipo} eliminata</span>`)).join('');
 
   function htmlEditorPiano(piano) {
-    const fasi = fasiDelPiano(piano);
+    const fasi = stato.fasiPiano;
     const indice = Math.max(0, fasi.findIndex((f) => f.id === stato.fasePiano));
-    const tipi = stato.tipiPiano.map((t) => `<button class="pillola${t.id === piano.tipo ? ' attiva' : ''}" data-azione="tipo-piano" data-tipo="${t.id}">${esc(t.nome)}</button>`).join('');
-    const blocco = bloccoMappa(piano);
-    const chiusa = (i) => (i > 0 && blocco ? ` disabled title="${esc(blocco)}"` : '');
-    const passi = fasi.map((f, i) => `<button class="passo ${statoFase(piano, f)}${i === indice ? ' attiva' : ''}" data-azione="vai-fase" data-fase="${f.id}"${chiusa(i)}>
+    const passi = fasi.map((f, i) => `<button class="passo ${statoFase(piano, f)}${i === indice ? ' attiva' : ''}" data-azione="vai-fase" data-fase="${f.id}">
         <span class="numero">${faseCompleta(piano, f) ? icona('fatto') : i + 1}</span>${esc(f.nome)}
       </button>`).join('');
     return `<div class="modulo testa-piano">
         <label class="largo"><span>TITOLO DEL PIANO</span><input data-piano="titolo" value="${esc(piano.titolo)}" maxlength="200" placeholder="cosa vuoi risolvere, in poche parole" autocomplete="off"></label>
-        <div class="largo tipo-piano"><span>TIPO DI LAVORO</span><div class="filtri-tipo">${tipi}</div></div>
         ${htmlBackendPiano(piano)}
       </div>
       <div class="passi" id="passi-piano">${passi}</div>
@@ -3146,7 +3408,7 @@
         <button class="btn" data-azione="vai-fase" data-fase="${fasi[indice - 1]?.id || ''}" ${indice ? '' : 'disabled'}>← Fase precedente</button>
         <span class="spazio"></span>
         ${indice < fasi.length - 1
-    ? `<button class="btn primario" data-azione="vai-fase" data-fase="${fasi[indice + 1].id}"${chiusa(indice + 1)}>Fase successiva →</button>`
+    ? `<button class="btn primario" data-azione="vai-fase" data-fase="${fasi[indice + 1].id}">Fase successiva →</button>`
     : `<button class="btn primario" data-azione="copia-piano" data-id="${piano.id}" title="Crea il piano e lo copia: incollalo in una chat di Claude Code con /piano">Crea il piano</button>`}
       </div>`;
   }
@@ -3218,7 +3480,7 @@
   function aggiornaIndicatoriPiano() {
     const piano = pianoAperto();
     if (!piano) return;
-    const fasi = fasiDelPiano(piano);
+    const fasi = stato.fasiPiano;
     document.querySelectorAll('#passi-piano .passo').forEach((b, i) => {
       const fase = fasi[i];
       b.classList.remove('completa', 'iniziata');
@@ -3232,9 +3494,10 @@
 
   function testoPiano(piano) {
     const attivita = stato.attivita.find((a) => a.id === piano.attivita);
-    const fasi = fasiDelPiano(piano).map((f, i) => {
+    const fasi = stato.fasiPiano.map((f, i) => {
       const dati = piano.fasi[f.id];
-      const campi = delTipo(f.campi, piano.tipo).map((c) => `${c.nome}: ${String(dati.campi[c.id] || '').trim() || (c.facoltativo ? '(non scritto)' : '(vuoto)')}`);
+      if (f.soloBug && dati.spunte.nonBug) return [`## ${i + 1}. ${f.nome.toUpperCase()}`, 'Non è un bug'].join('\n');
+      const campi = f.campi.map((c) => `${c.nome}: ${String(dati.campi[c.id] || '').trim() || (c.facoltativo ? '(non scritto)' : '(vuoto)')}`);
       return [`## ${i + 1}. ${f.nome.toUpperCase()}`, ...campi].join('\n');
     });
     const progetto = stato.progetti.find((p) => p.nome === piano.progetto);
@@ -3243,10 +3506,9 @@
       '/piano',
       `PIANO: ${piano.titolo || 'Senza titolo'}`,
       `ID PIANO: ${piano.id}`,
-      `TIPO: ${nomeTipo(piano.tipo)}`,
       `PROGETTO: ${piano.progetto}${progetto ? ` (${progetto.cartella})` : ''}`,
       ...(attivita ? [`ATTIVITÀ: ${attivita.titolo}`] : []),
-      `MAPPA: ${piano.mappa || 'non scelta'}`,
+      `MAPPA: ${piano.mappa && mappePronte(piano) ? piano.mappa : 'saltata'}`,
       `MAPPE GIÀ FATTE: ${mappe.length ? mappe.join(' · ') : 'nessuna'}`,
       '',
       fasi.join('\n\n'),
@@ -3681,6 +3943,68 @@
       scriviCampo(campo, righe.join('\n'));
       document.querySelector(`[data-scelte="${fase.id}.${c.id}"]`).innerHTML = htmlScelte(fase, c, campo.value);
     },
+    'opzione-vuoto'(b) {
+      const { fase, c, campo } = datiCampo(b);
+      if (!campo || !c?.opzioneVuoto) return;
+      const eraAttiva = opzioneVuotaAttiva(c, campo.value);
+      scriviCampo(campo, eraAttiva ? '' : c.opzioneVuoto.testo);
+      b.classList.toggle('attiva', !eraAttiva);
+      campo.hidden = !eraAttiva;
+      document.querySelector(`[data-scelte="${fase.id}.${c.id}"]`)?.toggleAttribute('hidden', !eraAttiva);
+    },
+    'chiamata-piu'(b) {
+      const scelta = b.closest('.chiamate').querySelector('.scelta-chiamata');
+      scelta.hidden = !scelta.hidden;
+    },
+    'file-piu'(b) {
+      const scelta = b.closest('.elenco-file').querySelector('.scelta-chiamata');
+      scelta.hidden = !scelta.hidden;
+    },
+    'file-nuovo'(b) {
+      const box = b.closest('.elenco-file');
+      ridisegnaFile(box, [...fileDalDom(box), nuovoFile(b.dataset.tipo)]);
+    },
+    'file-togli'(b) {
+      const box = b.closest('.elenco-file');
+      const voci = [...box.querySelectorAll('.voce-file')];
+      ridisegnaFile(box, fileDalDom(box).filter((_, i) => voci[i] !== b.closest('.voce-file')));
+    },
+    'funzione-piu'(b) {
+      const { box, voce, lato, voci } = latoDelleFunzioni(b);
+      voci[voce].lati[lato].funzioni.push(nuovaFunzione());
+      ridisegnaFile(box, voci);
+    },
+    'funzione-togli'(b) {
+      const { box, voce, lato, voci } = latoDelleFunzioni(b);
+      voci[voce].lati[lato].funzioni.splice([...b.closest('.lato-file').querySelectorAll('.funzione-file')].indexOf(b.closest('.funzione-file')), 1);
+      ridisegnaFile(box, voci);
+    },
+    'chiamata-nuova'(b) {
+      const modello = chiamateDalDom(b.closest('.chiamate'));
+      modello.push(nuovaChiamata(b.dataset.tipo));
+      ridisegnaChiamate(b.closest('.chiamate'), modello);
+    },
+    'chiamata-togli'(b) {
+      const box = b.closest('.chiamate');
+      const blocchi = [...box.querySelectorAll('.chiamata')];
+      ridisegnaChiamate(box, chiamateDalDom(box).filter((_, i) => blocchi[i] !== b.closest('.chiamata')));
+    },
+    // Il metodo propone se c'è un body (POST, PUT, PATCH) ma non toglie mai un body già compilato
+    'chiamata-metodo'(b) {
+      const rotta = b.closest('.rotta');
+      rotta.querySelectorAll('.riga-rotta .pillola').forEach((p) => p.classList.toggle('attiva', p === b));
+      const conBody = METODI_CON_BODY.includes(b.dataset.metodo);
+      const bodyAttivo = rotta.querySelector('[data-param="body"]').classList.contains('attiva');
+      if (conBody && !bodyAttivo) impostaParametro(rotta, 'body', true);
+      if (!conBody && bodyAttivo && !rotta.querySelector('input[data-k="body"]').value.trim()) impostaParametro(rotta, 'body', false);
+      sincronizzaChiamate(b.closest('.chiamate'));
+    },
+    'chiamata-param'(b) {
+      const rotta = b.closest('.rotta');
+      if (b.dataset.param === 'nessuno') PARAMETRI.forEach(([id]) => impostaParametro(rotta, id, false));
+      else impostaParametro(rotta, b.dataset.param, !b.classList.contains('attiva'));
+      sincronizzaChiamate(b.closest('.chiamate'));
+    },
     async 'genera-sintesi'() {
       const piano = pianoAperto();
       const testo = testoRichiesta(piano);
@@ -3695,29 +4019,16 @@
     async 'vai-fase'(b) {
       if (!b.dataset.fase) return;
       const piano = pianoAperto();
-      const blocco = bloccoMappa(piano);
-      if (blocco && fasiDelPiano(piano).findIndex((f) => f.id === b.dataset.fase) > 0) return avvisa(blocco, true);
       await salvaPiano();
       stato.fasePiano = b.dataset.fase;
       disegna();
       document.querySelector('.scheda.piano.aperta')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
-    // Cambiando tipo si resta sulla stessa fase se esiste anche nel tipo nuovo, altrimenti si torna alla prima
-    async 'tipo-piano'(b) {
-      const piano = pianoAperto();
-      if (piano.tipo === b.dataset.tipo) return;
-      await salvaPiano();
-      piano.tipo = b.dataset.tipo;
-      if (!fasiDelPiano(piano).some((f) => f.id === stato.fasePiano)) stato.fasePiano = fasiDelPiano(piano)[0].id;
-      pianoNuovo = null;
-      await api('/api/piani/aggiorna', { id: piano.id, tipo: piano.tipo });
-      disegna();
-    },
     async 'mappa-piano'(b) {
       const piano = pianoAperto();
-      if (piano.mappa === b.dataset.mappa || piano.generazione?.stato === 'in-corso') return;
+      if (piano.generazione?.stato === 'in-corso') return;
       await salvaPiano();
-      piano.mappa = b.dataset.mappa;
+      piano.mappa = piano.mappa === b.dataset.mappa ? '' : b.dataset.mappa;
       pianoNuovo = null;
       await api('/api/piani/aggiorna', { id: piano.id, mappa: piano.mappa });
       disegna();
@@ -3962,6 +4273,94 @@
   });
   document.addEventListener('change', (e) => {
     if (e.target.type === 'checkbox') modificaPiano(e);
+  });
+
+  // NON È UN BUG
+  // La spunta si salva come le altre; qui si oscurano e si bloccano i campi della fase senza ridisegnarla
+  document.addEventListener('change', (e) => {
+    if (e.target.dataset?.spunta !== 'nonBug') return;
+    e.target.closest('.fase-piano').querySelector('.campi-bug').toggleAttribute('inert', e.target.checked);
+    e.target.closest('.non-bug').classList.toggle('attiva', e.target.checked);
+  });
+
+  // CHIAMATE: LETTURA E SALVATAGGIO
+  // Si rilegge tutto dai pulsanti e dai campi, poi si scrive il testo nella textarea nascosta: da lì parte il salvataggio normale
+  function chiamateDalDom(box) {
+    return [...box.querySelectorAll('.chiamata')].map((el) => ({
+      tipo: el.dataset.tipo,
+      cosa: el.querySelector('[data-k="cosa"]').value,
+      rotte: [...el.querySelectorAll('.rotta')].map((r) => ({
+        metodo: r.querySelector('.riga-rotta .attiva')?.dataset.metodo || '',
+        rotta: r.querySelector('[data-k="rotta"]').value.trim(),
+        ...Object.fromEntries(PARAMETRI.map(([id]) => [id, r.querySelector(`[data-param="${id}"]`).classList.contains('attiva') ? r.querySelector(`input[data-k="${id}"]`).value : null])),
+      })),
+    }));
+  }
+
+  const campoStrutturato = (box) => box.closest('.campo-strutturato').querySelector('textarea[data-campo]');
+  const sincronizzaChiamate = (box) => scriviCampo(campoStrutturato(box), testoChiamate(chiamateDalDom(box)));
+
+  function ridisegnaChiamate(box, modello) {
+    const testo = testoChiamate(modello);
+    scriviCampo(campoStrutturato(box), testo);
+    box.outerHTML = htmlChiamate(testo);
+  }
+
+  const fileDalDom = (box) => [...box.querySelectorAll('.voce-file')].map((el) => ({
+    tipo: el.dataset.tipo,
+    cosa: el.querySelector('[data-k="cosa"]').value,
+    lati: [...el.querySelectorAll('.lato-file')].map((lato) => ({
+      nome: lato.querySelector('[data-k="nome"]').value.trim(),
+      cartella: lato.querySelector('[data-k="cartella"]').value.trim(),
+      funzioni: [...lato.querySelectorAll('.funzione-file')].map((f) => ({
+        nome: f.querySelector('[data-k="nome-funzione"]').value.trim(),
+        cosa: f.querySelector('[data-k="cosa-funzione"]').value,
+      })),
+    })),
+  }));
+
+  // La funzione si aggiunge o si toglie nel suo lato: servono gli indici del file e del lato dentro l'elenco
+  function latoDelleFunzioni(bottone) {
+    const box = bottone.closest('.elenco-file');
+    const voce = bottone.closest('.voce-file');
+    return {
+      box,
+      voce: [...box.querySelectorAll('.voce-file')].indexOf(voce),
+      lato: [...voce.querySelectorAll('.lato-file')].indexOf(bottone.closest('.lato-file')),
+      voci: fileDalDom(box),
+    };
+  }
+
+  function ridisegnaFile(box, voci) {
+    const testo = testoFile(voci);
+    scriviCampo(campoStrutturato(box), testo);
+    box.outerHTML = htmlElencoFile(testo);
+  }
+
+  document.addEventListener('input', (e) => {
+    const box = e.target.closest?.('.elenco-file');
+    if (box) scriviCampo(campoStrutturato(box), testoFile(fileDalDom(box)));
+  });
+
+  // Un parametro attivo mostra la sua riga dei campi; "Nessuno" è acceso quando non ce n'è nessuno
+  function impostaParametro(rotta, id, attivo) {
+    rotta.querySelector(`[data-param="${id}"]`).classList.toggle('attiva', attivo);
+    rotta.querySelector(`input[data-k="${id}"]`).hidden = !attivo;
+    rotta.querySelector('[data-param="nessuno"]').classList.toggle('attiva', PARAMETRI.every(([p]) => !rotta.querySelector(`[data-param="${p}"]`).classList.contains('attiva')));
+  }
+
+  document.addEventListener('input', (e) => {
+    const box = e.target.closest?.('.chiamate');
+    if (box) sincronizzaChiamate(box);
+  });
+
+  // Una rotta con :id o {id} ha i path params
+  document.addEventListener('change', (e) => {
+    if (!e.target.matches?.('.chiamate input[data-k="rotta"]') || !/[:{]\w/.test(e.target.value)) return;
+    const rotta = e.target.closest('.rotta');
+    if (rotta.querySelector('[data-param="path"]').classList.contains('attiva')) return;
+    impostaParametro(rotta, 'path', true);
+    sincronizzaChiamate(e.target.closest('.chiamate'));
   });
   window.addEventListener('beforeunload', () => salvaPiano());
 
@@ -4646,13 +5045,13 @@
       const [faseId, campoId] = id.split('.');
       const fase = stato.fasiPiano.find((f) => f.id === faseId);
       if (!piano || !fase) return null;
-      const intestazione = { piano: piano.titolo, tipo: nomeTipo(piano.tipo), fase: fase.nome };
+      const intestazione = { piano: piano.titolo, fase: fase.nome };
       if (perCampo) {
         const c = fase.campi.find((x) => x.id === campoId);
         if (!c) return null;
         return { etichetta: `${fase.nome} › ${c.nome}`, dati: { ...intestazione, campo: c.nome, testo: String(piano.fasi[fase.id]?.campi[c.id] || '').trim() || '(vuoto)' } };
       }
-      const campi = Object.fromEntries(delTipo(fase.campi, piano.tipo).map((c) => [c.nome, String(piano.fasi[fase.id]?.campi[c.id] || '').trim() || '(vuoto)']));
+      const campi = Object.fromEntries(fase.campi.map((c) => [c.nome, String(piano.fasi[fase.id]?.campi[c.id] || '').trim() || '(vuoto)']));
       return { etichetta: `fase ${fase.nome}`, dati: { ...intestazione, campi } };
     }
 

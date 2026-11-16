@@ -555,80 +555,59 @@ function eliminaAttivita(dati) {
   return { eliminata: dati.id };
 }
 
-// TIPI E FASI DEI PIANI
-// Il ragionamento che un senior fa prima di scrivere codice, diverso per ogni tipo di lavoro: la pagina disegna i campi da qui.
-// tipi dice in quali tipi compare una fase, un campo o una spunta (assente = in tutti); i campi facoltativi non bloccano la fase
-const TIPI_PIANO = [
-  { id: 'aggiunta', nome: 'Aggiunta' },
-  { id: 'modifica', nome: 'Modifica' },
-  { id: 'bug', nome: 'Bug fix' },
-  { id: 'minore', nome: 'Modifica minore' },
-];
-const GRANDI = ['aggiunta', 'modifica', 'bug'];
-const MAPPE_PIANO = ['dati', 'struttura', 'entrambi', 'nessuna'];
+const MAPPE_PIANO = ['dati', 'struttura', 'entrambi'];
 
+// FASI DEI PIANI
+// Il ragionamento che un senior fa prima di scrivere codice: la pagina disegna i campi da qui.
+// Un unico piano per ogni lavoro. soloBug: la fase serve solo se il lavoro è un bug, altrimenti resta vuota
+// I campi facoltativi non bloccano la fase
 const FASI_PIANO = [
   {
     id: 'richiesta', nome: 'Richiesta',
     campi: [
-      { id: 'obiettivo', nome: 'Obiettivo', aiuto: 'cosa vuoi ottenere, visto da chi usa l\'app', tipi: ['aggiunta', 'modifica'], esempio: "Dalle Impostazioni l'utente cambia la lingua dell'app e la vede subito, senza riavviarla." },
-      { id: 'cambia', nome: 'Cosa deve cambiare rispetto a oggi', aiuto: 'prima succede questo, dopo deve succedere quest\'altro', tipi: ['modifica'], esempio: "Oggi dopo il login si apre sempre la Dashboard; dopo, deve aprirsi l'ultima sezione usata." },
-      { id: 'atteso', nome: 'Comportamento atteso', aiuto: 'cosa dovrebbe succedere', tipi: ['bug'], esempio: "Toccando \"Invia\" il messaggio compare subito nella chat." },
-      { id: 'problema', nome: 'Problema', aiuto: 'cosa succede invece, su quale piattaforma o dispositivo', tipi: ['bug'], esempio: "Su Android 14 il messaggio resta grigio con l'orologio e compare solo riaprendo la chat; su iOS va." },
-      { id: 'cosa', nome: 'Cosa cambiare', aiuto: 'testo, colore, dimensione, posizione, formattazione', tipi: ['minore'], esempio: "Il colore del pulsante \"Elimina\" nella scheda di un file." },
-      { id: 'dove', nome: 'Dove', aiuto: 'pagina, flusso o file', facoltativo: true, esempio: "Schermata Passkey (PasskeysScreen.jsx), flusso di registrazione di una nuova passkey." },
-      { id: 'valore', nome: 'Valore nuovo', aiuto: 'il valore finale (vuoto: lo scegli guardando il resto del progetto)', tipi: ['minore'], facoltativo: true, esempio: "Il rosso danger di colors.js, lo stesso degli altri pulsanti di eliminazione." },
-      { id: 'vincoli', nome: 'Cosa non deve cambiare', tipi: ['minore'], facoltativo: true, esempio: "Dimensione, posizione e testo del pulsante." },
-      { id: 'note', nome: 'Note', aiuto: 'vincoli, dubbi, esempi', tipi: GRANDI, facoltativo: true, esempio: "Il backend è già pronto su beta; non so se va gestito anche il caso senza rete." },
+      { id: 'obiettivo', nome: 'Obiettivo', aiuto: 'cosa vuoi ottenere, visto da chi usa l\'app; per un bug, cosa dovrebbe succedere', esempio: "Dalle Impostazioni l'utente cambia la lingua dell'app e la vede subito, senza riavviarla." },
+      { id: 'cambia', facoltativo: true, nome: 'Cosa deve cambiare rispetto a oggi', aiuto: 'prima succede questo, dopo deve succedere quest\'altro', esempio: "Oggi dopo il login si apre sempre la Dashboard; dopo, deve aprirsi l'ultima sezione usata." },
+      { id: 'vincoli', nome: 'Cosa non deve cambiare', facoltativo: true, esempio: "Il flusso di accesso resta com'è: cambia solo cosa si apre dopo il login." },
+      { id: 'note', nome: 'Note', aiuto: 'vincoli, dubbi, esempi', facoltativo: true, esempio: "Il backend è già pronto su beta; non so se va gestito anche il caso senza rete." },
     ],
     spunte: [
-      { id: 'frase', nome: 'So dire in una frase cosa cambia per chi usa l\'app', tipi: GRANDI },
-      { id: 'invariato', nome: 'So cosa NON deve cambiare', tipi: GRANDI },
-      { id: 'elemento', nome: 'So esattamente quale elemento cambio', tipi: ['minore'] },
+      { id: 'frase', nome: 'So dire in una frase cosa cambia per chi usa l\'app' },
+      { id: 'invariato', nome: 'So cosa NON deve cambiare' },
     ],
   },
   {
-    id: 'oggi', nome: 'Com\'è oggi', tipi: ['modifica'],
+    id: 'bug', nome: 'Bug', soloBug: true,
     campi: [
-      { id: 'come', nome: 'Come funziona adesso', aiuto: 'con parole tue, passo per passo', esempio: "L'utente preme Accedi, l'app chiama /auth/login e, se va bene, apre sempre la Dashboard." },
-      { id: 'chi', nome: 'Chi lo usa', aiuto: 'schermate, componenti o funzioni che dipendono da questo comportamento', esempio: "LoginScreen, la funzione login di AuthContext e il deep link di SetupAccount." },
-    ],
-    spunte: [{ id: 'provato', nome: 'L\'ho provato di persona com\'è adesso' }],
-  },
-  {
-    id: 'riprodurre', nome: 'Riprodurre', tipi: ['bug'],
-    campi: [
+      { id: 'problema', facoltativo: true, nome: 'Problema', aiuto: 'cosa succede invece, su quale piattaforma o dispositivo', esempio: "Su Android 14 il messaggio resta grigio con l'orologio e compare solo riaprendo la chat; su iOS va." },
       { id: 'ambiente', nome: 'Dove lo provi', aiuto: 'dispositivo, sistema, account e dati usati', facoltativo: true, esempio: "Pixel 7, Android 14, account di test." },
-      { id: 'passi', nome: 'Passi per riprodurlo', aiuto: 'un passo per riga', esempio: "1. apro una chat · 2. spengo il Wi-Fi · 3. invio un messaggio · 4. riaccendo il Wi-Fi." },
-      { id: 'quando', nome: 'Quando succede', aiuto: 'sempre, a volte, solo in certi casi', esempio: "Sempre al primo invio dopo che la rete torna; dal secondo invio in poi no." },
+      { id: 'passi', nome: 'Passi per riprodurlo', aiuto: 'un passo per riga', facoltativo: true, esempio: "1. apro una chat · 2. spengo il Wi-Fi · 3. invio un messaggio · 4. riaccendo il Wi-Fi." },
+      { id: 'quando', nome: 'Quando succede', aiuto: 'sempre, a volte, solo in certi casi', facoltativo: true, esempio: "Sempre al primo invio dopo che la rete torna; dal secondo invio in poi no." },
+      { id: 'dove', facoltativo: true, nome: 'Dove pensi che sia', aiuto: 'file e funzione', esempio: "chatService.js, funzione sendMessage, oppure la riconnessione in SocketManager.jsx." },
+      { id: 'ipotesi', facoltativo: true, nome: 'La tua ipotesi sulla causa', aiuto: 'perché secondo te succede', esempio: "Quando la rete torna il socket si ricollega, ma il messaggio rimasto in coda non viene rimandato." },
+      { id: 'verificato', facoltativo: true, nome: 'Cosa hai verificato', aiuto: 'log, breakpoint, prove fatte e cosa ti hanno detto', esempio: "Con un console.log in sendMessage ho visto che la chiamata parte, ma in quel momento il socket è \"disconnected\"." },
     ],
     spunte: [
+      { id: 'nonBug', nome: 'Non è un bug' },
       { id: 'riprodotto', nome: 'L\'ho riprodotto almeno una volta' },
-      { id: 'frase', nome: 'So spiegare il problema in una frase' },
+      { id: 'sparito', nome: 'Il bug non si riproduce più' },
     ],
   },
   {
-    id: 'indagare', nome: 'Indagare', tipi: GRANDI,
+    id: 'indagare', nome: 'Indagare',
     campi: [
-      { id: 'aggancio', nome: 'Dove si aggancia il codice nuovo', aiuto: 'file, componente o funzione da cui parte', tipi: ['aggiunta'], esempio: "SettingsScreen.jsx: la nuova voce va nella lista delle impostazioni, sotto \"Tema\"." },
-      { id: 'riuso', nome: 'Cosa esiste già che puoi riusare', aiuto: 'componenti, funzioni, servizi, stili', tipi: ['aggiunta'], esempio: "LanguageContext (cambia già la lingua) e BaseModal per la finestra di scelta." },
-      { id: 'posizione', nome: 'Dove sta il comportamento attuale', aiuto: 'file e funzione', tipi: ['modifica'], esempio: "AuthContext.js, funzione login: è lì che si decide dove andare dopo l'accesso." },
-      { id: 'dipendenze', nome: 'Chi altro usa quel codice', tipi: ['modifica'], esempio: "TwoFAScreen e RecoveryCode chiamano la stessa funzione dopo la verifica." },
-      { id: 'dove', nome: 'Dove pensi che sia', aiuto: 'file e funzione', tipi: ['bug'], esempio: "chatService.js, funzione sendMessage, oppure la riconnessione in SocketManager.jsx." },
-      { id: 'ipotesi', nome: 'La tua ipotesi sulla causa', aiuto: 'perché secondo te succede', tipi: ['bug'], esempio: "Quando la rete torna il socket si ricollega, ma il messaggio rimasto in coda non viene rimandato." },
-      { id: 'verificato', nome: 'Cosa hai verificato', aiuto: 'log, breakpoint, prove fatte e cosa ti hanno detto', tipi: ['bug'], esempio: "Con un console.log in sendMessage ho visto che la chiamata parte, ma in quel momento il socket è \"disconnected\"." },
+      { id: 'come', nome: 'Come funziona adesso', aiuto: 'con parole tue, scritto a testo', esempio: "L'utente preme Accedi, l'app chiama /auth/login e, se va bene, apre sempre la Dashboard." },
+      { id: 'zone', nome: 'Zone interessate', aiuto: 'a parole, quali zone dell\'app sono interessate', esempio: "La schermata di accesso, il salvataggio della sessione e la navigazione che si apre subito dopo il login." },
     ],
     spunte: [
+      { id: 'provato', nome: 'L\'ho provato di persona com\'è adesso' },
       { id: 'letto', nome: 'Ho letto il codice intorno, non solo il punto che mi interessa' },
       { id: 'cercato', nome: 'Ho cercato se nel progetto esiste già qualcosa di simile' },
     ],
   },
   {
-    id: 'progettare', nome: 'Progettare', tipi: GRANDI,
+    id: 'progettare', nome: 'Progettare',
     campi: [
       { id: 'modifica', nome: 'La modifica a parole', aiuto: 'cosa cambi, senza scrivere codice', esempio: "Dopo il login leggo l'ultima sezione salvata e, se c'è, apro quella invece della Dashboard." },
-      { id: 'file', nome: 'File e funzioni che tocchi', esempio: "AuthContext.js (login), BottomNavigator.jsx (salva la sezione aperta), AsyncStorage." },
-      { id: 'dati', nome: 'Cosa entra e cosa esce', aiuto: 'cosa riceve, cosa produce, cosa modifica, quali chiamate al backend; se non lo sai scrivi "da verificare"', esempio: "Entra: il nome della sezione (stringa). Esce: la navigazione verso quella sezione. Nessuna chiamata nuova al backend." },
       { id: 'alternative', nome: 'Alternative scartate e perché', aiuto: "un'altra strada possibile e perché non la scegli, oppure perché non ce ne sono", esempio: "Salvarla nel backend: scartata, serve solo su questo dispositivo e richiederebbe una API nuova." },
     ],
     spunte: [
@@ -637,11 +616,18 @@ const FASI_PIANO = [
     ],
   },
   {
-    id: 'rischi', nome: 'Rischi', tipi: GRANDI,
+    id: 'codice', nome: 'Codice',
     campi: [
-      { id: 'rompe', nome: 'Cosa può rompersi', aiuto: 'gli altri file che usano la funzione che cambi', esempio: "Il deep link di SetupAccount, che dopo il login naviga anche lui." },
-      { id: 'limite', nome: 'Casi limite', aiuto: 'cosa succede in ogni situazione, oppure "non applicabile"', esempio: "Sezione salvata che non esiste più (es. \"Gestione utenti\" per chi non è ADMG); primo accesso senza nulla di salvato." },
-      { id: 'sicurezza', nome: 'Sicurezza e dati', aiuto: 'quali dati salvi, dove e chi li legge; se non salvi nulla scrivi "nessun dato salvato"', esempio: "Salvo solo il nome della sezione, niente token né dati dell'utente; al logout lo cancello." },
+      { id: 'chiamate', nome: 'Chiamate al backend', facoltativo: true, chiamate: true },
+      { id: 'file', nome: 'File', facoltativo: true, elencoFile: true },
+    ],
+    spunte: [],
+  },
+  {
+    id: 'rischi', nome: 'Rischi',
+    campi: [
+      { id: 'limite', nome: 'Casi limite', facoltativo: true, soloPulsanti: true, aiuto: 'scegli cosa deve succedere in ogni situazione che riguarda la tua modifica', esempio: "Sezione salvata che non esiste più (es. \"Gestione utenti\" per chi non è ADMG); primo accesso senza nulla di salvato." },
+      { id: 'sicurezza', nome: 'Sicurezza e dati', facoltativo: true, opzioneVuoto: { nome: 'Non salvo dati', testo: 'Nessun dato salvato' }, aiuto: 'quali dati salvi, dove e chi li legge', esempio: "Salvo solo il nome della sezione, niente token né dati dell'utente; al logout lo cancello." },
     ],
     spunte: [
       { id: 'chiamanti', nome: 'Ho controllato chi altro usa quello che cambio' },
@@ -652,13 +638,11 @@ const FASI_PIANO = [
     id: 'verifica', nome: 'Verifica',
     campi: [
       { id: 'prova', nome: 'Come provi che funziona', aiuto: 'passi manuali o test automatici', esempio: "Login, vado in Agenda, chiudo l'app e rientro: si apre Agenda. Poi lo stesso con un utente non ADMG." },
-      { id: 'finito', nome: 'Quando è davvero finito', aiuto: 'criteri concreti, non "quando sembra andare"', tipi: GRANDI, esempio: "Va su Android e iOS, il primo accesso apre la Dashboard, il logout cancella la sezione salvata." },
+      { id: 'finito', nome: 'Quando è davvero finito', aiuto: 'criteri concreti, non "quando sembra andare"', esempio: "Va su Android e iOS, il primo accesso apre la Dashboard, il logout cancella la sezione salvata." },
     ],
     spunte: [
-      { id: 'richiesto', nome: 'Fa quello che chiedeva la Richiesta', tipi: ['aggiunta', 'modifica'] },
-      { id: 'sparito', nome: 'Il bug non si riproduce più', tipi: ['bug'] },
-      { id: 'resto', nome: 'Le parti collegate funzionano ancora', tipi: GRANDI },
-      { id: 'pagina', nome: 'Il resto della pagina è rimasto uguale', tipi: ['minore'] },
+      { id: 'richiesto', nome: 'Fa quello che chiedeva la Richiesta' },
+      { id: 'resto', nome: 'Le parti collegate funzionano ancora' },
     ],
   },
 ];
@@ -669,48 +653,34 @@ const FASI_PIANO = [
 // forma: "elenco" (•) o "passi" (1. 2. …); traccia: testo di partenza da completare;
 // controlli: "vago" (parole come "sistemo", "non va"), "file" (serve un file o una funzione), "breve" (troppo corto)
 const GUIDA_CAMPI = {
-  'richiesta.obiettivo': { guida: ['Cosa potrà fare chi usa l\'app dopo la modifica, che oggi non può fare.'], controlli: ['vago', 'breve'] },
+  'richiesta.obiettivo': { guida: ['Cosa potrà fare chi usa l\'app dopo la modifica, che oggi non può fare. Per un bug: cosa dovrebbe succedere.'], controlli: ['vago', 'breve'] },
   'richiesta.cambia': { traccia: 'Oggi: \nDopo: ', guida: ['Cosa succede oggi e cosa deve succedere dopo, visto da chi usa l\'app.'], controlli: ['vago'] },
-  'richiesta.atteso': { guida: ['Cosa dovrebbe vedere o poter fare l\'utente nel punto in cui oggi le cose vanno storte.'], controlli: ['vago', 'breve'] },
-  'richiesta.problema': { traccia: 'Cosa succede: \nDispositivo e piattaforma: \nDa quando (se lo sai): ', guida: ['Cosa vedi succedere e su quale dispositivo, non la causa che immagini.'], controlli: ['vago'] },
-  'richiesta.cosa': { guida: ['L\'elemento come lo vedi sullo schermo e cosa vuoi cambiare (testo, colore, dimensione, posizione).'] },
-  'richiesta.dove': { guida: ["Schermata, flusso o file coinvolti, uno per riga. Se non lo sai, lascialo vuoto: la mappa lo cerca partendo dall'obiettivo."], controlli: ['file'] },
+  'bug.problema': { traccia: 'Cosa succede: \nDispositivo e piattaforma: \nDa quando (se lo sai): ', guida: ['Cosa vedi succedere e su quale dispositivo, non la causa che immagini.'], controlli: ['vago'] },
   'richiesta.vincoli': { guida: ['Ciò che deve restare com\'è, una cosa per riga.'] },
   'richiesta.note': { guida: ['Vincoli, dubbi o esempi; va bene anche ciò che non sai.'] },
-  'oggi.come': { forma: 'passi', guida: ['I passi con cui funziona adesso, nell\'ordine in cui succedono.'], controlli: ['breve'] },
-  'oggi.chi': { guida: ['Schermate, componenti o funzioni che dipendono da questo comportamento.'], controlli: ['file'] },
-  'riprodurre.ambiente': { guida: ['Dispositivo, sistema, account e dati usati per provarlo.'] },
-  'riprodurre.passi': { forma: 'passi', guida: ['Cosa tocchi o digiti, un passo per riga, fino a vedere il problema.'] },
-  'riprodurre.quando': { guida: ['Se succede sempre, a volte o solo in certi casi.'], controlli: ['vago'] },
-  'indagare.aggancio': { guida: ['File e funzione da cui parte il codice nuovo.'], controlli: ['file'] },
-  'indagare.riuso': { guida: ['Cosa esiste già nel progetto e puoi riusare, una riga per cosa.'], controlli: ['file'] },
-  'indagare.posizione': { guida: ['File e funzione in cui si decide il comportamento di oggi.'], controlli: ['file'] },
-  'indagare.dipendenze': { guida: ['Gli altri file che usano questa funzione (cercala con Ctrl+Shift+F).'], controlli: ['file'] },
-  'indagare.dove': { guida: ['File e funzione dove pensi sia il problema, dal più probabile.'], controlli: ['file'] },
-  'indagare.ipotesi': { guida: ['Perché secondo te succede, in una frase che puoi verificare.'], controlli: ['vago'] },
-  'indagare.verificato': { guida: ['Le prove fatte e cosa hanno mostrato, una per riga.'] },
+  'indagare.come': { guida: ['Come funziona adesso, scritto a parole, in modo che si capisca anche senza il codice davanti.'], controlli: ['breve'] },
+  'indagare.zone': { guida: ['Spiega a parole quali zone dell\'app (schermate, flussi, servizi) sono interessate e perché.'], controlli: ['vago', 'breve'] },
+  'bug.ambiente': { guida: ['Dispositivo, sistema, account e dati usati per provarlo.'] },
+  'bug.passi': { forma: 'passi', guida: ['Cosa tocchi o digiti, un passo per riga, fino a vedere il problema.'] },
+  'bug.quando': { guida: ['Se succede sempre, a volte o solo in certi casi.'], controlli: ['vago'] },
+  'bug.dove': { guida: ['File e funzione dove pensi sia il problema, dal più probabile.'], controlli: ['file'] },
+  'bug.ipotesi': { guida: ['Perché secondo te succede, in una frase che puoi verificare.'], controlli: ['vago'] },
+  'bug.verificato': { guida: ['Le prove fatte e cosa hanno mostrato, una per riga.'] },
   'progettare.modifica': { guida: ['Cosa cambi, a parole, senza scrivere codice.'], controlli: ['vago', 'breve'] },
-  'progettare.file': { guida: ['I file e le funzioni che tocchi, con cosa ci fai.'], controlli: ['file'] },
-  'progettare.dati': {
-    traccia: 'Entra: \nEsce: \nStato che cambia: \nChiamate al backend: ',
-    tutte: true,
-    guida: ['Cosa riceve la funzione, cosa produce, cosa modifica e quali chiamate al backend fa; se non lo sai scrivi "da verificare".'],
-  },
+  'codice.chiamate': { guida: ['Vuoto = il piano non coinvolge il backend. Con + aggiungi una chiamata: NUOVA (il backend deve crearla), MODIFICA (cambia: prima e dopo) o ESISTENTE (c\'è già e la usi così com\'è).'] },
+  'codice.file': { guida: ['Vuoto = nessun file coinvolto. Con + aggiungi un file: NUOVO (lo crei tu), MODIFICA (esiste e cambia) o ESISTENTE (esiste e lo usi così com\'è). Dentro ogni file, con + aggiungi le funzioni che ti interessano.'] },
   'progettare.alternative': {
     traccia: 'Alternativa 1: \nPerché la scarto: ',
     tutte: true,
     guida: ['Un\'altra strada possibile e perché non la scegli; se non ce ne sono scrivi "Unica strada:" e il motivo.'],
   },
-  'rischi.rompe': { guida: ['Gli altri file che usano la funzione che cambi e cosa succede a loro (cercala con Ctrl+Shift+F).'], controlli: ['file'] },
   'rischi.limite': {
     traccia: 'Valore vuoto o mancante: \nErrore di rete o del server: \nUtente senza permessi o con ruolo diverso: \nDoppio tocco o azione ripetuta: \nApp messa in background o chiusa a metà: ',
-    tutte: true,
-    guida: ['Cosa deve succedere a chi usa l\'app in ogni situazione; scrivi "non applicabile" o "da provare" se non lo sai.'],
+    guida: ['Per ogni situazione scegli cosa deve succedere; salta quelle che non c\'entrano con la tua modifica.'],
   },
   'rischi.sicurezza': {
     traccia: 'Cosa salvo e dove: \nChi può leggerlo: \nCosa resta dopo il logout: ',
-    tutte: true,
-    guida: ['Quali dati salvi, dove e chi può leggerli; se non salvi nulla scrivi "nessun dato salvato".'],
+    guida: ['Se non salvi niente premi «Non salvo dati»; altrimenti scrivi cosa salvi e dove, chi può leggerlo e cosa resta dopo il logout.'],
   },
   'verifica.prova': { forma: 'passi', guida: ['I passi per provare che funziona, con cosa devi vedere alla fine.'] },
   'verifica.finito': { guida: ['I criteri per dire "finito", ciascuno controllabile con un sì o un no.'], controlli: ['vago'] },
@@ -718,11 +688,6 @@ const GUIDA_CAMPI = {
 // RIPRENDI DA
 // Un campo si può partire dal testo già scritto in un altro: il tasto compare solo a campo vuoto e con la fonte compilata
 const RIPRENDI_DA = {
-  'indagare.aggancio': 'richiesta.dove',
-  'indagare.posizione': 'richiesta.dove',
-  'indagare.dove': 'richiesta.dove',
-  'rischi.rompe': 'indagare.dipendenze',
-  'verifica.prova': 'rischi.limite',
 };
 
 // STRUMENTI DEI CAMPI
@@ -739,21 +704,16 @@ const CASI_LIMITE = [
 ].map(([titolo, opzioni]) => ({ titolo, opzioni: [...opzioni, 'non applicabile', 'da provare'] }));
 
 const STRUMENTI_CAMPI = {
-  'oggi.chi': { codice: true, riempi: true, diagramma: true, domanda: 'Quali schermate, componenti o funzioni dipendono da come funziona oggi questo comportamento? Una riga per voce, con il file.' },
-  'oggi.come': { diagramma: true },
-  'indagare.aggancio': { codice: true },
-  'indagare.riuso': { codice: true },
-  'indagare.posizione': { codice: true, diagramma: true },
-  'indagare.dipendenze': { codice: true, riempi: true, diagramma: true, domanda: 'Quali file usano la funzione che cambio in questo piano? Una riga per file, con cosa ci fa. Cerca nel codice.' },
-  'indagare.dove': { codice: true },
-  'progettare.file': { codice: true },
-  'progettare.dati': { diagramma: true, domanda: 'Per la modifica di questo piano: cosa riceve la funzione, cosa produce, quale stato modifica, quali chiamate al backend fa? Quattro righe: Entra, Esce, Stato che cambia, Chiamate al backend. Cita i passi D della mappa se c\'entrano.' },
+  'indagare.zone': { codice: true, diagramma: true, domanda: 'Quali zone dell\'app sono interessate dal comportamento di questo piano? Spiegamelo a parole, senza elenchi. Cerca nel codice.' },
+  'indagare.come': { diagramma: true },
+  'bug.dove': { codice: true },
+  'codice.chiamate': { domanda: 'Per la modifica di questo piano: quali chiamate al backend servono? Una riga per chiamata: NUOVA, MODIFICA (prima e dopo) o ESISTENTE, con metodo, rotta, body o params e cosa fa. Se non ne servono dimmelo.' },
+  'codice.file': { codice: true },
   'progettare.alternative': { domanda: 'Che alternative ha la modifica di questo piano? Massimo 3, ognuna con "Perché la scarto". Dimmi quale consiglieresti.' },
-  'rischi.rompe': { codice: true, riempi: true, diagramma: true, domanda: 'Cosa può rompersi con la modifica di questo piano? Una riga per file che usa ciò che cambio, con cosa succederebbe. Cerca nel codice e cita i passi D della mappa se c\'entrano.' },
   'rischi.limite': { scelte: CASI_LIMITE, domanda: 'Per la modifica di questo piano: cosa succede oggi, nel codice, con valore vuoto, errore di rete, ruolo diverso, doppio tocco, app in background? Una riga per caso.' },
   'rischi.sicurezza': {
     scelte: [
-      { titolo: 'Cosa salvo e dove', opzioni: ['nessun dato salvato', 'solo in memoria', 'AsyncStorage', 'Keychain', 'backend'] },
+      { titolo: 'Cosa salvo e dove', opzioni: ['solo in memoria', 'AsyncStorage', 'Keychain', 'backend'] },
       { titolo: 'Chi può leggerlo', opzioni: ['solo l\'utente', 'anche il backend', 'altri utenti', 'nessuno'] },
       { titolo: 'Cosa resta dopo il logout', opzioni: ['niente (viene cancellato)', 'resta sul telefono', 'da verificare'] },
     ],
@@ -826,10 +786,25 @@ function completaPiano(piano) {
     campi: { ...vuoto[f.id].campi, ...piano.fasi?.[f.id]?.campi },
     spunte: { ...vuoto[f.id].spunte, ...piano.fasi?.[f.id]?.spunte },
   }]));
-  const { branch, ...resto } = piano;
+  // I piani nati con i tipi: il comportamento atteso o "cosa cambiare" diventano l'Obiettivo
+  const vecchi = piano.fasi || {};
+  const vecchiRichiesta = vecchi.richiesta?.campi || {};
+  if (!String(fasi.richiesta.campi.obiettivo || '').trim()) fasi.richiesta.campi.obiettivo = vecchiRichiesta.atteso || vecchiRichiesta.cosa || '';
+  // I campi solo bug stavano in Richiesta, Com'è oggi, Indagare e Riprodurre: ora sono tutti nella fase Bug
+  const doveStavano = { problema: ['richiesta'], ambiente: ['oggi', 'riprodurre'], passi: ['oggi', 'riprodurre'], quando: ['oggi', 'riprodurre'], dove: ['indagare'], ipotesi: ['indagare'], verificato: ['indagare'] };
+  for (const [id, fasiVecchie] of Object.entries(doveStavano)) {
+    if (String(fasi.bug.campi[id] || '').trim()) continue;
+    const fase = fasiVecchie.find((f) => String(vecchi[f]?.campi?.[id] || '').trim());
+    fasi.bug.campi[id] = fase ? vecchi[fase].campi[id] : '';
+  }
+  // Com'è oggi e Indagare sono confluite in Indagare: Come funziona adesso e Zone interessate
+  const oggi = vecchi.oggi?.campi || {};
+  const indagare = vecchi.indagare?.campi || {};
+  if (!String(fasi.indagare.campi.come || '').trim()) fasi.indagare.campi.come = oggi.come || '';
+  if (!String(fasi.indagare.campi.zone || '').trim()) fasi.indagare.campi.zone = [indagare.file, oggi.chi, indagare.posizione, indagare.dipendenze].filter((x) => String(x || '').trim()).join('\n');
+  const { branch, tipo, ...resto } = piano;
   return {
     ...resto,
-    tipo: TIPI_PIANO.some((t) => t.id === piano.tipo) ? piano.tipo : 'aggiunta',
     mappa: MAPPE_PIANO.includes(piano.mappa) ? piano.mappa : '',
     mappe: Array.isArray(piano.mappe) ? piano.mappe : [],
     backend: blocchiBackend(piano.backend, piano.aggiornato),
@@ -1131,18 +1106,16 @@ function collegaGenerate(prog, id, tipi, testo) {
 // Un claude -p in sola lettura legge i messaggi del backend del piano e propone il testo dei campi della Richiesta.
 // Risponde subito con le proposte: la pagina decide dove scriverle (solo nei campi vuoti)
 const TIMEOUT_COMPILA_MS = 3 * 60 * 1000;
-const NOMI_TIPI_PIANO = { aggiunta: 'Aggiunta', modifica: 'Modifica', bug: 'Bug fix', minore: 'Modifica minore' };
+const CAMPI_RICHIESTA = FASI_PIANO.find((f) => f.id === 'richiesta').campi;
 
-const campiRichiestaDelTipo = (tipo) => FASI_PIANO.find((f) => f.id === 'richiesta').campi.filter((c) => !c.tipi || c.tipi.includes(tipo));
-
-const promptCompila = (tipo, campi, messaggi) => [
+const promptCompila = (campi, messaggi) => [
   'Sei avviato in automatico dalla sala di controllo e nessuno può risponderti. Non modificare nessun file.',
-  `Qui sotto ci sono i messaggi che il backend ha mandato per un piano di lavoro di tipo "${NOMI_TIPI_PIANO[tipo] || tipo}" sull'app del progetto della cartella corrente. Capisci cosa chiedono e proponi il testo dei campi della Richiesta.`,
+  `Qui sotto ci sono i messaggi che il backend ha mandato per un piano di lavoro sull'app del progetto della cartella corrente. Capisci cosa chiedono e proponi il testo dei campi della Richiesta.`,
   'Campi (id: nome, cosa scrivere):',
   ...campi.map((c) => `- ${c.id}: ${c.nome}${c.aiuto ? `, ${c.aiuto}` : ''}`),
   'Regole:',
   '- scrivi come lo scriverebbe chi usa l\'app: italiano semplice, 1-3 frasi per campo, senza ripetere i messaggi per intero.',
-  '- nei campi che sono elenchi (dove, vincoli, note) una voce per riga, ognuna che comincia con "- ".',
+  '- nei campi che sono elenchi (vincoli, note) una voce per riga, ognuna che comincia con "- ".',
   '- puoi leggere il codice dei punti citati per capire di cosa si parla; non inventare nomi di file o funzioni che non esistono.',
   '- se i messaggi non dicono nulla su un campo, lascia "" in quel campo: niente supposizioni.',
   `L'ultima riga della risposta deve essere solo questa, con JSON valido su una riga e solo gli id dei campi qui sopra:`,
@@ -1157,9 +1130,8 @@ async function compilaRichiesta(prog, dati) {
   if (!piano) throw errore(404, 'piano non trovato');
   const messaggi = blocchiBackend(piano.backend, piano.aggiornato).map((b) => b.testo).filter(Boolean);
   if (!messaggi.length) throw errore(400, 'aggiungi prima un messaggio del backend');
-  const tipo = completaPiano(piano).tipo;
-  const campi = campiRichiestaDelTipo(tipo);
-  const risultato = await avviaClaude(prog, ['--tools', 'Read,Grep,Glob', '--model', 'sonnet'], promptCompila(tipo, campi, messaggi), TIMEOUT_COMPILA_MS, 'compila');
+  const campi = CAMPI_RICHIESTA;
+  const risultato = await avviaClaude(prog, ['--tools', 'Read,Grep,Glob', '--model', 'sonnet'], promptCompila(campi, messaggi), TIMEOUT_COMPILA_MS, 'compila');
   const riga = risultato.trim().split('\n').reverse().find((r) => r.trim().startsWith('COMPILA:'));
   if (!riga) throw errore(502, 'claude non ha restituito i campi');
   let valori;
@@ -1260,13 +1232,15 @@ function creaPiano(prog, dati) {
   const adesso = Date.now();
   const piano = {
     id: crypto.randomUUID(), progetto: prog.nome, titolo: testo(dati.titolo || attivita?.titolo, 200),
-    tipo: attivita?.problema ? 'bug' : 'aggiunta', mappa: MAPPE_PIANO.includes(attivita?.mappa) ? attivita.mappa : '', mappe: [],
+    mappa: MAPPE_PIANO.includes(attivita?.mappa) ? attivita.mappa : '', mappe: [],
     attivita: attivita?.id || '', backend: blocchiBackend(attivita?.backend, adesso), fasi: pianoVuoto(), creato: adesso, aggiornato: adesso,
   };
   if (attivita) {
     const richiesta = piano.fasi.richiesta.campi;
-    Object.assign(richiesta, { dove: attivita.dove || '', note: attivita.note || '', problema: attivita.problema || '' });
-    richiesta[piano.tipo === 'bug' ? 'atteso' : 'obiettivo'] = attivita.obiettivo || '';
+    const note = [attivita.note, attivita.dove ? `Dove: ${attivita.dove}` : ''].filter(Boolean).join('\n');
+    Object.assign(richiesta, { note });
+    piano.fasi.bug.campi.problema = attivita.problema || '';
+    richiesta.obiettivo = attivita.obiettivo || '';
   }
   scriviJson(FILE_PIANI, [...leggiJson(FILE_PIANI), piano]);
   return piano;
@@ -1293,13 +1267,9 @@ function aggiornaPiano(dati) {
     piano.stato = dati.stato;
   }
   if (dati.mappa !== undefined) {
-    if (!MAPPE_PIANO.includes(dati.mappa)) throw errore(400, 'mappa non valida');
+    if (dati.mappa !== '' && !MAPPE_PIANO.includes(dati.mappa)) throw errore(400, 'mappa non valida');
     if (generazioni.get(piano.id)?.stato === 'in-corso' && dati.mappa !== piano.mappa) throw errore(409, 'la mappa si sta generando: cambiala quando ha finito');
     piano.mappa = dati.mappa;
-  }
-  if (dati.tipo !== undefined) {
-    if (!TIPI_PIANO.some((t) => t.id === dati.tipo)) throw errore(400, 'tipo di piano non valido');
-    piano.tipo = dati.tipo;
   }
   for (const fase of FASI_PIANO) {
     const nuova = dati.fasi?.[fase.id];
@@ -1351,12 +1321,12 @@ async function materialePiano(prog, id) {
   if (!grezzo) throw errore(404, 'piano non trovato');
   const piano = completaPiano(grezzo);
   if (piano.terminato) throw errore(409, 'il piano è già terminato');
-  const campi = FASI_PIANO.filter((f) => !f.tipi || f.tipi.includes(piano.tipo)).flatMap((f) => f.campi
-    .filter((c) => (!c.tipi || c.tipi.includes(piano.tipo)) && String(piano.fasi[f.id].campi[c.id] || '').trim())
+  const campi = FASI_PIANO.filter((f) => !(f.soloBug && piano.fasi[f.id].spunte.nonBug)).flatMap((f) => f.campi
+    .filter((c) => String(piano.fasi[f.id].campi[c.id] || '').trim())
     .map((c) => `${f.nome} › ${c.nome}: ${String(piano.fasi[f.id].campi[c.id]).trim()}`));
   const branch = leggiJson(FILE_ATTIVITA).find((a) => a.id === piano.attivita)?.branch || '';
   const codice = await codiceDelPiano(prog, branch).catch(() => '');
-  const testoPiano = [`PIANO: ${piano.titolo || 'Senza titolo'}`, `TIPO: ${NOMI_TIPI_PIANO[piano.tipo] || piano.tipo}`, '', ...campi, codice].join('\n');
+  const testoPiano = [`PIANO: ${piano.titolo || 'Senza titolo'}`, '', ...campi, codice].join('\n');
   return { piano, testo: testoPiano };
 }
 
@@ -1388,7 +1358,7 @@ const AZIONI = {
   '/api/attivita/aggiorna': (d) => aggiornaAttivita(d),
   '/api/attivita/elimina': (d) => eliminaAttivita(d),
   '/api/attivita/riordina': (d) => riordinaAttivita(progetto(d), d.ids),
-  '/api/piani': (d) => ({ tipi: TIPI_PIANO, fasi: FASI_PIANO, piani: piani(progetto(d)) }),
+  '/api/piani': (d) => ({ fasi: FASI_PIANO, piani: piani(progetto(d)) }),
   '/api/piani/crea': (d) => creaPiano(progetto(d), d),
   '/api/piani/aggiorna': (d) => aggiornaPiano(d),
   '/api/piani/elimina': (d) => eliminaPiano(d),
@@ -1703,15 +1673,36 @@ function attivitaDaTerminale([azione, ...args]) {
 }
 
 // TERMINALE DI VS CODE
-// Il task "Sala di controllo" lancia questa modalità all'apertura del progetto: aspetta Invio e poi avvia la sala
-function attendiInvio() {
-  const chiedi = () => process.stdout.write('\nPremi Invio per avviare la sala di controllo… ');
-  process.stdin.setEncoding('utf8');
-  process.stdin.on('data', () => {
-    avviaInSfondo(true);
-    setTimeout(chiedi, 1500);
+// Il task "Sala di controllo" lancia questa modalità all'apertura del progetto: mostra se la sala è accesa e aspetta un tasto
+// (Invio = avvia o apri nel browser, F = ferma, Ctrl+C = esce dal terminale ma lascia la sala com'è)
+function attendiTasti() {
+  let ultimoStato = null;
+  const leggiStato = (fine) => {
+    const prova = http.get({ host: HOST, port: PORTA, path: '/api/stato', headers: { host: HOST_AMMESSI[0] }, timeout: 1500 }, (res) => {
+      res.resume();
+      fine(true);
+    });
+    prova.on('timeout', () => prova.destroy());
+    prova.on('error', () => fine(false));
+  };
+  const mostra = (attiva) => process.stdout.write(`\nSala di controllo: ${attiva ? 'ATTIVA' : 'SPENTA'} su ${ORIGINE}\nInvio → ${attiva ? 'apri nel browser' : 'avvia e apri'} · F → ferma\n`);
+  const controlla = () => leggiStato((attiva) => {
+    if (attiva === ultimoStato) return;
+    ultimoStato = attiva;
+    mostra(attiva);
   });
-  chiedi();
+
+  if (process.stdin.isTTY) process.stdin.setRawMode(true);
+  process.stdin.setEncoding('utf8');
+  process.stdin.on('data', (tasto) => {
+    if (tasto.includes('\u0003')) process.exit(0);
+    if (tasto.trim().toLowerCase() === 'f') ferma();
+    else if (!tasto.trim()) avviaInSfondo(true);
+    else return;
+    setTimeout(controlla, 1500);
+  });
+  setInterval(controlla, 3000);
+  controlla();
 }
 
 // PIANI DA TERMINALE
@@ -1727,7 +1718,7 @@ function pianiDaTerminale([azione, ...args]) {
 }
 
 const comando = process.argv[2];
-if (comando === '--terminale') attendiInvio();
+if (comando === '--terminale') attendiTasti();
 else if (comando === '--piani') pianiDaTerminale(process.argv.slice(3));
 else if (comando === '--attivita') attivitaDaTerminale(process.argv.slice(3));
 else if (comando === '--contesto') contestoDaTerminale(process.argv.slice(3));
