@@ -75,6 +75,6 @@ Quando scrivi codice rispetta sempre queste regole semantiche:
 
 # SALA DI CONTROLLO
 
-* quando l'utente chiede di aggiungere, elencare o spostare attività (task) nella sala di controllo usa `node \~/.claude/sala-controllo/server.js --attivita` (senza altri argomenti mostra l'uso; `progetti` dà i nomi dei progetti). Aggiungile solo su sua richiesta esplicita, con titolo breve e note solo se servono.
+* quando l'utente chiede di aggiungere, elencare o spostare attività (task) nella sala di controllo usa `node \~/.claude/sala-controllo/server.js --attivita` (senza altri argomenti mostra l'uso; `progetti` dà i nomi dei progetti). Aggiungile solo su sua richiesta esplicita, con note solo se servono. Il titolo ha sempre questo formato: massimo 2 parole in MAIUSCOLO che riassumono la richiesta, poi due punti e un brevissimo testo (come il titolo normale). Esempio: `SINCRO CALENDARIO: sincronizzare l'agenda con il calendario del telefono`.
 * non modificare a mano i file in `\~/.claude/sala-controllo/dati/` e non leggere il gettone.
 

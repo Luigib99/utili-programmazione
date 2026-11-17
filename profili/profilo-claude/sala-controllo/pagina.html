@@ -19,6 +19,8 @@
     --accent-bg: rgba(217, 119, 87, .14);
     --ok: #6cc07e;
     --ok-bg: rgba(108, 192, 126, .12);
+    --blu: #58a6ff;
+    --blu-bg: rgba(88, 166, 255, .12);
     --danger: #e5534b;
     --danger-text: #ff9f97;
     --chat: var(--accent);
@@ -137,6 +139,7 @@
   }
 
   .togli-progetto:hover { color: var(--text); }
+  .togli-progetto.pericolo svg { width: 12px; height: 12px; }
 
   .togli-progetto.pericolo {
     width: auto;
@@ -374,6 +377,16 @@
   }
 
   .scheda.fatto .titolo { color: var(--ok); }
+
+  /* ATTIVITÀ IN ATTESA DEL BACKEND */
+  .scheda.atteso-backend,
+  .scheda.atteso-backend:hover {
+    border-color: var(--blu);
+    background: linear-gradient(var(--blu-bg), var(--blu-bg)), var(--surface);
+    box-shadow: 0 0 0 1px rgba(88, 166, 255, .2), 0 8px 28px rgba(88, 166, 255, .08);
+  }
+
+  .scheda.atteso-backend .titolo { color: var(--blu); }
 
   .scheda.branch.corrente .titolo code { color: #fff; }
   .riga.aperta .titolo, .scheda.attiva .titolo { color: #fff; }
@@ -1376,6 +1389,7 @@
   .scheda .stati .btn.icona.attuale.da-fare { background: var(--text); }
   .scheda .stati .btn.icona.attuale.in-corso { background: var(--accent); color: #fff; }
   .scheda .stati .btn.icona.attuale.fatto { background: var(--ok); }
+  .scheda .stati .btn.icona.attuale.atteso-backend { background: var(--blu); }
 
   .etichetta {
     padding: 1px 7px;
@@ -2418,6 +2432,9 @@
   // FILTRI PER STATO
   // Valgono per attività e piani: "Aperti" (da fare + in corso) è quello di partenza, "Tutte" sta in fondo
   const FILTRI_STATO = [['aperti', 'Aperti'], ...STATI, ['tutte', 'Tutte']];
+  // Le attività hanno un quarto stato: aspettano che il backend finisca la sua parte (i piani non lo hanno)
+  const STATI_ATTIVITA = [['atteso-backend', 'Atteso backend'], ['da-fare', 'Da fare'], ['in-corso', 'In corso'], ['fatto', 'Fatto']];
+  const FILTRI_ATTIVITA = [['aperti', 'Aperti'], ...STATI_ATTIVITA, ['tutte', 'Tutte']];
   const passaFiltro = (filtro, statoElemento) => filtro === 'tutte' || (filtro === 'aperti' ? statoElemento !== 'fatto' : statoElemento === filtro);
   // Le attività mai trascinate non hanno ancora un ordine: vanno in fondo, dalla più recente
   const perOrdine = (a, b) => (a.ordine ?? Infinity) - (b.ordine ?? Infinity) || b.creata - a.creata;
@@ -2448,6 +2465,7 @@
     'da-fare': '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
     'in-corso': '<path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/>',
     fatto: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+    'atteso-backend': '<path d="M6 2.5h12M6 21.5h12"/><path d="M7 2.5v4l5 5.5-5 5.5v4M17 2.5v4l-5 5.5 5 5.5v4"/>',
     maniglia: '<circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/>',
     copia: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
     passa: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="m10 17 5-5-5-5"/><path d="M15 12H4"/>',
@@ -3574,7 +3592,7 @@
   function htmlScheda(a) {
     const voci = CAMPI_SCHEDA.filter((c) => c.id !== 'titolo' && a[c.id])
       .map((c) => `<dt>${c.nome}</dt><dd>${esc(a[c.id])}</dd>`).join('');
-    const classeStato = { 'in-corso': ' attiva', fatto: ' fatto' }[a.stato] || '';
+    const classeStato = { 'in-corso': ' attiva', fatto: ' fatto', 'atteso-backend': ' atteso-backend' }[a.stato] || '';
     return `<div class="scheda${classeStato}${stato.aperte.has(a.id) ? ' aperta' : ''}" data-id="${a.id}" data-blocco="attivita" data-bid="${a.id}">
       <div class="testa" data-azione="espandi" data-id="${a.id}">
         <span class="maniglia" title="Trascina per spostare l'attività">${icona('maniglia')}</span>
@@ -3586,7 +3604,7 @@
         ${a.branch ? `<span class="etichetta">${esc(a.branch)}</span>` : ''}
         <span class="aggiunta" title="Data di aggiunta">${quando(a.creata)}</span>
         <div class="stati">
-          ${STATI.map(([id, nome]) => `<button class="btn icona ${id}${id === a.stato ? ' attuale' : ''}" data-azione="sposta" data-id="${a.id}" data-stato="${id}"
+          ${STATI_ATTIVITA.map(([id, nome]) => `<button class="btn icona ${id}${id === a.stato ? ' attuale' : ''}" data-azione="sposta" data-id="${a.id}" data-stato="${id}"
             title="${id === a.stato ? `È in ${nome}` : `Sposta in ${nome}`}">${icona(id)}</button>`).join('')}
         </div>
         <button class="btn icona" data-azione="elimina-attivita" data-id="${a.id}" title="Elimina l'attività">${icona('elimina')}</button>
@@ -3607,7 +3625,7 @@
       .sort(perOrdine);
     const conta = (id) => stato.attivita.filter((a) => passaFiltro(id, a.stato)).length;
     return `<div class="barra">
-        ${FILTRI_STATO.map(([id, nome]) => `<button class="pillola${stato.filtroAttivita === id ? ' attiva' : ''}" data-filtro-attivita="${id}">${nome} · ${conta(id)}</button>`).join('')}
+        ${FILTRI_ATTIVITA.map(([id, nome]) => `<button class="pillola${stato.filtroAttivita === id ? ' attiva' : ''}" data-filtro-attivita="${id}">${nome} · ${conta(id)}</button>`).join('')}
         <span class="spazio"></span>
         ${stato.nuova ? '' : '<button class="btn primario" data-azione="nuova">+ Nuova attività</button>'}
       </div>
@@ -3617,22 +3635,32 @@
 
 
   // CONFERMA
-  // Le azioni irreversibili chiedono un secondo clic entro 4 secondi
+  // Le azioni irreversibili chiedono un secondo clic entro 4 secondi: il pulsante diventa rosso con una V.
+  // Senza avviso il pulsante resta grande quanto prima; se l'azione fa perdere qualcosa di preciso (es. dei commit) `avviso` lo scrive accanto alla V e si allarga
   let daConfermare = null;
-  function confermato(bottone, domanda = 'Sicuro? Clicca di nuovo') {
+  function confermato(bottone, avviso = '') {
     if (daConfermare === bottone) {
       daConfermare = null;
       return true;
     }
     daConfermare = bottone;
     const contenuto = bottone.innerHTML;
-    bottone.textContent = domanda;
+    const titolo = bottone.title;
+    const stile = bottone.getAttribute('style');
+    const { width, height } = bottone.getBoundingClientRect();
+    const raggio = getComputedStyle(bottone).borderRadius;
+    bottone.innerHTML = `${icona('fatto')}${avviso ? ` <span>${esc(avviso)}</span>` : ''}`;
+    bottone.title = avviso || 'Clicca la V per confermare';
     bottone.classList.add('pericolo');
+    if (!avviso) Object.assign(bottone.style, { width: `${width}px`, height: `${height}px`, padding: '0', borderRadius: raggio });
     setTimeout(() => {
       if (daConfermare !== bottone) return;
       daConfermare = null;
       bottone.innerHTML = contenuto;
+      bottone.title = titolo;
       bottone.classList.remove('pericolo');
+      if (stile === null) bottone.removeAttribute('style');
+      else bottone.setAttribute('style', stile);
     }, 4000);
     return false;
   }
@@ -3724,7 +3752,7 @@
       await carica();
     },
     async torna(b) {
-      if (!confermato(b, `Togli ${b.dataset.tolti} commit: clicca di nuovo`)) return;
+      if (!confermato(b, `Togli ${b.dataset.tolti} commit`)) return;
       const esito = await api('/api/branch/torna', { hash: b.dataset.hash });
       avvisa(`Tolti ${esito.tolti} commit. Per annullare: git reset --hard ${esito.prima.slice(0, 8)}`);
       await carica();
@@ -4057,7 +4085,7 @@
     async 'elimina-branch'(b) {
       const avanti = b.dataset.avanti === '' ? null : Number(b.dataset.avanti);
       const forza = avanti !== 0;
-      if (!confermato(b, forza ? `Perdi ${avanti ?? 'i'} commit non uniti: clicca di nuovo` : 'Sicuro? Clicca di nuovo')) return;
+      if (!confermato(b, forza ? `Perdi ${avanti ?? 'i'} commit non uniti` : '')) return;
       await api('/api/branch/elimina', { nome: b.dataset.nome, forza });
       avvisa(`Branch ${b.dataset.nome} eliminato`);
       await carica();
@@ -4087,7 +4115,7 @@
       stato.progetto ? disegna() : disegnaSenzaProgetti();
     },
     async 'rimuovi-progetto'(b) {
-      if (!confermato(b, 'Togliere? Clicca di nuovo')) return;
+      if (!confermato(b)) return;
       await api('/api/progetti/rimuovi', { nome: b.dataset.nome });
       avvisa(`${b.dataset.nome} tolto dalla sala: cartella, attività e piani restano dove sono`);
       await apriProgetto(stato.progetto === b.dataset.nome ? '' : stato.progetto);
@@ -4128,7 +4156,7 @@
     async sposta(b) {
       if (b.classList.contains('attuale')) return;
       await api('/api/attivita/aggiorna', { id: b.dataset.id, stato: b.dataset.stato });
-      avvisa(`Spostata in ${STATI.find(([id]) => id === b.dataset.stato)[1]}`);
+      avvisa(`Spostata in ${STATI_ATTIVITA.find(([id]) => id === b.dataset.stato)[1]}`);
       await carica();
     },
     modifica(b) {

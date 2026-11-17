@@ -124,7 +124,7 @@ const PROPOSTA_ATTIVITA = `CREARE ATTIVITÀ: solo se l'utente ti chiede di crear
 \`\`\`attivita
 {"titolo": "...", "obiettivo": "...", "problema": "", "dove": "...", "mappa": "dati", "note": ""}
 \`\`\`
-- titolo obbligatorio (breve, max 200 caratteri); obiettivo = cosa vuole ottenere; problema solo se è un bug (cosa succede, cosa si aspettava, come riprodurlo); dove = pagina, flusso o file (cercalo nel codice se serve); mappa = "dati", "struttura" o "entrambi"; note = vincoli o dubbi. Lascia "" i campi che non sai.
+- titolo obbligatorio, sempre in questo formato: massimo 2 parole in MAIUSCOLO che riassumono la richiesta, poi due punti e un brevissimo testo (es. "SINCRO CALENDARIO: sincronizza l'agenda con il calendario del telefono"), max 200 caratteri; obiettivo = cosa vuole ottenere; problema solo se è un bug (cosa succede, cosa si aspettava, come riprodurlo); dove = pagina, flusso o file (cercalo nel codice se serve); mappa = "dati", "struttura" o "entrambi"; note = vincoli o dubbi. Lascia "" i campi che non sai.
 - l'utente vede ogni blocco come una scheda con il tasto Aggiungi: non dire che l'hai aggiunta, perché la aggiunge lui.
 - se non te lo chiede, non scrivere blocchi "attivita".`;
 
