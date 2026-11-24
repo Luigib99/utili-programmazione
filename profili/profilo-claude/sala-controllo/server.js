@@ -23,6 +23,7 @@ const FILE_ARCHIVIO = path.join(CARTELLA_DATI, 'archivio.json');
 const FILE_PIANI = path.join(CARTELLA_DATI, 'piani.json');
 const FILE_LEZIONI = path.join(CARTELLA_DATI, 'lezioni.json');
 const FILE_CONTESTI = path.join(CARTELLA_DATI, 'contesti.json');
+const FILE_QUIZ = path.join(CARTELLA_DATI, 'quiz.json');
 const FILE_LEZIONI_MD = path.join(os.homedir(), 'Lezioni.md');
 const CARTELLA_MAPPE = path.join(os.homedir(), 'flussi');
 const FILE_PAGINA = path.join(__dirname, 'pagina.html');
@@ -1330,7 +1331,10 @@ async function materialePiano(prog, id) {
   return { piano, testo: testoPiano };
 }
 
-const quiz = require('./quiz-lezione')({ avviaClaude, testo, materialePiano, salvaLezione: aggiungiLezione, terminaPiano });
+const quiz = require('./quiz-lezione')({
+  avviaClaude, testo, materialePiano, salvaLezione: aggiungiLezione, terminaPiano,
+  archivio: { leggi: () => leggiJson(FILE_QUIZ), scrivi: (lista) => scriviJson(FILE_QUIZ, lista) },
+});
 
 const senzaFile = (sessioni) => sessioni.map(({ file, ...s }) => s);
 
@@ -1374,6 +1378,9 @@ const AZIONI = {
   '/api/lezioni/elimina': (d) => eliminaLezione(d.id),
   '/api/quiz/avvia': (d) => quiz.avvia(progetto(d), d),
   '/api/quiz/rispondi': (d) => quiz.rispondi(progetto(d), d),
+  '/api/quiz/elenco': (d) => quiz.elenco(progetto(d)),
+  '/api/quiz/riprendi': (d) => quiz.riprendi(progetto(d), d),
+  '/api/quiz/elimina': (d) => quiz.elimina(progetto(d), d),
   '/api/codice/albero': (d) => letturaCodice.albero(progetto(d)),
   '/api/codice/file': (d) => letturaCodice.file(progetto(d), d.percorso),
   '/api/codice/importato-da': (d) => letturaCodice.importatoDa(progetto(d), d.percorso),

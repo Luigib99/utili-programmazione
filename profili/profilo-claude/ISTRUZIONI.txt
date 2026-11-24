@@ -8,7 +8,8 @@ La struttura della cartella rispecchia quella di ~/.claude:
 - skills/         skill personali:
                   - piano: mappa e revisione dei piani scritti nella sala di controllo (può implementare)
                   - implementazione: analisi, modifiche proposte e rischi; scrive i file solo dopo "procedi"
-                  - revisione: revisione del codice in sola lettura (anche "prova io"); per correggere si usa implementazione
+                  - revisione: rilegge richieste e codice implementato in chat, spiega cosa è stato fatto, se risponde alla richiesta e i rischi (sola lettura); per correggere si usa implementazione
+                  - spiegazione: spiega passo per passo l'ultimo piano, con l'origine di ogni funzione (nostra, libreria, framework)
                   REGOLA: solo piano e implementazione possono modificare file, tutte le altre skill sono in sola lettura
                   - insegnante / senior-developer / traduttore: le tre modalità di Chattino come skill
                     (insegnante: lezione guidata; senior-developer: guida in 4 fasi; traduttore: testo in parole semplici)

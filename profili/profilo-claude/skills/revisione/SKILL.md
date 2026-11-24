@@ -1,90 +1,87 @@
 ---
 name: revisione
-description: Revisione di codice nel progetto con problemi classificati per gravità
-argument-hint: "<vuoto per lo schema, testo libero o TITOLO: / COSA REVISIONARE: / COSA DOVREBBE FARE: / FOCUS: / MODALITÀ: / MAPPA: dati, struttura, entrambi o nessuna / CONFERMA: no>"
+description: Rilegge tutto ciò che l'utente ha richiesto e tutto ciò che è stato implementato nella chat, poi spiega nel dettaglio cosa è stato fatto, se rispecchia la richiesta e quali rischi ci sono
+argument-hint: "[parte da revisionare, opzionale: un file, un passo o un tema]"
 disable-model-invocation: true
 model: opus
 effort: high
 ---
 
-# REVISIONE DI CODICE
+# REVISIONE
 
-Il codice da revisionare è: $ARGUMENTS
+Parte da revisionare (opzionale): $ARGUMENTS
 
-L'obiettivo è che l'utente impari a giudicare criticamente il codice (anche quello prodotto dall'AI): capire cosa è sbagliato, perché e con quali conseguenze. Tieni le segnalazioni concrete: niente problemi ipotetici, niente preferenze stilistiche spacciate per errori. Ogni messaggio segue il "Formato dei messaggi" di `~/.claude/shared/scheda-richiesta.md` e il "FORMATO RISPOSTE" del CLAUDE.md globale.
+Segui il FORMATO RISPOSTE del CLAUDE.md globale (titoli `##`, `---` tra le sezioni, un'idea per riga, grassetto, flussi con frecce).
 
-## Struttura
+## Obiettivo
 
-1. passa a SCHEDA RICHIESTA.
-2. passa a DIAGRAMMA.
-3. se `MODALITÀ` è "prova io", passa a REVISIONE UTENTE, altrimenti passa a REVISIONE.
-4. passa a SEGNALAZIONI.
-5. passa a CORREZIONE.
-6. passa a RIEPILOGO.
+L'utente ha perso il filo del codice. La revisione gli restituisce il quadro completo:
 
-In qualsiasi fase:
+1. cosa ha chiesto
+2. cosa è stato implementato davvero
+3. se le due cose coincidono
+4. cosa può andare storto
 
-- se non è chiaro cosa revisionare, usa in ordine: il codice evidenziato nell'IDE, il file aperto, le modifiche del branch corrente rispetto a main. Se nessuno è disponibile, chiedi all'utente.
-- se la richiesta è ambigua, chiedi chiarimenti prima di andare avanti.
+Sola lettura: non modificare mai file.
 
-## SCHEDA RICHIESTA
+## Fonti da rileggere
 
-- leggi e applica le regole in `~/.claude/shared/scheda-richiesta.md`.
-- campi (\* = obbligatorio):
-  - `TITOLO`\*: vedi "Campi comuni".
-  - `COSA REVISIONARE`\*: file, porzione di codice o branch.
-  - `COSA DOVREBBE FARE`\*: il comportamento che il codice deve avere, secondo l'utente; è il riferimento per giudicare la correttezza.
-  - `FOCUS`: tutto (predefinito) oppure solo alcuni aspetti (logica, sicurezza, prestazioni, convenzioni del progetto).
-  - `MODALITÀ`: normale (predefinita) oppure "prova io".
-  - `MAPPA`\*: vedi "Campi comuni"; in questa skill ha anche il valore `nessuna` (nessun diagramma). Quando la chiedi con le opzioni a scelta, aggiungi `nessuna` alle tre solite.
-  - `CONFERMA`: predefinita sì. Se l'utente scrive "senza conferma" (o `CONFERMA: no`), la scheda NON va confermata: mostrala in breve e passa subito alla fase successiva, senza `## DOMANDA` e senza fermarti.
-- `COSA REVISIONARE` si può dedurre con l'ordine indicato sopra ("In qualsiasi fase"); `COSA DOVREBBE FARE` si può dedurre dal codice solo se è evidente, altrimenti chiedilo.
-- se `FOCUS` è limitato, segnala comunque i problemi 🔴 Gravi trovati fuori dal focus.
+Rileggi TUTTO prima di rispondere, senza fidarti della memoria della chat:
 
-## DIAGRAMMA
+- le richieste esplicite dell'utente in questa conversazione (anche le correzioni e i cambi di idea: vale l'ultima versione)
 
-- se `MAPPA` è `nessuna`, salta questa fase: niente diagramma e nessun riferimento D/S nelle fasi successive (indica i problemi solo con nomeFile:riga).
-- genera il diagramma scelto in `MAPPA` (vedi "Campi comuni"): qui non c'è una spiegazione a passi, quindi il diagramma precede direttamente la fase successiva.
-- il diagramma rappresenta la parte dell'app in cui si inserisce il codice revisionato (se è un branch, quella toccata dalle modifiche), non solo le righe richieste.
-- se `MODALITÀ` è "prova io", il diagramma deve essere **neutro**: non usare `incoming: "lost"`; né `action`, né `payloadName`, né i testi (`physical`, `simple`, `does`, `purpose`, `receives`, `returns`, `explanation`), né `fields`, `badges` o `label` devono mettere in risalto i punti problematici.
-- in chat indica il percorso del file (cliccabile); con `entrambi`, una riga per file con davanti `DATI` o `STRUTTURA`.
+- i piani e i passi proposti da `/implementazione` o `/piano`
 
-## REVISIONE UTENTE
+- il codice **reale** ora presente nei file toccati (Read/Grep, non quello mostrato in chat)
 
-- fermati e attendi che l'utente elenchi i problemi che ha trovato, con il motivo.
-- l'utente può indicare i punti con i numeri del diagramma (es. "al passo D4…", "tra D5 e D6…", "S3"): usali come riferimento, e se un numero non esiste o è ambiguo chiedi.
-- dopo la sua risposta passa a REVISIONE e, in SEGNALAZIONI, indica per ogni problema se l'utente lo aveva trovato, se lo aveva mancato o se ne aveva segnalato uno che non è un problema (spiegando perché).
+- le modifiche non ancora committate (`git diff`, `git status`) e quelle del branch rispetto a main
 
-## REVISIONE
+- chi usa il codice modificato (chiamanti) e cosa il codice richiama
 
-- leggi il codice e il contesto necessario a capirlo (chiamanti, funzioni usate, dati in ingresso), non solo le righe richieste.
-- verifica ogni problema prima di segnalarlo: se non riesci a descrivere uno scenario concreto in cui si manifesta, non segnalarlo.
-- controlla in quest'ordine: correttezza (bug, casi limite, errori non gestiti), sicurezza, coerenza con l'architettura e le convenzioni del progetto, leggibilità e REGOLE SEMANTICHE del CLAUDE.md globale.
+Se è stato dato un argomento, restringi la revisione a quella parte. Se non c'è nulla da revisionare in chat, usa il diff del branch; se manca anche quello, chiedi all'utente.
 
-## SEGNALAZIONI
+## Struttura della risposta
 
-- raggruppa i problemi per gravità, dal più grave:
-  - sottotitoli `### GRAVI`, `### MEDI`, `### MINORI` (senza emoji) e, all'inizio di ogni problema, l'emoji del suo gruppo:
-  - 🔴 Gravi: bug, crash, problemi di sicurezza, perdita di dati.
-  - 🟡 Medi: casi limite non gestiti, incoerenze con l'architettura, codice fragile.
-  - 🟡 Minori: leggibilità, nomenclatura, commenti, formattazione.
-- numera i problemi in modo progressivo tra tutti i gruppi.
-- per ogni problema indica:
-  - nomeFile:riga in grassetto, con sotto il codice reale del punto in un riquadro.
-  - il punto del diagramma in cui si trova (es. "D4 (`getAllUsers`)" o "S3 (`footerContainer`)"); omettilo se `MAPPA` è `nessuna`.
-  - cosa è sbagliato.
-  - perché è sbagliato e lo scenario concreto in cui si manifesta.
-  - come lo correggeresti, a parole e senza codice.
-- se non trovi problemi, dillo in modo esplicito senza inventarne.
-- chiudi con `## RICHIESTA` (preceduta da `---`): "Per correggerli lancia /implementazione indicando i numeri dei problemi.", poi fermati e attendi.
+Una sezione `##` per fase, in quest'ordine.
 
-## CORREZIONE
+1. `## RICHIESTA ORIGINALE`: elenco puntato di ciò che l'utente ha chiesto, requisito per requisito, nelle sue parole essenziali.
 
-- questa skill è in sola lettura: non modificare mai nessun file, nemmeno se l'utente scrive "procedi" o indica dei numeri.
-- se l'utente chiede di correggere, rispondi con la sola sezione `## RICHIESTA`: "Lancia /implementazione indicando i numeri dei problemi da correggere."
-- se l'utente contesta un problema, valuta la sua obiezione: se è valida ritira la segnalazione, se non lo è spiega perché.
+2. `## COSA È STATO FATTO`: la parte principale, nel dettaglio.
 
-## RIEPILOGO
+   - un `###` per ogni file modificato o creato (nome in grassetto, link al file)
+   - sotto ogni file, un punto per ogni funzione, hook, variabile o blocco aggiunto o cambiato: `- elemento = cosa fa`
+   - per ogni funzione richiamata indica l'**origine**: NOSTRA (con file:riga), LIBRERIA (con nome pacchetto), FRAMEWORK, NUOVA
+   - un flusso con frecce che mostra come i pezzi lavorano insieme, dall'azione dell'utente al risultato
 
-- indica quali problemi restano aperti e quali l'utente ha contestato, con l'esito.
-- fai il "Controllo finale" della scheda.
+3. `## RISPONDE ALLA RICHIESTA?`: tabella o checklist requisito per requisito.
+
+   - `- [x]` soddisfatto, `- [ ]` mancante o parziale
+   - cosa è stato fatto in più rispetto alla richiesta (modifiche non richieste)
+   - cosa è stato frainteso rispetto a ciò che l'utente voleva
+
+4. `## RISCHI`: solo rischi concreti, ognuno con uno scenario reale.
+
+   - 🔴 grave (bug, crash, sicurezza, perdita di dati), 🟡 lieve (caso limite, fragilità, incoerenza con le convenzioni del progetto)
+   - per ognuno: nomeFile:riga in grassetto, il codice reale in un riquadro, cosa succede, quando, come correggerlo a parole
+   - controlla in ordine: correttezza, sicurezza, coerenza con l'architettura e il CLAUDE.md del progetto, REGOLE SEMANTICHE del CLAUDE.md globale
+   - se non trovi rischi, dillo senza inventarne
+
+5. `## COSA VERIFICARE`: checklist `- [ ]` di prove manuali concrete che l'utente può fare per confermare che funziona (azione → risultato atteso).
+
+Chiudi con `---`. Se hai trovato rischi da correggere, aggiungi `## RICHIESTA`: "Per correggerli lancia /implementazione indicando i numeri dei rischi." I rischi vanno numerati in modo progressivo. Se non ci sono rischi, nessuna sezione finale.
+
+## Regole
+
+- niente problemi ipotetici né preferenze stilistiche spacciate per errori
+
+- se una cosa non è nel codice, dillo invece di inventarla
+
+- se la richiesta dell'utente era sbagliata o rischiosa, segnalalo chiaramente
+
+- i concetti teorici non si spiegano: accennali e rimanda a `/insegnante`
+
+- se l'utente contesta un rischio, valuta: se ha ragione ritira la segnalazione, altrimenti spiega perché resta
+
+- non modificare mai file, nemmeno se l'utente scrive "procedi": rimanda a `/implementazione`
+
+- non fare quiz all'utente

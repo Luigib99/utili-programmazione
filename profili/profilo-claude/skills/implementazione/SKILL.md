@@ -50,7 +50,7 @@ Una sezione `##` per fase, in questo ordine, **senza toccare nessun file**.
    - prima un `### DOVE` con l'albero delle cartelle (`├──` `└──`) con ogni file toccato in questo passo e `modificato` o `nuovo`
    - poi un sottotitolo `### 📄 nomefile.ext` per ogni file (nome in grassetto, link al file se sta nel progetto)
    - per ogni file: cosa cambia in una riga, poi i riquadri `PRIMA` e `DOPO` con il codice reale, completo, rispettando le REGOLE SEMANTICHE del CLAUDE.md globale. File nuovo: solo `NUOVO`. Codice eliminato: solo PRIMA
-   - sotto ogni riquadro (PRIMA, DOPO, NUOVO): la spiegazione breve dei cambiamenti e il glossario senza titolo, un elenco puntato `- termine = cosa fa` (vedi MODIFICHE ESEGUITE nel CLAUDE.md globale)
+   - sotto ogni riquadro (PRIMA, DOPO, NUOVO): una riga che dice **cosa fa effettivamente** quel cambiamento (cosa succede in più, in meno o diversamente a runtime, visto dall'app o dall'utente; non la ripetizione del codice) e il glossario senza titolo, un elenco puntato `- termine = cosa fa` (vedi MODIFICHE ESEGUITE nel CLAUDE.md globale)
    - se sposti o rinomini file, elenca anche gli import da aggiornare
    - niente alternative non richieste: proponi una sola strada
 
@@ -60,7 +60,9 @@ Una sezione `##` per fase, in questo ordine, **senza toccare nessun file**.
    - cosa viene toccato indirettamente (altre schermate, test, import)
    - come verificherai che non si sia rotto nulla
 
-Chiudi con `---` e `## DOMANDA`: "Scrivi **procedi** per applicare il passo 1." Poi fermati e attendi.
+Chiudi con `---` e `## DOMANDA`: "Vuoi la spiegazione del passo 1 (`/spiegazione`) o scrivi **procedi** per applicarlo?" Poi fermati e attendi.
+
+Se l'utente lancia `/spiegazione`, dopo la spiegazione serve comunque un nuovo "procedi" per applicare il passo.
 
 ## Dopo il "procedi"
 
@@ -69,7 +71,7 @@ Solo il messaggio "procedi" (o equivalente esplicito) è il via. Una risposta a 
 1. applica ESATTAMENTE le modifiche del passo proposto, niente di più, e niente dei passi successivi. Se durante il lavoro scopri che servono modifiche diverse, fermati e descrivile prima di farle.
 2. verifica: esegui lint e test dei file toccati con i comandi del progetto (vedi il CLAUDE.md del progetto) e controlla che non restino import rotti e che il progetto sia ancora funzionante.
 3. rispondi con `## ESITO` (verifica fatta e risultato; se un test fallisce, riportalo con l'output, anche se già falliva prima: verificalo) e `## MODIFICHE ESEGUITE` con una voce per file, i riquadri PRIMA / DOPO / NUOVO, la spiegazione breve e il glossario (elenco `- termine = cosa fa`, senza titolo).
-4. se restano passi: mostra `## PASSI RIMASTI` (l'elenco con i fatti spuntati `- [x]` e i restanti `- [ ]`), poi `## PASSO N` e `## RISCHI` del passo successivo, e chiudi con "Scrivi **procedi** per applicare il passo N." Ogni passo ha il suo "procedi".
+4. se restano passi: mostra `## PASSI RIMASTI` (l'elenco con i fatti spuntati `- [x]` e i restanti `- [ ]`), poi `## PASSO N` e `## RISCHI` del passo successivo, e chiudi con "Vuoi la spiegazione del passo N (`/spiegazione`) o scrivi **procedi** per applicarlo?" Ogni passo ha il suo "procedi".
 5. a lavoro finito (nessun passo rimasto), in una riga suggerisci `/revisione` per far controllare il lavoro.
 
 ## Regole

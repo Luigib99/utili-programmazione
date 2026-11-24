@@ -1,14 +1,13 @@
 // Quiz di fine lezione: la lezione si genera solo dopo aver risposto bene alle domande.
 // Due ingressi (Chattino insegnante e piano da terminare), stesso meccanismo:
 // genera le domande → verifica le risposte → a quiz superato scrive la lezione e la salva.
-// I quiz vivono in memoria: se il server si riavvia, il quiz si rigenera.
+// I quiz non finiti stanno in dati/quiz.json: si riprendono anche dopo un riavvio del server.
 const crypto = require('crypto');
 
 const TIMEOUT_MS = 4 * 60 * 1000;
 const MODELLO = ['--tools', 'Read,Grep,Glob', '--model', 'sonnet'];
 const MAX_MATERIALE = 40000;
-const MAX_QUIZ = 20;
-const SCADENZA_MS = 6 * 60 * 60 * 1000;
+const MAX_QUIZ = 50;
 const MIN_RISPOSTA = 15;
 const MAX_RISPOSTA = 3000;
 const OPZIONI = 4;
@@ -21,8 +20,8 @@ const NOMI_ORIGINE = {
 
 const FORMATO_DOMANDE = [
   'Formato di ogni domanda (JSON):',
-  '- a scelta: {"tipo": "scelta", "testo": "...", "opzioni": ["...", "...", "...", "..."], "corretta": 0, "spiegazione": "..."}',
-  '  · esattamente 4 opzioni, una sola giusta, le altre sbagliate ma plausibili; "corretta" è l\'indice (0-3) della giusta; "spiegazione" dice perché la giusta è giusta e perché le altre no, in 2-3 frasi.',
+  '- a scelta: {"tipo": "scelta", "testo": "...", "opzioni": ["...", "...", "...", "..."], "corretta": 0, "spiegazione": "...", "ripasso": "..."}',
+  '  · esattamente 4 opzioni, una sola giusta, le altre sbagliate ma plausibili; "corretta" è l\'indice (0-3) della giusta; "spiegazione" dice perché la giusta è giusta e perché le altre no, in 2-3 frasi; "ripasso" rispiega il concetto alla base della domanda in 2-4 frasi, SENZA dire quale opzione è giusta né citarla.',
   '- aperta: {"tipo": "aperta", "testo": "...", "criterio": "..."}',
   '  · si risponde in 2-4 frasi; "criterio" elenca i punti essenziali che la risposta deve contenere.',
   'Le domande verificano di aver capito (perché, cosa succede se, come si applica), non la memoria dei termini; il testo di una domanda non deve contenere la risposta.',
@@ -63,9 +62,10 @@ function leggiDomanda(grezza, id, testo) {
   if (grezza.tipo !== 'scelta' || !Array.isArray(grezza.opzioni) || grezza.opzioni.length !== OPZIONI) return null;
   const opzioni = grezza.opzioni.map((o) => testo(o, 300));
   const spiegazione = testo(grezza.spiegazione, 800);
-  if (opzioni.some((o) => !o) || !spiegazione || !Number.isInteger(grezza.corretta) || grezza.corretta < 0 || grezza.corretta >= OPZIONI) return null;
+  const ripasso = testo(grezza.ripasso, 800);
+  if (opzioni.some((o) => !o) || !spiegazione || !ripasso ||!Number.isInteger(grezza.corretta) || grezza.corretta < 0 || grezza.corretta >= OPZIONI) return null;
   const ordine = mescola(opzioni.map((_, i) => i));
-  return { ...base, tipo: 'scelta', opzioni: ordine.map((i) => opzioni[i]), corretta: ordine.indexOf(grezza.corretta), spiegazione };
+  return { ...base, tipo: 'scelta', opzioni: ordine.map((i) => opzioni[i]), corretta: ordine.indexOf(grezza.corretta), spiegazione, ripasso };
 }
 
 const inSospeso = (quiz) => quiz.voci.some((v) => !v.esito);
@@ -78,20 +78,22 @@ function pubblica(quiz) {
     titolo: quiz.titolo,
     superato: !inSospeso(quiz),
     voci: quiz.voci.map((v) => ({
-      id: v.id, tipo: v.tipo, testo: v.testo, opzioni: v.opzioni, esito: v.esito, risposta: v.risposta,
-      ...(v.esito ? { feedback: v.tipo === 'scelta' ? v.spiegazione : v.feedback, ...(v.tipo === 'scelta' ? { corretta: v.corretta } : {}) } : {}),
+      id: v.id, tipo: v.tipo, testo: v.testo, opzioni: v.opzioni, esito: v.esito, risposta: v.risposta, avviso: v.avviso || '',
+      ...(v.esito ? { feedback: v.tipo === 'scelta' ? (v.esito === 'ok' ? v.spiegazione : v.ripasso) : v.feedback, ...(v.tipo === 'scelta' && v.esito === 'ok' ? { corretta: v.corretta } : {}) } : {}),
     })),
   };
 }
 
-module.exports = function creaQuiz({ avviaClaude, testo, materialePiano, salvaLezione, terminaPiano }) {
-  const quizAperti = new Map();
-  let contatore = 0;
+module.exports = function creaQuiz({ avviaClaude, testo, materialePiano, salvaLezione, terminaPiano, archivio }) {
+  const quizAperti = new Map(archivio.leggi().filter((q) => q?.id && Array.isArray(q.voci)).map((q) => [q.id, { ...q, occupato: false }]));
+
+  // SALVATAGGIO
+  // "occupato" vale solo mentre il server elabora: non va nel file
+  const salva = () => archivio.scrivi([...quizAperti.values()].map(({ occupato, ...q }) => q));
 
   // PULIZIA
+  // Nessuna scadenza: oltre il massimo si toglie il più vecchio
   function pulisci() {
-    const limite = Date.now() - SCADENZA_MS;
-    for (const [id, q] of quizAperti) if (q.creato < limite) quizAperti.delete(id);
     while (quizAperti.size >= MAX_QUIZ) quizAperti.delete(quizAperti.keys().next().value);
   }
 
@@ -113,7 +115,9 @@ module.exports = function creaQuiz({ avviaClaude, testo, materialePiano, salvaLe
   const promptDomande = (origine, materia) => [
     'Sei avviato in automatico dalla sala di controllo e nessuno può risponderti. Non modificare nessun file.',
     `Uno sviluppatore che sta imparando (React Native, JavaScript) ha appena concluso ${NOMI_ORIGINE[origine]}. Prima di salvargli la lezione devi verificare che abbia capito davvero.`,
-    'Scrivi 5 domande: 3 a scelta e 2 aperte, dalla più semplice alla più difficile, tutte sul MATERIALE qui sotto (cosa è stato spiegato o deciso e perché). Se ti serve puoi leggere il codice del progetto citato, ma non fare domande su ciò che il MATERIALE non copre.',
+    'Scrivi 5 domande: 3 a scelta e 2 aperte, dalla più semplice alla più difficile.',
+    'Le domande riguardano SOLO ciò che il MATERIALE spiega o decide: per una lezione gli argomenti spiegati dal tutor, per un piano gli obiettivi, le scelte, i rischi e il perché del piano.',
+    'Il codice cambiato (se c\'è nel MATERIALE) serve solo a capire il piano: non fare domande su righe, nomi o dettagli di codice che il piano non spiega. Non leggere il progetto per inventare domande: non fare domande su ciò che il MATERIALE non copre.',
     FORMATO_DOMANDE,
     'Scrivi anche un "titolo" (max 80 caratteri) e un "argomento" (una riga) che descrivono ciò che ha imparato.',
     'L\'ultima riga della risposta deve essere solo questa, con JSON valido su una riga:',
@@ -143,6 +147,7 @@ module.exports = function creaQuiz({ avviaClaude, testo, materialePiano, salvaLe
       throw errore(502, 'claude non ha scritto un quiz valido: riprova');
     }
     quizAperti.set(quiz.id, quiz);
+    salva();
     return pubblica(quiz);
   }
 
@@ -152,12 +157,13 @@ module.exports = function creaQuiz({ avviaClaude, testo, materialePiano, salvaLe
     'Sei avviato in automatico dalla sala di controllo e nessuno può risponderti. Non modificare nessun file.',
     `Stai verificando se uno sviluppatore ha capito ${NOMI_ORIGINE[quiz.origine]}. Qui sotto trovi il MATERIALE e le sue risposte.`,
     'Hai due compiti.',
-    '1) VALUTA ogni risposta aperta. È giusta ("ok": true) se mostra di aver capito il concetto del criterio, anche con parole diverse e senza i termini esatti; è sbagliata se manca un punto essenziale o dice una cosa falsa. "spiegazione": se giusta, una frase che conferma o integra; se sbagliata, cosa manca o è errato e la risposta corretta, in 2-3 frasi.',
+    '1) VALUTA ogni risposta aperta. Sii di manica larga: è giusta ("ok": true) se il ragionamento è corretto nella sostanza, anche con parole diverse, senza i termini esatti, in modo incompleto o con imprecisioni di dettaglio. È sbagliata ("ok": false) SOLO se dice una cosa falsa sul concetto o non ha capito l\'idea di fondo, non se manca un punto secondario.',
+    'Se è giusta ma manca qualcosa o c\'è un\'imprecisione, metti in "avviso" una frase breve che dice cosa aggiungere o precisare; se è giusta e completa, "avviso" è "". "spiegazione": se giusta, una frase che conferma o integra; se sbagliata, rispiega in 2-3 frasi il concetto su cui ha sbagliato, come una mini lezione, SENZA scrivere la risposta corretta da copiare.',
     '2) SOSTITUISCI ogni domanda sbagliata (le scelte sbagliate sono elencate sotto, le aperte sbagliate le decidi tu) con una domanda nuova sullo STESSO concetto e dello stesso tipo, formulata in modo diverso (non basta cambiare l\'ordine delle opzioni). Se non ci sono domande sbagliate, "nuove" è [].',
     FORMATO_DOMANDE,
     'Ogni domanda nuova ha in più il campo "sostituisce" con l\'id della domanda che rimpiazza.',
     'L\'ultima riga della risposta deve essere solo questa, con JSON valido su una riga:',
-    'VALUTAZIONE: {"aperte": {"<id>": {"ok": true, "spiegazione": "..."}}, "nuove": [{"sostituisce": "<id>", "tipo": "...", ...}]}',
+    'VALUTAZIONE: {"aperte": {"<id>": {"ok": true, "avviso": "...", "spiegazione": "..."}}, "nuove": [{"sostituisce": "<id>", "tipo": "...", ...}]}',
     '',
     'MATERIALE:',
     quiz.materia.slice(0, 20000),
@@ -190,10 +196,14 @@ module.exports = function creaQuiz({ avviaClaude, testo, materialePiano, salvaLe
     if (quiz.occupato) throw errore(409, 'sto già elaborando questo quiz');
     quiz.occupato = true;
     try {
-      if (inSospeso(quiz)) await valuta(prog, quiz, leggiRisposte(quiz, dati.risposte));
+      if (inSospeso(quiz)) {
+        await valuta(prog, quiz, leggiRisposte(quiz, dati.risposte));
+        salva();
+      }
       if (inSospeso(quiz)) return pubblica(quiz);
       const lezione = await scriviLezione(prog, quiz);
       quizAperti.delete(quiz.id);
+      salva();
       return { ...pubblica(quiz), lezione };
     } finally {
       quiz.occupato = false;
@@ -216,7 +226,7 @@ module.exports = function creaQuiz({ avviaClaude, testo, materialePiano, salvaLe
       for (const v of aperte) {
         const g = letto?.aperte?.[v.id];
         if (typeof g?.ok !== 'boolean') throw errore(502, 'claude non ha valutato tutte le risposte: riprova');
-        giudizio.set(v.id, { ok: g.ok, feedback: testo(g.spiegazione, 800) });
+        giudizio.set(v.id, { ok: g.ok, feedback: testo(g.spiegazione, 800), avviso: g.ok ? testo(g.avviso, 400) : '' });
       }
       for (const d of Array.isArray(letto?.nuove) ? letto.nuove : []) {
         const sbagliata = inAttesa.find((v) => v.id === d?.sostituisce && !giudizio.get(v.id)?.ok);
@@ -228,7 +238,7 @@ module.exports = function creaQuiz({ avviaClaude, testo, materialePiano, salvaLe
 
     for (const v of inAttesa) {
       const g = giudizio.get(v.id);
-      Object.assign(v, { esito: g.ok ? 'ok' : 'no', risposta: risposte.get(v.id), feedback: g.feedback });
+      Object.assign(v, { esito: g.ok ? 'ok' : 'no', risposta: risposte.get(v.id), feedback: g.feedback, avviso: g.avviso || '' });
     }
     for (const nuova of nuove.values()) quiz.voci.push({ ...nuova, id: idVoce(quiz) });
   }
@@ -251,7 +261,7 @@ module.exports = function creaQuiz({ avviaClaude, testo, materialePiano, salvaLe
     'QUIZ SVOLTO:',
     ...quiz.voci.map((v) => `--- ${v.tipo === 'scelta' ? 'scelta' : 'aperta'} (${v.esito === 'ok' ? 'giusta' : 'sbagliata'}) ---\nDomanda: ${v.testo}\n${v.tipo === 'scelta'
       ? `Risposta data: ${v.opzioni[v.risposta]}\nGiusta: ${v.opzioni[v.corretta]}\nSpiegazione: ${v.spiegazione}`
-      : `Risposta data: ${v.risposta}\nCommento: ${v.feedback}`}`),
+      : `Risposta data: ${v.risposta}\nCommento: ${v.feedback}${v.avviso ? `\nDa precisare: ${v.avviso}` : ''}`}`),
   ].join('\n');
 
   // LEZIONE
@@ -268,5 +278,30 @@ module.exports = function creaQuiz({ avviaClaude, testo, materialePiano, salvaLe
     return { id: lezione.id, titolo: lezione.titolo };
   }
 
-  return { avvia, rispondi };
+  // ELENCO
+  // Solo i quiz del progetto aperto, senza soluzioni né criteri; i più recenti in alto
+  const elenco = (prog) => [...quizAperti.values()].filter((q) => q.progetto === prog.nome).sort((a, b) => b.creato - a.creato)
+    .map((q) => ({
+      id: q.id, origine: q.origine, titolo: q.titolo, argomento: q.argomento, creato: q.creato,
+      giuste: q.voci.filter((v) => v.esito === 'ok').length, totali: q.voci.length,
+    }));
+
+  // RIPRESA
+  function riprendi(prog, dati) {
+    const quiz = quizAperti.get(String(dati.id));
+    if (!quiz || quiz.progetto !== prog.nome) throw errore(404, 'quiz non trovato');
+    return pubblica(quiz);
+  }
+
+  // ELIMINAZIONE
+  function elimina(prog, dati) {
+    const quiz = quizAperti.get(String(dati.id));
+    if (!quiz || quiz.progetto !== prog.nome) throw errore(404, 'quiz non trovato');
+    if (quiz.occupato) throw errore(409, 'sto elaborando questo quiz: riprova tra poco');
+    quizAperti.delete(quiz.id);
+    salva();
+    return { eliminato: quiz.id };
+  }
+
+  return { avvia, rispondi, elenco, riprendi, elimina };
 };

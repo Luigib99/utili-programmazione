@@ -19,6 +19,7 @@
     --accent-bg: rgba(217, 119, 87, .14);
     --ok: #6cc07e;
     --ok-bg: rgba(108, 192, 126, .12);
+    --avviso: #e6b450;
     --blu: #58a6ff;
     --blu-bg: rgba(88, 166, 255, .12);
     --danger: #e5534b;
@@ -747,6 +748,8 @@
 
   .testa-lezione .corpo { flex: 1; min-width: 0; }
   .scheda.lezione dl { margin: 0; }
+  .scheda.quiz-da-finire { border-style: dashed; }
+  .stato.tipo.quiz { color: var(--avviso); }
 
   /* QUIZ DI FINE LEZIONE */
   #quiz {
@@ -840,8 +843,22 @@
   .quiz-domanda textarea:focus { border-color: var(--accent); outline: none; }
   .quiz-esito { margin-top: 10px; color: var(--muted); font-size: 13px; }
   .quiz-esito b { color: var(--text); }
+  .quiz-avviso { margin-top: 6px; color: var(--avviso); font-size: 13px; }
   .quiz-messaggio { padding: 24px 6px; color: var(--muted); text-align: center; }
   .quiz-messaggio.errore { color: var(--danger-text); }
+
+  /* Quiz ridotto: resta in basso al centro finché non lo riprendi */
+  #quiz-ripresa {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    z-index: 25;
+    transform: translateX(-50%);
+    border-color: var(--accent);
+    box-shadow: var(--ombra);
+  }
+
+  #quiz-ripresa[hidden] { display: none; }
 
   #chat-log .termina-lezione {
     display: inline-flex;
@@ -1701,7 +1718,7 @@
     --surface-2: #211f1d;
     --border: #2f2d2a;
     background: var(--surface);
-    border: 2px solid var(--accent);
+    border: 1px solid rgba(217, 119, 87, .35);
     border-radius: 12px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, .6);
     overflow: hidden;
@@ -2266,22 +2283,16 @@
     white-space: nowrap;
   }
 
-  /* SCHERMO INTERO: la chat copre la pagina ma sta sotto la mascotte (z-index minore), che resta dov'è */
+  /* SCHERMO INTERO: la chat è un riquadro grande quasi quanto la pagina, staccato di poco dai bordi; sta sotto la mascotte (z-index minore), che resta dov'è */
   #chat.schermo-intero {
-    inset: 0 !important;
-    align-items: center;
-    width: 100vw !important;
-    height: 100vh !important;
+    inset: 12px !important;
+    width: auto !important;
+    height: auto !important;
     max-width: none;
     max-height: none;
-    padding-inline: clamp(0px, 8vw, 96px);
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
     resize: none;
   }
 
-  #chat.schermo-intero > * { width: min(960px, 100%); }
   #chat.schermo-intero .chat-head { cursor: default; }
   #chat.schermo-intero #chat-log .msg { max-width: 96%; font-size: 14.5px; }
 
@@ -2379,12 +2390,12 @@
   <button class="btn" id="ricarica" title="Aggiorna adesso">Aggiorna</button>
 </header>
 <nav id="sezioni">
-  <button data-sezione="sessioni">Sessioni Claude<span class="conta" id="conta-sessioni"></span></button>
-  <button data-sezione="branch">Branch<span class="conta" id="conta-branch"></span></button>
-  <button data-sezione="attivita">Attività<span class="conta" id="conta-attivita"></span></button>
-  <button data-sezione="piani">Piani<span class="conta" id="conta-piani"></span></button>
-  <button data-sezione="contesto">Contesto<span class="conta" id="conta-contesto"></span></button>
-  <button data-sezione="lezioni">Lezioni<span class="conta" id="conta-lezioni"></span></button>
+  <button data-sezione="sessioni" data-blocco="sezione" data-bid="sessioni">Sessioni Claude<span class="conta" id="conta-sessioni"></span></button>
+  <button data-sezione="branch" data-blocco="sezione" data-bid="branch">Branch<span class="conta" id="conta-branch"></span></button>
+  <button data-sezione="attivita" data-blocco="sezione" data-bid="attivita">Attività<span class="conta" id="conta-attivita"></span></button>
+  <button data-sezione="piani" data-blocco="sezione" data-bid="piani">Piani<span class="conta" id="conta-piani"></span></button>
+  <button data-sezione="contesto" data-blocco="sezione" data-bid="contesto">Contesto<span class="conta" id="conta-contesto"></span></button>
+  <button data-sezione="lezioni" data-blocco="sezione" data-bid="lezioni">Lezioni<span class="conta" id="conta-lezioni"></span></button>
   <button data-sezione="funzionalita">Funzionalità</button>
   <button data-sezione="codice">Lettura codice</button>
 </nav>
@@ -2416,12 +2427,14 @@
   <div class="quiz-finestra" role="dialog" aria-modal="true" aria-labelledby="quiz-titolo">
     <div class="quiz-testa">
       <div class="corpo"><b id="quiz-titolo"></b><div class="sotto" id="quiz-sotto"></div></div>
+      <button type="button" class="btn" id="quiz-riduci" title="Riduci: il quiz resta in basso e lo riprendi quando vuoi">&#x2013;</button>
       <button type="button" class="btn" id="quiz-chiudi" title="Chiudi (Esc)">&#x2715;</button>
     </div>
     <div id="quiz-corpo"></div>
     <div class="quiz-piede" id="quiz-piede"></div>
   </div>
 </div>
+<button type="button" class="btn" id="quiz-ripresa" hidden>Riprendi il quiz</button>
 
 <script src="/lettura-codice/analisi.js"></script>
 <script src="/lettura-codice/pagina.js"></script>
@@ -2493,6 +2506,8 @@
     filtro: 'tutte',
     filtroAttivita: 'aperti',
     filtroPiani: 'aperti',
+    filtroLezioni: 'tutte',
+    quiz: [],
     trascinata: null,
     piani: [],
     lezioni: [],
@@ -2549,12 +2564,13 @@
   // CARICAMENTO DATI
   async function carica() {
     if (!stato.progetto) return;
-    const [sessioni, branch, attivita, piani, lezioni, consumiClaude, contesti] = await Promise.allSettled([
-      api('/api/sessioni'), api('/api/branch'), api('/api/attivita'), api('/api/piani'), api('/api/lezioni'), api('/api/consumi'), api('/api/contesti'),
+    const [sessioni, branch, attivita, piani, lezioni, consumiClaude, contesti, quizDaFinire] = await Promise.allSettled([
+      api('/api/sessioni'), api('/api/branch'), api('/api/attivita'), api('/api/piani'), api('/api/lezioni'), api('/api/consumi'), api('/api/contesti'), api('/api/quiz/elenco'),
     ]);
     if (consumiClaude.status === 'fulfilled') stato.consumi = consumiClaude.value;
     stato.contesti = contesti.status === 'fulfilled' ? contesti.value : [];
     if (lezioni.status === 'fulfilled') Object.assign(stato, { lezioni: lezioni.value.lezioni, fileLezioni: lezioni.value.file });
+    if (quizDaFinire.status === 'fulfilled') stato.quiz = quizDaFinire.value;
     if (piani.status === 'fulfilled') Object.assign(stato, { piani: piani.value.piani, fasiPiano: piani.value.fasi });
     stato.sessioni = sessioni.status === 'fulfilled' ? sessioni.value : [];
     stato.branch = branch.status === 'fulfilled' ? branch.value : { errore: branch.reason.message };
@@ -2634,7 +2650,7 @@
     $('conta-branch').textContent = stato.branch?.branch?.length ?? '';
     $('conta-attivita').textContent = stato.attivita.filter((a) => a.stato !== 'fatto').length;
     $('conta-piani').textContent = stato.piani.length;
-    $('conta-lezioni').textContent = stato.lezioni.length;
+    $('conta-lezioni').textContent = stato.lezioni.length + stato.quiz.length;
     $('conta-contesto').textContent = stato.contesti.length;
     const sezioni = { sessioni: htmlSessioni, branch: htmlBranch, attivita: htmlAttivita, piani: htmlPiani, contesto: htmlContesti, lezioni: htmlLezioni };
     // Lettura codice e Funzionalità sono elementi che sopravvivono ai ridisegni: si riagganciano invece di ricrearli
@@ -3462,15 +3478,32 @@
   }
 
   // LEZIONI
+  const FILTRI_LEZIONI = [['tutte', 'Tutte'], ['quiz', 'Quiz da finire'], ['terminate', 'Terminate']];
   const testoLezione = (l) => [l.titolo, l.progetto, ...l.parti.flat()].join(' ').toLowerCase();
+
+  // SCHEDA QUIZ
+  // Un quiz non finito sta in lista come una lezione, con l'etichetta "quiz" e quante domande ha già giuste
+  const htmlSchedaQuiz = (q) => `<div class="scheda lezione quiz-da-finire">
+        <div class="testa-lezione">
+          <span class="stato tipo quiz">quiz</span>
+          <div class="corpo">
+            <div class="titolo">${esc(q.titolo)}</div>
+            <div class="meta">${quando(q.creato)} · ${q.origine === 'piano' ? 'da un piano' : 'da Chattino'} · ${q.giuste} giuste su ${q.totali}</div>
+          </div>
+          <button class="btn primario" data-azione="riprendi-quiz" data-id="${esc(q.id)}">Riprendi</button>
+          <button class="btn icona" data-azione="elimina-quiz" data-id="${esc(q.id)}" title="Elimina questo quiz">${icona('elimina')}</button>
+        </div>
+      </div>`;
 
   function htmlElencoLezioni() {
     const cerca = stato.cercaLezioni.trim().toLowerCase();
-    const lista = stato.lezioni.filter((l) => !cerca || testoLezione(l).includes(cerca));
-    if (!lista.length) {
-      return `<p class="vuoto">${stato.lezioni.length ? 'Nessuna lezione con queste parole.' : 'Ancora nessuna lezione: arrivano da Chattino insegnante (quadrato «Termina lezione») e dai piani che termini, dopo il quiz.'}</p>`;
+    const quiz = stato.filtroLezioni === 'terminate' ? [] : stato.quiz.filter((q) => !cerca || `${q.titolo} ${q.argomento}`.toLowerCase().includes(cerca));
+    const lista = stato.filtroLezioni === 'quiz' ? [] : stato.lezioni.filter((l) => !cerca || testoLezione(l).includes(cerca));
+    if (!quiz.length && !lista.length) {
+      const vuoto = { quiz: 'Nessun quiz da finire.', terminate: 'Nessuna lezione terminata con queste parole.' }[stato.filtroLezioni];
+      return `<p class="vuoto">${vuoto || (stato.lezioni.length || stato.quiz.length ? 'Nessun risultato con queste parole.' : 'Ancora nessuna lezione: arrivano da Chattino insegnante (quadrato «Termina lezione») e dai piani che termini, dopo il quiz.')}</p>`;
     }
-    return lista.map((l) => `<div class="scheda lezione" data-blocco="lezione" data-bid="${esc(l.id)}">
+    return quiz.map(htmlSchedaQuiz).join('') + lista.map((l) => `<div class="scheda lezione" data-blocco="lezione" data-bid="${esc(l.id)}">
         <div class="testa-lezione">
           <span class="stato tipo ${l.origine}">${l.origine}</span>
           <div class="corpo">
@@ -3484,7 +3517,9 @@
   }
 
   function htmlLezioni() {
+    const conta = (id) => ({ tutte: stato.quiz.length + stato.lezioni.length, quiz: stato.quiz.length, terminate: stato.lezioni.length })[id];
     return `<div class="barra">
+        ${FILTRI_LEZIONI.map(([id, nome]) => `<button class="pillola${stato.filtroLezioni === id ? ' attiva' : ''}" data-filtro-lezioni="${id}">${nome} · ${conta(id)}</button>`).join('')}
         <input id="cerca-lezioni" placeholder="cerca nelle lezioni…" value="${esc(stato.cercaLezioni)}" autocomplete="off">
         <span class="spazio"></span>
         <span class="riepilogo">Si aggiornano da sole anche in <code>${esc(stato.fileLezioni || '~/Lezioni.md')}</code></span>
@@ -3904,6 +3939,15 @@
       avvisa('Lezione eliminata');
       await carica();
     },
+    'riprendi-quiz'(b) {
+      document.dispatchEvent(new CustomEvent('quiz-riprendi', { detail: { id: b.dataset.id } }));
+    },
+    async 'elimina-quiz'(b) {
+      if (!confermato(b)) return;
+      await api('/api/quiz/elimina', { id: b.dataset.id });
+      avvisa('Quiz eliminato');
+      await carica();
+    },
     async 'genera-mappa'() {
       const piano = pianoAperto();
       const manca = mancaPerGenerare(piano);
@@ -4184,7 +4228,7 @@
   document.addEventListener('click', async (e) => {
     // La maniglia serve solo a trascinare: il clic lì non apre l'attività
     if (e.target.closest('.maniglia')) return;
-    const el = e.target.closest('[data-progetto], [data-sezione], [data-filtro], [data-filtro-attivita], [data-filtro-piani], [data-azione], #ricarica');
+    const el = e.target.closest('[data-progetto], [data-sezione], [data-filtro], [data-filtro-attivita], [data-filtro-piani], [data-filtro-lezioni], [data-azione], #ricarica');
     if (!el) return;
     try {
       if (el.id === 'ricarica') return await carica();
@@ -4194,6 +4238,10 @@
       }
       if (el.dataset.filtroPiani) {
         stato.filtroPiani = el.dataset.filtroPiani;
+        return disegna();
+      }
+      if (el.dataset.filtroLezioni) {
+        stato.filtroLezioni = el.dataset.filtroLezioni;
         return disegna();
       }
       if (el.dataset.progetto) {
@@ -4618,6 +4666,15 @@
       ferma();
       schermata = 'chiuso';
       $('quiz').hidden = true;
+      $('quiz-ripresa').hidden = true;
+      carica().catch(() => {});
+    }
+
+    // RIDUZIONE
+    // Il quiz si nasconde senza toccare stato e risposte scritte: un'attesa in corso continua e il risultato arriva anche da ridotto
+    function riduci(ridotto) {
+      $('quiz').hidden = ridotto;
+      $('quiz-ripresa').hidden = !ridotto;
     }
 
     // ATTESA
@@ -4636,7 +4693,7 @@
     // Una risposta che arriva dopo la chiusura della finestra non la ridisegna, ma una lezione già salvata va comunque segnalata
     async function esegui(testo, percorso, dati) {
       const mio = ++numeroRichiesta;
-      $('quiz').hidden = false;
+      riduci(false);
       attendi(testo);
       try {
         const risultato = await api(percorso, dati);
@@ -4649,6 +4706,7 @@
         quiz = risultato;
         lezione = risultato.lezione || null;
         schermata = lezione ? 'fatto' : 'domande';
+        if (!$('quiz-ripresa').hidden) avvisa('Il quiz è pronto: riprendilo dal bottone in basso');
       } catch (err) {
         if (mio !== numeroRichiesta) return;
         ferma();
@@ -4663,10 +4721,11 @@
     function htmlVoce(v) {
       const chiusa = Boolean(v.esito);
       const corpo = v.tipo === 'scelta'
-        ? v.opzioni.map((o, i) => `<label class="quiz-opzione${chiusa ? (i === v.corretta ? ' giusta' : i === v.risposta ? ' sbagliata' : '') : ''}">
+        ? v.opzioni.map((o, i) => `<label class="quiz-opzione${chiusa ? (v.corretta !== undefined && i === v.corretta ? ' giusta' : i === v.risposta && v.esito === 'no' ? ' sbagliata' : '') : ''}">
             <input type="radio" name="${v.id}" value="${i}"${chiusa ? ' disabled' : ''}${v.risposta === i ? ' checked' : ''}><span>${esc(o)}</span></label>`).join('')
         : `<textarea data-voce="${v.id}" rows="4"${chiusa ? ' disabled' : ''} placeholder="Rispondi con parole tue, in 2-4 frasi">${esc(v.risposta || '')}</textarea>`;
-      const esito = chiusa ? `<div class="quiz-esito"><b>${v.esito === 'ok' ? '✓ Giusta' : '✗ Sbagliata'}</b>${v.feedback ? ` · ${esc(v.feedback)}` : ''}</div>` : '';
+      const avviso = chiusa && v.esito === 'ok' && v.avviso ? `<div class="quiz-avviso">⚠ ${esc(v.avviso)}</div>` : '';
+      const esito = chiusa ? `<div class="quiz-esito"><b>${v.esito === 'ok' ? '✓ Giusta' : '✗ Sbagliata: ripassa'}</b>${v.feedback ? ` · ${esc(v.feedback)}` : ''}</div>${avviso}` : '';
       return `<div class="quiz-domanda${v.esito ? ` ${v.esito}` : ''}"><span class="tipo-domanda">${NOMI_TIPO[v.tipo]}</span><p>${esc(v.testo)}</p>${corpo}${esito}</div>`;
     }
 
@@ -4730,16 +4789,24 @@
     $('quiz').addEventListener('click', (e) => {
       const azione = e.target.closest('[data-quiz]')?.dataset.quiz;
       if (azione) return AZIONI_QUIZ[azione]();
+      if (e.target.id === 'quiz-riduci') return riduci(true);
       if (e.target.id === 'quiz-chiudi') chiudi();
     });
+    $('quiz-ripresa').addEventListener('click', () => riduci(false));
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && schermata !== 'chiuso') chiudi();
+      if (e.key === 'Escape' && schermata !== 'chiuso' && !$('quiz').hidden) chiudi();
     });
     document.addEventListener('quiz-avvia', (e) => {
-      if (schermata === 'attesa') return;
+      if (schermata === 'attesa') return riduci(false);
       quiz = null;
       lezione = null;
       esegui('Preparo le domande…', '/api/quiz/avvia', e.detail);
+    });
+    document.addEventListener('quiz-riprendi', (e) => {
+      if (schermata === 'attesa') return riduci(false);
+      quiz = null;
+      lezione = null;
+      esegui('Riapro il quiz…', '/api/quiz/riprendi', e.detail);
     });
   })();
 
@@ -5064,6 +5131,7 @@
       lezione: { nome: 'Lezione', trova: (id) => stato.lezioni.find((l) => String(l.id) === id), titolo: (l) => l.titolo, dati: ({ id, ...l }) => l },
       campo: { nome: 'Campo del piano', trova: (id) => sezionePiano(id, true), titolo: (o) => o.etichetta, dati: (o) => o.dati },
       fase: { nome: 'Fase del piano', trova: (id) => sezionePiano(id, false), titolo: (o) => o.etichetta, dati: (o) => o.dati },
+      sezione: { nome: 'Sezione', trova: (id) => sezioneIntera(id), titolo: (o) => o.nome, dati: (o) => o.dati },
     };
 
     // SEZIONE DEL PIANO
@@ -5081,6 +5149,24 @@
       }
       const campi = Object.fromEntries(fase.campi.map((c) => [c.nome, String(piano.fasi[fase.id]?.campi[c.id] || '').trim() || '(vuoto)']));
       return { etichetta: `fase ${fase.nome}`, dati: { ...intestazione, campi } };
+    }
+
+    // SEZIONE INTERA
+    // Alt + clic su una linguetta in alto: a Chattino arrivano tutti gli elementi di quella sezione, con gli stessi dati del blocco singolo
+    const ELENCHI_SEZIONE = {
+      sessioni: { nome: 'Sessioni Claude', blocco: 'sessione', elenco: () => stato.sessioni },
+      branch: { nome: 'Branch', blocco: 'branch', elenco: () => stato.branch?.branch || [] },
+      attivita: { nome: 'Attività', blocco: 'attivita', elenco: () => stato.attivita },
+      piani: { nome: 'Piani', blocco: 'piano', elenco: () => stato.piani },
+      contesto: { nome: 'Contesto', blocco: 'contesto', elenco: () => stato.contesti },
+      lezioni: { nome: 'Lezioni', blocco: 'lezione', elenco: () => stato.lezioni },
+    };
+
+    function sezioneIntera(id) {
+      const s = ELENCHI_SEZIONE[id];
+      if (!s) return null;
+      const elenco = s.elenco();
+      return { nome: s.nome, dati: { sezione: s.nome, totale: elenco.length, elementi: elenco.map((x) => BLOCCHI[s.blocco].dati(x)) } };
     }
 
     // BLOCCO SCELTO
@@ -5106,7 +5192,7 @@
     function aggiornaContesto() {
       $('chat-ctx').innerHTML = bloccoScelto
         ? `Domanda su <b>${esc(bloccoScelto.etichetta)}</b><button type="button" id="chat-ctx-togli" title="Togli il contesto">&#x2715;</button>`
-        : 'Nessun contesto · tieni premuto <b>Alt</b> e clicca un blocco';
+        : 'Nessun contesto · tieni premuto <b>Alt</b> e clicca un blocco o una sezione in alto';
     }
 
     $('chat-ctx').addEventListener('click', (e) => {
@@ -5167,7 +5253,7 @@
     mini.innerHTML = '<i class="dot"></i>Chattino';
     document.body.appendChild(mini);
 
-    const bloccoSotto = (el) => el?.closest?.('#contenuto [data-blocco]') || null;
+    const bloccoSotto = (el) => el?.closest?.('#contenuto [data-blocco], #sezioni [data-blocco]') || null;
 
     function evidenzia(el) {
       if (el === evidenziato) return;
