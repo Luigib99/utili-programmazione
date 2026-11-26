@@ -34,7 +34,7 @@ const piani = (prog) => leggiJson(FILE_PIANI).filter((p) => p.progetto === prog.
     generazioneSintesi: generazioniSintesi.get(p.id) || null,
   }));
 
-// Da un'attività: se ha un problema scritto è un bug fix, altrimenti un'aggiunta; il tipo si cambia dopo
+// Da un'attività: obiettivo, note e «dove» diventano la Richiesta del piano; se c'è un problema scritto si compila anche la fase Bug
 function creaPiano(prog, dati) {
   const attivita = dati.attivita ? leggiJson(FILE_ATTIVITA).find((a) => a.id === dati.attivita && a.progetto === prog.nome) : null;
   if (dati.attivita && !attivita) throw errore(404, 'attività non trovata');
@@ -55,7 +55,7 @@ function creaPiano(prog, dati) {
   return piano;
 }
 
-// Si accettano solo il tipo, le fasi, i campi e le spunte previsti qui sopra; i campi nascosti dal tipo restano salvati
+// Si accettano solo le fasi, i campi e le spunte definiti in fasi-piano.js
 function aggiornaPiano(dati) {
   const lista = leggiJson(FILE_PIANI);
   const indice = lista.findIndex((p) => p.id === dati.id);

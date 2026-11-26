@@ -1268,7 +1268,6 @@
   .scelta-chiamata[hidden] { display: none; }
   @media (max-width: 720px) { .chiamata .lati { grid-template-columns: 1fr; } }
 
-  .riprendi { align-self: flex-start; font-size: 12.5px; font-weight: 500; letter-spacing: 0; }
   .avvisi-mappa { align-self: center; color: #e3b341; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
   .consumo { align-self: center; color: var(--muted); font-size: 12px; font-weight: 400; letter-spacing: 0; white-space: nowrap; }
   .consumo .tok-num { color: var(--accent-chiaro); font-weight: 700; font-size: 1.15em; }
@@ -3053,10 +3052,6 @@
     const [fase, campo] = riferimentoCampo(id);
     return String(piano.fasi[fase]?.campi[campo] || '').trim();
   };
-  const nomeCampo = (piano, id) => {
-    const [fase, campo] = riferimentoCampo(id);
-    return (stato.fasiPiano.find((f) => f.id === fase)?.campi || []).find((c) => c.id === campo)?.nome || campo;
-  };
 
   // Una riga per voce: con l'elenco si toglie il punto, con i passi il numero, e si ricontano
   const righeDelTesto = (testo) => String(testo).split('\n').map((r) => r.replace(/^\s*(•\s*|[-*]\s+|\d+[.)]\s+)/, '').trimEnd()).filter((r) => r.trim());
@@ -3091,11 +3086,6 @@
   function htmlGuidaCampo(piano, fase, c) {
     if (!c.guida?.[0]) return '';
     return `<details class="guida-campo"><summary>Come si scrive</summary><p>${esc(c.guida[0])}</p></details>`;
-  }
-
-  function htmlRiprendi(piano, fase, c) {
-    if (!c.riprendi || testoCampo(piano, `${fase.id}.${c.id}`) || !testoCampo(piano, c.riprendi)) return '';
-    return `<button type="button" class="btn riprendi" data-azione="riprendi-campo" data-fase="${fase.id}" data-campo="${c.id}" data-da="${c.riprendi}">&#x21A7; Parti da «${esc(nomeCampo(piano, c.riprendi))}»</button>`;
   }
 
   // STRUMENTI DEI CAMPI
@@ -3392,7 +3382,6 @@
         ${c.opzioneVuoto ? `<button type="button" class="pillola${opzioneVuotaAttiva(c, dati.campi[c.id]) ? ' attiva' : ''}" data-azione="opzione-vuoto" data-fase="${fase.id}" data-campo="${c.id}">${esc(c.opzioneVuoto.nome)}</button>` : ''}
         <textarea${c.soloPulsanti || opzioneVuotaAttiva(c, dati.campi[c.id]) ? ' hidden' : ''} data-fase="${fase.id}" data-campo="${c.id}" data-forma="${c.forma || ''}" data-traccia="${esc(c.traccia || '')}" maxlength="5000" placeholder="${esc([c.aiuto, c.esempio ? `es. ${c.esempio}` : ''].filter(Boolean).join('\n'))}">${esc(dati.campi[c.id] || '')}</textarea>
         <span class="consigli" data-consigli="${fase.id}.${c.id}">${htmlConsigli(c, dati.campi[c.id] || '')}</span>
-        ${htmlRiprendi(piano, fase, c)}
         ${htmlStrumenti(piano, fase, c)}
       </label>`).join('');
     // Nella fase solo bug la spunta «Non è un bug» oscura e blocca tutti i campi
@@ -3958,14 +3947,6 @@
       pianoNuovo = null;
       disegna();
       seguiGenerazione();
-    },
-    'riprendi-campo'(b) {
-      const piano = pianoAperto();
-      const campo = document.querySelector(`.fase-piano textarea[data-fase="${b.dataset.fase}"][data-campo="${b.dataset.campo}"]`);
-      if (!piano || !campo) return;
-      const testo = testoCampo(piano, b.dataset.da);
-      scriviCampo(campo, campo.dataset.forma ? formattaCampo(testo, campo.dataset.forma) : testo);
-      campo.focus();
     },
     // STRUMENTI DEI CAMPI
     async 'vedi-codice'(b) {
@@ -4568,7 +4549,6 @@
     const c = campoDelPiano(el);
     const consigli = document.querySelector(`[data-consigli="${el.dataset.fase}.${el.dataset.campo}"]`);
     if (c && consigli) consigli.innerHTML = htmlConsigli(c, el.value);
-    el.closest('label')?.querySelector('.riprendi')?.remove();
   });
 
   // TRASCINAMENTO ATTIVITÀ

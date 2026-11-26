@@ -193,6 +193,6 @@ function pianiDaTerminale([azione, ...args]) {
 }
 
 module.exports = {
-  USO, FILE_SERVER, avviaInSfondo, ferma, attendiTasti, attivitaDaTerminale, contestoDaTerminale,
+  USO, avviaInSfondo, ferma, attendiTasti, attivitaDaTerminale, contestoDaTerminale,
   lezioniDaTerminale, pianiDaTerminale,
 };

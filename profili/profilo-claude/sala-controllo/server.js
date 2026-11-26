@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Sala di controllo locale: sessioni di Claude Code, branch e attività dei progetti.
-// Uso: node server.js [comando]; l'elenco dei comandi è nella costante USO più sotto.
+// Uso: node server.js [comando]; l'elenco dei comandi è nella costante USO di moduli/comandi-terminale.js.
 // Lanciato da dentro un progetto (--apri, --terminale) lo registra da solo e apre la sala su quello.
 const http = require('http');
 const fs = require('fs');

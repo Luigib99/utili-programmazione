@@ -131,11 +131,6 @@ const GUIDA_CAMPI = {
   'verifica.prova': { forma: 'passi', guida: ['I passi per provare che funziona, con cosa devi vedere alla fine.'] },
   'verifica.finito': { guida: ['I criteri per dire "finito", ciascuno controllabile con un sì o un no.'], controlli: ['vago'] },
 };
-// RIPRENDI DA
-// Un campo si può partire dal testo già scritto in un altro: il tasto compare solo a campo vuoto e con la fonte compilata
-const RIPRENDI_DA = {
-};
-
 // STRUMENTI DEI CAMPI
 // Cosa può fare la pagina per te invece di chiederti di scrivere a memoria:
 // codice = VEDI NEL CODICE (cerca il nome nel progetto e apre VS Code), riempi = mette i file trovati nel campo,
@@ -167,6 +162,6 @@ const STRUMENTI_CAMPI = {
   },
 };
 
-FASI_PIANO.forEach((f) => f.campi.forEach((c) => Object.assign(c, GUIDA_CAMPI[`${f.id}.${c.id}`], STRUMENTI_CAMPI[`${f.id}.${c.id}`], RIPRENDI_DA[`${f.id}.${c.id}`] ? { riprendi: RIPRENDI_DA[`${f.id}.${c.id}`] } : {})));
+FASI_PIANO.forEach((f) => f.campi.forEach((c) => Object.assign(c, GUIDA_CAMPI[`${f.id}.${c.id}`], STRUMENTI_CAMPI[`${f.id}.${c.id}`])));
 
 module.exports = { FASI_PIANO, MAPPE_PIANO };
