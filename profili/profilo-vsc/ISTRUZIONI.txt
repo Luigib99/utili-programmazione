@@ -22,6 +22,8 @@ DIPENDENZE
 - I terminali npx / npm / git / api usano le funzioni del profilo-terminale: caricare anche quello.
 - Il terminale api usa la cartella ~/api-requests: caricare anche il Profilo_API del progetto
   (in Privato/<Progetto>/Profilo_API).
+- Il terminale "sala di controllo" usa ~/.claude/sala-controllo/ e Node.js 22.5+: caricare anche
+  il profilo-claude (vedi profili/profilo-claude/ISTRUZIONI.txt).
 
 DA PERSONALIZZARE
 - "rest-client.environmentVariables": gli URL sono di esempio, sostituirli con quelli del progetto

@@ -135,6 +135,11 @@
       "splitTerminals": [
         { "name": "api", "icon": "debug-alt", "color": "terminal.ansiMagenta", "commands": ["apimode; clear"] }
       ]
+    },
+    {
+      "splitTerminals": [
+        { "name": "sala di controllo", "icon": "dashboard", "color": "terminal.ansiGreen", "commands": ["clear; node \"$HOME/.claude/sala-controllo/server.js\" --terminale"] }
+      ]
     }
   ],
 

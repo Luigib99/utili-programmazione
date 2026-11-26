@@ -33,21 +33,18 @@ La struttura della cartella rispecchia quella di ~/.claude:
                   - arresto:                      node ~/.claude/sala-controllo/server.js --ferma
                   - progetti: si aggiungono da soli (vedi sopra e sotto); l'elenco è in
                     ~/.claude/sala-controllo/dati/progetti.json
+                  moduli/ il codice del server diviso per argomento (git, piani, mappe, sessioni...): va copiato insieme a server.js
                   dati/ (gettone, progetti, attività, piani, archivio delle chat) si crea da solo e NON va copiato nella repo
 
 SALA DI CONTROLLO SU UN PC NUOVO
 Serve: Node.js 22.5 o più recente, git, VS Code con l'estensione Claude Code (per Chattino).
 1. copiare questa cartella in ~/.claude come spiegato in "DOVE COPIARLO" (dati/ non c'è: si crea da solo).
-2. per ogni progetto, da un terminale aperto nella cartella del progetto:
-     node ~/.claude/sala-controllo/server.js --aggiungi
-   aggiunge il progetto alla sala, crea <progetto>/.vscode/tasks.json e lo esclude da git
-   solo su quel PC (.git/info/exclude), senza toccare il .gitignore del progetto.
-   Se il progetto ha già un .vscode/tasks.json non lo tocca: il task da aggiungere è in
-   sala-controllo/tasks.json.
-3. ricaricare VS Code: in basso, tra i terminali, compare "Sala di controllo"; Invio avvia la
-   sala e la apre sul progetto della finestra. La prima volta VS Code può chiedere di
-   permettere le attività automatiche: "Allow" (oppure nelle impostazioni
-   "task.allowAutomaticTasks": "on").
+2. caricare il profilo VS Code seguendo profili/profilo-vsc/ISTRUZIONI.txt (estensione Restore Terminals,
+   profilo-terminale; ATTENZIONE: sostituisce le impostazioni di VS Code): contiene il terminale
+   "sala di controllo".
+3. riavviare VS Code: in basso, tra i terminali, compare "sala di controllo"; Invio avvia la
+   sala e la apre sul progetto della finestra. Il progetto si aggiunge da solo alla sala la
+   prima volta che premi Invio.
 Senza VS Code: node ~/.claude/sala-controllo/server.js --apri dalla cartella del progetto.
 Attività, piani e archivio restano sul PC dove li crei: non passano da un PC all'altro.
 
